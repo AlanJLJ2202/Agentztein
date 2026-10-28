@@ -15,7 +15,8 @@
     "db:migrate": "pnpm --filter @skillab/db migrate",
     "datasets:generate": "tsx packages/env-recon/src/cli/generate.ts",
     "datasets:verify": "tsx packages/env-recon/src/cli/generate.ts --verify",
-    "env:conflict": "tsx packages/env-recon/src/cli/conflict.ts"
+    "env:conflict": "tsx packages/env-recon/src/cli/conflict.ts",
+    "datasets:review": "tsx packages/env-recon/src/cli/review.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
