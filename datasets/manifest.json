@@ -1,0 +1,115 @@
+{
+  "generatorVersion": "env-recon@1",
+  "configVersion": "ds-v1",
+  "entries": [
+    {
+      "family": "stable",
+      "split": "adaptation",
+      "hash": "a4c16653dabb5b611b81d0c95a39eb9ccd7ace915cca691cc6dd6611a0c399b7",
+      "caseCount": 20,
+      "rowCount": 253,
+      "seedRange": [
+        1000000,
+        1000019
+      ],
+      "path": "adaptation/stable.json"
+    },
+    {
+      "family": "interleaved",
+      "split": "adaptation",
+      "hash": "481acedf3b7806d66858f9902e313b7d4ecbbd244d0262a26e700c9c7d99cae5",
+      "caseCount": 20,
+      "rowCount": 258,
+      "seedRange": [
+        1100000,
+        1100019
+      ],
+      "path": "adaptation/interleaved.json"
+    },
+    {
+      "family": "temporal_shift",
+      "split": "adaptation",
+      "hash": "cc0cfa376965127182b35bd690cddcbfbb21be1a4634cf435256ec3c22bf6d94",
+      "caseCount": 20,
+      "rowCount": 285,
+      "seedRange": [
+        1200000,
+        1200019
+      ],
+      "path": "adaptation/temporal_shift.json"
+    },
+    {
+      "family": "stable",
+      "split": "validation",
+      "hash": "64a353b4bef5402dd4e558296d4f6efd6820b6710cd4b6b31477c73bbef7a57e",
+      "caseCount": 10,
+      "rowCount": 126,
+      "seedRange": [
+        2000000,
+        2000009
+      ],
+      "path": "validation/stable.json"
+    },
+    {
+      "family": "interleaved",
+      "split": "validation",
+      "hash": "4c9e09f4a8f3bd06aeded8a11695167caa315fd79cab71db5cb4e280d0bcf8a4",
+      "caseCount": 10,
+      "rowCount": 141,
+      "seedRange": [
+        2100000,
+        2100009
+      ],
+      "path": "validation/interleaved.json"
+    },
+    {
+      "family": "temporal_shift",
+      "split": "validation",
+      "hash": "510c317d94efe9661d313ce020b65c4b55892d1ad4a7386ad9526889ffdc7a22",
+      "caseCount": 10,
+      "rowCount": 136,
+      "seedRange": [
+        2200000,
+        2200009
+      ],
+      "path": "validation/temporal_shift.json"
+    },
+    {
+      "family": "stable",
+      "split": "test",
+      "hash": "d36290854948d906330a7624f0e3bf0fdd3c28c9891168d4f5556f8a60c507c6",
+      "caseCount": 10,
+      "rowCount": 214,
+      "seedRange": [
+        3000000,
+        3000009
+      ],
+      "path": "sealed/test/stable.json"
+    },
+    {
+      "family": "interleaved",
+      "split": "test",
+      "hash": "1c11f9b55f99820b5613ec8ec428c874461b8b1a8b5c728d71d32cb0ac45a31c",
+      "caseCount": 10,
+      "rowCount": 206,
+      "seedRange": [
+        3100000,
+        3100009
+      ],
+      "path": "sealed/test/interleaved.json"
+    },
+    {
+      "family": "temporal_shift",
+      "split": "test",
+      "hash": "a59d67cb96f991c1fa9906fb86a35594edda2ffea73baae9ad199ad59feb7532",
+      "caseCount": 10,
+      "rowCount": 220,
+      "seedRange": [
+        3200000,
+        3200009
+      ],
+      "path": "sealed/test/temporal_shift.json"
+    }
+  ],
+  "hash": "dfff584334683dc5f34c80bbd1c7cc067711446b30c8fdfa45102a5531c9f3ff"
+}
