@@ -37,7 +37,18 @@ packages/db          esquema Drizzle + migraciones (tablas append-only, esquema 
 datasets/manifest.json  hashes de todos los splits (los datos se regeneran desde semillas)
 ```
 
-## Cómo correr
+## Flujo en la nube (sin máquina local)
+
+Todo se opera desde el navegador (ADR-015):
+
+1. **Supabase:** crear el proyecto; en *Project Settings → Data API* quitar `public` de los esquemas expuestos;
+   descargar el certificado CA en *Database Settings → SSL*.
+2. **GitHub → Settings → Environments → `production`:** secretos `DATABASE_URL` (cadena del *Session pooler*,
+   puerto 5432) y `DATABASE_SSL_CA` (contenido completo del certificado `.crt`).
+3. **GitHub → Actions → `db-migrate` → Run workflow**, escribiendo `migrate`.
+4. Cada push corre `ci` (lint, typecheck, verificación de datasets y tests con Postgres efímero).
+
+## Cómo correr (local, opcional)
 
 Requisitos: Node ≥ 22.12, pnpm 10, PostgreSQL 16 (vía `docker compose up` o local).
 

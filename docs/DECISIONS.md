@@ -158,3 +158,23 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
   validación estructural rechaza candidatas cuyo texto copie cadenas literales del dataset (ya prevista
   como anti-memorización) y cada candidata guarda la lista de trazas de origen (procedencia).
 - **Consecuencias:** se añade en E3 un test con una descripción que intenta inyectar instrucciones.
+
+## ADR-015 — Flujo 100% en la nube (sin máquina local)
+- **Contexto:** Alan trabaja solo desde servicios en la nube, sin editor ni terminal locales. El contenedor
+  de las sesiones de Claude Code no alcanza hosts de Postgres externos (red restringida a HTTPS vía proxy).
+- **Decisión:**
+  - Código: sesiones de Claude Code en la nube → commits a la rama de trabajo en GitHub.
+  - Verificación: GitHub Actions `ci` (Postgres 16 efímero) en cada push.
+  - Base de datos alojada: Supabase. Migraciones con el workflow manual `db-migrate`
+    (GitHub → Actions → Run workflow, escribiendo `migrate`), con secretos `DATABASE_URL` (Session pooler)
+    y `DATABASE_SSL_CA` en el environment `production` de GitHub.
+  - TLS verificado contra el CA del proyecto Supabase (`DATABASE_SSL_CA`); nunca `rejectUnauthorized: false`.
+  - Supabase usará Postgres 17 o más nuevo; el esquema no depende de funciones exclusivas de 16. El CI sigue en 16.
+  - Seguridad: quitar `public` de los esquemas expuestos por la Data API de Supabase (o RLS sin políticas),
+    porque las tablas viven en `public`. `sealed` no se expone.
+  - Panel (E7): Vercel, con `DATABASE_URL` del Transaction pooler como variable de entorno.
+- **Alternativas:** abrir la red del entorno de Claude a Supabase (Postgres va por TCP, no por el proxy
+  HTTPS, así que no está garantizado); pegar SQL a mano en el editor de Supabase (propenso a errores y sin
+  registro del journal de Drizzle).
+- **Consecuencias:** la conexión real a Supabase solo se prueba cuando corre `db-migrate`; el código de
+  TLS tiene test unitario, pero no se ha probado contra Supabase desde esta sesión.
