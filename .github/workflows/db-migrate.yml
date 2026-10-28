@@ -1,0 +1,31 @@
+name: db-migrate
+# Applies pending migrations to the hosted database (Supabase). Manual on purpose: run it from
+# GitHub → Actions → db-migrate → Run workflow. Migrations only add; they never edit history.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "migrate" to apply pending migrations'
+        required: true
+concurrency: db-migrate
+jobs:
+  migrate:
+    if: inputs.confirm == 'migrate'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_SSL_CA: ${{ secrets.DATABASE_SSL_CA }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check secrets are present
+        run: |
+          test -n "$DATABASE_URL" || { echo "::error::Secret DATABASE_URL missing in environment 'production'"; exit 1; }
+          test -n "$DATABASE_SSL_CA" || { echo "::error::Secret DATABASE_SSL_CA missing in environment 'production'"; exit 1; }
+      - run: pnpm db:migrate
