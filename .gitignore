@@ -1,0 +1,11 @@
+node_modules/
+.data/
+.env
+*.log
+coverage/
+dist/
+# Sealed split (test + ground truth) is regenerated from seeds; only its manifest hash is committed.
+datasets/adaptation/
+datasets/validation/
+datasets/sealed/*
+!datasets/sealed/.gitkeep
