@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
-import { Evidence, Label, Row, SkillContent, SubmitLabels, canonicalJson, hashCanonical } from "../src/index.js";
+import { Decision, Evidence, Label, Row, SkillContent, SubmitLabels, canonicalJson, hashCanonical } from "../src/index.js";
 
 describe("canonical hashing", () => {
   it("is independent of key order (property)", () => {
@@ -88,5 +88,30 @@ describe("skill contracts", () => {
     };
     expect(Evidence.safeParse(ev).success).toBe(false);
     expect(Evidence.safeParse({ ...ev, successes: 2 }).success).toBe(true);
+  });
+});
+
+describe("decision contract", () => {
+  const h = "a".repeat(64);
+  const decision = {
+    id: "d1",
+    skillId: "s",
+    version: 1,
+    outcome: "insufficient_evidence",
+    reason: "CI crosses zero in vendorB/R1",
+    criteriaHash: h,
+    evaluatorVersion: "evaluator@1",
+    evaluatorHash: h,
+    thresholds: { minImprovementPp: 10 },
+    perFamily: [],
+    hardConstraintViolations: [],
+    createdAt: "2026-10-28T00:00:00.000Z",
+  };
+
+  it("requires a stated reason", () => {
+    expect(Decision.safeParse(decision).success).toBe(true);
+    const { reason: _reason, ...withoutReason } = decision;
+    expect(Decision.safeParse(withoutReason).success).toBe(false);
+    expect(Decision.safeParse({ ...decision, reason: "" }).success).toBe(false);
   });
 });

@@ -15,6 +15,13 @@
       "when": 1793171348404,
       "tag": "0001_immutability",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793171672752,
+      "tag": "0002_decision_reason",
+      "breakpoints": true
     }
   ]
 }

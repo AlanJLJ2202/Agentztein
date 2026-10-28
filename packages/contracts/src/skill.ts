@@ -123,6 +123,8 @@ export const Decision = z
     skillId: z.string().min(1),
     version: z.number().int().positive(),
     outcome: DecisionOutcome,
+    /** The motive in words: a decision must be explainable, not only a set of numbers. */
+    reason: z.string().min(1),
     criteriaHash: Sha256,
     evaluatorVersion: z.string().min(1),
     evaluatorHash: Sha256,

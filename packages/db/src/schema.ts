@@ -193,6 +193,7 @@ export const decisions = pgTable(
     skillId: text("skill_id").notNull(),
     version: integer("version").notNull(),
     outcome: text("outcome").notNull(),
+    reason: text("reason").notNull(),
     criteriaHash: text("criteria_hash").notNull(),
     evaluatorVersion: text("evaluator_version").notNull(),
     evaluatorHash: text("evaluator_hash").notNull(),
