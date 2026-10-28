@@ -5,16 +5,28 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
 
 ---
 
-## ADR-000 — Fuente de verdad sin el PDF del anteproyecto
-- **Contexto:** el prompt maestro indica adjuntar `Anteproyecto_Evolucion_Verificable_de_Agentes.pdf`
-  como especificación. En esta sesión solo se recibió el prompt (`PROMPT_agente_evolucion_verificable.md`);
-  el PDF no está disponible.
-- **Decisión:** el prompt maestro es la especificación provisional. Todo punto metodológico se toma de él.
-  Cuando se reciba el PDF se revisará este archivo punto por punto y cualquier contradicción se anotará
-  aquí (gana el PDF).
-- **Consecuencias:** riesgo de divergencia en separación de conjuntos, reglas de promoción y
-  definición de familias. E1 no depende de umbrales, así que el riesgo se concentra en E4–E8.
-  **[pendiente de confirmar por Alan: enviar el PDF]**
+## ADR-000 — Fuente de verdad: anteproyecto v1.0 recibido y contrastado
+- **Contexto:** E1 se construyó con el prompt maestro como especificación provisional porque el PDF no
+  estaba disponible. El 2026-10-28 se recibió `Anteproyecto_Evolucion_Verificable_de_Agentes.pdf`
+  (v1.0, 27-oct-2026, 14 páginas) y se revisó completo contra el prompt y contra lo construido.
+- **Resultado de la revisión:** no hay contradicciones metodológicas entre prompt y PDF en separación de
+  conjuntos, reglas de promoción ni límites del candidato. Sí hay huecos que el prompt no cubría y que
+  el PDF exige; se resuelven así (gana el PDF):
+
+  | Punto del PDF | Hueco | Resolución |
+  |---|---|---|
+  | §04 Decisión: "motivo, evaluador, umbrales, revisión humana, versión promovida" | `Decision` no tenía motivo | Campo `reason` obligatorio en el contrato + migración `0002_decision_reason` |
+  | §06 "mejora mínima y tolerancia de regresión a calibrar con la variabilidad del baseline" | ADR-003 fijaba números | ADR-003 reescrito: los números son marcadores; se derivan de la calibración |
+  | §07 "la verdad de referencia ... se revisa antes de ejecutar agentes" | No había revisión humana | ADR-011: `pnpm datasets:review` → `docs/GROUND_TRUTH_REVIEW.md` + aprobación de Alan |
+  | §03 H3 "cambios individuales vs paquetes de cambios simultáneos" | El prompt no tenía condición de paquetes | ADR-012 |
+  | §10 riesgo "sobreajuste y atajos → transformaciones semánticamente válidas [10]" | El test solo cambiaba distribución | ADR-013 |
+  | §10 riesgo "experiencias contaminadas → procedencia, separación datos/instrucciones" | Sin regla explícita para el proponente | ADR-014 |
+  | §06 "registrar ... cualquier cambio de infraestructura" | No previsto | Registro de infraestructura en E2 (`infra_changes`) |
+  | §13 Referencias [1]–[14] | README sin referencias | Lista de referencias del anteproyecto en `README.md` |
+
+- **Coincidencias confirmadas:** F1–F3, variantes A–D, piloto 360 episodios, ablaciones D-sin-alcance y
+  D-sin-vigencia, operaciones permitidas, estados, regla de promoción, invariantes, demo de 4 minutos,
+  criterios de MVP, Control solo como antecedente, nombre comercial pendiente.
 
 ## ADR-001 — Nombre de código y licencia
 - **Decisión:** nombre de código `skillab` (paquetes `@skillab/*`). Repositorio sin licencia pública
@@ -31,14 +43,17 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
 - **Alternativas:** project references + `tsc -b` con emisión a `dist/`.
 - **Consecuencias:** los workers (E2) se lanzan con `tsx`. Si hiciera falta emitir JS, se añade luego.
 
-## ADR-003 — Umbrales de promoción por defecto **[pendiente de confirmar por Alan]**
-Se congelan en el pre-registro tras la calibración (E8). Defaults provisionales:
-- Métrica primaria: éxito por lote completo (todas las filas correctas) dentro del scope, en validation.
-- Mejora mínima: +10 puntos porcentuales y límite inferior del IC 95% bootstrap por casos > 0.
-- Tolerancia de regresión por familia vigente: caída ≤ 5 pp en el punto estimado **y** límite inferior
-  del IC 95% de la diferencia ≥ −10 pp. Se ajusta con la calibración antes de congelar; cualquier cambio
-  posterior crea una versión nueva del pre-registro.
-- Restricciones duras (booleanas): 0 violaciones de invariantes, validación estructural OK, permisos ⊆ herramientas.
+## ADR-003 — Umbrales de promoción **[pendiente de confirmar por Alan]**
+- **Contexto:** el PDF (§06) pide que mejora mínima y tolerancia de regresión se calibren con la
+  variabilidad del baseline y se fijen antes de la corrida confirmatoria.
+- **Decisión:** los umbrales se derivan en E8 a partir de la calibración de la variante A (dispersión del
+  éxito por lote entre repeticiones, por familia), y se congelan con hash en `config/preregistration/v1.json`.
+  Regla de derivación por defecto: mejora mínima = máx(10 pp, 2 × desviación típica entre repeticiones);
+  tolerancia de regresión = máx(5 pp, 1 × desviación típica). Además, el límite inferior del IC 95%
+  bootstrap por casos de la mejora debe ser > 0.
+- **Restricciones duras (booleanas):** 0 violaciones observadas de invariantes, validación estructural OK,
+  permisos ⊆ herramientas. Se reportan como "0 observadas", nunca como "sin fallos".
+- **Consecuencias:** hasta la calibración, ningún número de umbral es definitivo.
 
 ## ADR-004 — Autonomía de promoción **[pendiente de confirmar por Alan]**
 - **Decisión:** `human_required` por defecto en el pre-registro v1. `auto` solo en `--dry-run`/tests.
@@ -62,6 +77,8 @@ Se congelan en el pre-registro tras la calibración (E8). Defaults provisionales
   - F3 `temporal_shift`: secuencia alternada A/B en orden temporal; los lotes con índice ≥ `shiftIndex`
     usan R2 (vendorB pasa a B@2; vendorA sigue en A@1).
   "Lotes mezclados" se interpreta como episodios intercalados, no filas de dos proveedores en el mismo lote.
+  El PDF (§07) describe F2 como "contextos intercalados con reglas distintas"; aquí las reglas distintas
+  son los procedimientos correctos de cada proveedor (id estable en A, hora en la descripción en B).
 - **Señales observables por proveedor** (para que exista una solución aprendible):
   - vendorA (A@1): `vendor_txn_id` estable; un duplicado es reimportación con el mismo id.
     No hay compras legítimas repetidas con mismo importe y fecha (por diseño: así el oráculo ingenuo
@@ -104,3 +121,40 @@ Se congelan en el pre-registro tras la calibración (E8). Defaults provisionales
 - **Contexto:** el contenedor de la sesión no tiene el daemon de Docker garantizado; sí tiene PostgreSQL 16.
 - **Decisión:** `docker-compose.yml` es el camino oficial; los tests de DB usan `DATABASE_URL` y se
   marcan como *skipped* (visiblemente) si no está definida. En esta sesión se usa el Postgres 16 local.
+
+## ADR-011 — Revisión humana de la verdad de referencia antes de ejecutar agentes
+- **Contexto:** PDF §07: "La verdad de referencia se genera programáticamente y se revisa antes de
+  ejecutar agentes."
+- **Decisión:** `pnpm datasets:review` genera `docs/GROUND_TRUTH_REVIEW.md` con un lote de adaptation por
+  proveedor × versión de reglas, sus etiquetas y conteos por split (solo adaptation y validation; el test
+  sellado no se lee). Ninguna corrida con modelo real (calibración incluida) empieza sin que Alan apruebe
+  esa revisión. La aprobación se anota aquí con fecha y hash del manifest.
+- **Estado:** pendiente. Manifest a revisar: `dfff584334683dc5f34c80bbd1c7cc067711446b30c8fdfa45102a5531c9f3ff`.
+- **Consecuencias:** cualquier cambio del generador invalida la aprobación y exige una nueva revisión.
+
+## ADR-012 — Condición de paquetes para H3 **[pendiente de confirmar por Alan]**
+- **Contexto:** H3 (§03) compara evaluar cambios individuales frente a paquetes de cambios simultáneos.
+  El prompt solo impone "un cambio por candidata" y no tenía forma de medir H3.
+- **Decisión:** análisis secundario en E8, después de las ablaciones y solo si el presupuesto alcanza:
+  se toman k candidatas ya generadas (k = 3 por defecto, al menos una conocida como perjudicial en otra
+  familia) y se evalúan (a) una a una y (b) como paquete, con los mismos casos de validation. Métrica:
+  ¿la evaluación identifica la candidata perjudicial? y coste de llegar a esa identificación.
+  No requiere llamadas extra al proponente.
+- **Consecuencias:** si no hay presupuesto, H3 se declara no evaluada en el reporte, sin inferirla.
+
+## ADR-013 — Transformaciones semánticamente válidas en el conjunto final
+- **Contexto:** PDF §10 propone casos finales reservados y transformaciones semánticamente válidas [10]
+  contra sobreajuste y atajos.
+- **Decisión:** en E4 el evaluador añade al split test variantes de cada caso que no cambian la respuesta
+  correcta: reordenar filas del mismo día, desplazar todas las fechas, renombrar comercios de forma
+  consistente, escalar importes por un factor común. La métrica de invariancia (¿la etiqueta cambia bajo
+  la transformación?) se reporta aparte. Los oráculos de referencia deben ser invariantes (test).
+- **Consecuencias:** el split test crece; el coste de evaluación final se recalcula en la calibración.
+
+## ADR-014 — Las trazas son datos, no instrucciones
+- **Contexto:** PDF §10 riesgo "experiencias contaminadas".
+- **Decisión:** el proponente recibe las trazas dentro de un bloque delimitado y marcado como datos no
+  confiables; su prompt indica que el contenido de filas y descripciones nunca son instrucciones. La
+  validación estructural rechaza candidatas cuyo texto copie cadenas literales del dataset (ya prevista
+  como anti-memorización) y cada candidata guarda la lista de trazas de origen (procedencia).
+- **Consecuencias:** se añade en E3 un test con una descripción que intenta inyectar instrucciones.

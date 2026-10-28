@@ -26,7 +26,7 @@ El objetivo es un protocolo reproducible y un reporte honesto, incluido el caso 
 | E2 Ejecutor (model-adapter, runner, trazas, coste) | siguiente |
 | E3–E8 | pendientes |
 
-Detalle en [`docs/PROGRESS.md`](docs/PROGRESS.md); decisiones en [`docs/DECISIONS.md`](docs/DECISIONS.md).
+Especificación: anteproyecto v1.0 (contraste en ADR-000). Detalle en [`docs/PROGRESS.md`](docs/PROGRESS.md); decisiones en [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ## Estructura actual
 
@@ -69,11 +69,29 @@ pnpm datasets:generate   # escribe adaptation/, validation/ y sealed/test/ + man
 pnpm env:conflict        # muestra el conflicto A/B y el efecto R1→R2 con oráculos de referencia
 ```
 
+```bash
+pnpm datasets:review     # regenera docs/GROUND_TRUTH_REVIEW.md para revisión humana
+```
+
 Sin `DATABASE_URL`, los tests de Postgres se marcan como *skipped* (visiblemente); el resto corre igual.
 
 ## Antecedentes
 
-Este proyecto toma ideas de trabajos previos sobre agentes que mejoran su propio andamiaje, entre ellos
-Darwin Gödel Machine (DGM), GEPA, ACE, Hermes, Meta-Harness, MESH, Skill-V, CTA y CHASE. El crédito es de
-sus autores; aquí no se reproduce su trabajo como propio. Las referencias bibliográficas completas se
-tomarán del anteproyecto y se añadirán en `docs/REPORT.md`.
+Este proyecto se apoya en trabajo previo; el crédito es de sus autores y aquí no se reproduce como propio.
+Ninguno de sus resultados se ha reproducido en este repositorio. Referencias tal como aparecen en el
+anteproyecto v1.0 (§13); las publicaciones recientes pueden ser preprints.
+
+1. Nous Research. *Hermes Agent Self-Evolution*. https://github.com/NousResearch/hermes-agent-self-evolution
+2. Nous Research. *Hermes Agent: Skills System y aprobación de escrituras*. https://hermes-agent.nousresearch.com/docs/user-guide/features/skills/
+3. Sakana AI. *The Darwin Gödel Machine*. 30 may 2025. https://sakana.ai/dgm/
+4. Agrawal et al. *GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning*. ICLR 2026. https://arxiv.org/abs/2507.19457
+5. *ACE. Agentic Context Engineering*. https://ace-agent.github.io/
+6. Lee et al. *Meta-Harness: End-to-End Optimization of Model Harnesses*. Mar 2026. https://arxiv.org/abs/2603.28052
+7. Shang et al. *MESH-Harness: Self-Improving Agent Harnesses via Bandit-Guided Compositional Evolution*. Oct 2026. https://arxiv.org/abs/2610.05300
+8. Ma et al. *Skill-V: Verifiable Self-Evolving Skill Library for Interactive Agents*. Oct 2026. https://arxiv.org/html/2610.11781v1
+9. Zhou et al. *Counterfactual Trace Auditing of LLM Agent Skills* (CTA). May 2026. https://arxiv.org/abs/2605.11946
+10. Zhu et al. *Bad Genius: Counterfactual-Guided Harness Evolution Beyond Task-Specific Shortcuts* (CHASE). Sep 2026. https://arxiv.org/abs/2609.18366
+11. Chen et al. *Are Self-Evolving Agents Continual Learners?* 19 oct 2026. https://arxiv.org/abs/2610.25858
+12. Zhao et al. *Self-Evolving Agents Can Repair Failures but Struggle to Generalize from Them*. 16 oct 2026. https://arxiv.org/abs/2610.22984
+13. Huang et al. *From Raw Experience to Skill Consumption: A Systematic Study of Model-Generated Agent Skills*. May 2026. https://arxiv.org/abs/2605.23899
+14. Meta. *Global AI Developer Hackathon: temas, criterios y fechas*. https://dev.meta.ai/events/global-hackathon

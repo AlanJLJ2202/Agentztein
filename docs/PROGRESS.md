@@ -15,7 +15,7 @@ la variante D no gane (H4).
 
 ## Riesgos que veo en la especificación
 
-1. **PDF ausente** (ADR-000): trabajo con el prompt como especificación provisional.
+1. ~~PDF ausente~~ → recibido el 2026-10-28 y contrastado (ADR-000).
 2. **Entorno demasiado fácil o demasiado difícil**: si el modelo resuelve vendorB sin habilidades, no hay
    nada que aprender; si es imposible, todas las variantes empatan en 0. Mitigación: señales observables
    diseñadas (hora en la descripción) y calibración con A antes de fijar tamaños.
@@ -77,10 +77,26 @@ pnpm env:conflict
 - Coste gastado en modelos: USD 0 (no se llamó a ningún modelo).
 
 **Pendiente / notas**
-- PDF del anteproyecto no recibido (ADR-000).
 - Los oráculos son reglas escritas a mano; que el entorno sea resoluble por reglas no implica que un LLM lo
   resuelva sin ayuda: eso lo mide la calibración de E2.
 - Roles de Postgres (`proposer_ro`, `runner`, `evaluator`) y vistas por split: E3.
+
+## E1.1 — Ajustes tras recibir el anteproyecto (2026-10-28)
+
+**Hecho**
+- Revisión completa del PDF contra prompt y código (ADR-000): sin contradicciones metodológicas; 8 huecos
+  resueltos o planificados.
+- `Decision.reason` obligatorio (contrato + migración `0002_decision_reason` + test).
+- `pnpm datasets:review` → `docs/GROUND_TRUTH_REVIEW.md` (ADR-011). **Bloquea E2-calibración** hasta que
+  Alan apruebe la revisión.
+- ADR-003 reescrito (umbrales derivados de la calibración), ADR-012 (H3, paquetes), ADR-013
+  (transformaciones semánticas en test, E4), ADR-014 (trazas como datos, E3).
+- Referencias [1]–[14] del anteproyecto en `README.md`.
+
+**Verificación**
+```bash
+pnpm check
+```
 
 ## E2 — Ejecutor (plan)
 - `packages/model-adapter`: interfaz `ModelClient`, `FakeModelClient` determinista (scripted), contabilidad
@@ -91,5 +107,7 @@ pnpm env:conflict
 - `packages/runner`: episodio con timeout, presupuesto (80% warning, 100% stop), traza completa a `BlobStore`
   local por sha256, persistencia en `episodes` incluso en fallo.
 - Loader de datasets a DB (cases / sealed.test_cases / sealed.truth).
+- Registro de cambios de infraestructura (`infra_changes`: versión de Node, dependencias, modelo, adaptador)
+  que el anteproyecto pide registrar (§06).
 - **Salida:** corrida de A (frozen) en las 3 familias con FakeModelClient, resultados y coste persistidos,
   test que fuerza timeout/JSON inválido. Calibración con modelo real solo tras confirmar precios y API key.
