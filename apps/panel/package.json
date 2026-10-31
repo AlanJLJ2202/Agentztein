@@ -8,7 +8,7 @@
     "dev": "pnpm snapshot && vite",
     "build": "pnpm snapshot && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "pnpm snapshot && tsc -p tsconfig.json"
   },
   "dependencies": {
     "react": "^19.3.1",
