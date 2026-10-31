@@ -1,0 +1,25 @@
+{
+  "name": "@skillab/panel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "snapshot": "tsx scripts/snapshot.ts",
+    "dev": "pnpm snapshot && vite",
+    "build": "pnpm snapshot && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@skillab/contracts": "workspace:*",
+    "@skillab/env-recon": "workspace:*",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.5"
+  }
+}

@@ -4,19 +4,20 @@
   "type": "module",
   "packageManager": "pnpm@10.28.0",
   "engines": {
-    "node": ">=22.12.0"
+    "node": "22.x"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "typecheck": "pnpm -r --parallel typecheck",
     "test": "vitest run",
-    "check": "pnpm lint && pnpm typecheck && pnpm datasets:verify && pnpm test",
+    "check": "pnpm lint && pnpm typecheck && pnpm datasets:verify && pnpm test && pnpm build:panel",
     "db:generate": "pnpm --filter @skillab/db generate",
     "db:migrate": "pnpm --filter @skillab/db migrate",
     "datasets:generate": "tsx packages/env-recon/src/cli/generate.ts",
     "datasets:verify": "tsx packages/env-recon/src/cli/generate.ts --verify",
     "env:conflict": "tsx packages/env-recon/src/cli/conflict.ts",
-    "datasets:review": "tsx packages/env-recon/src/cli/review.ts"
+    "datasets:review": "tsx packages/env-recon/src/cli/review.ts",
+    "build:panel": "pnpm --filter @skillab/panel build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
