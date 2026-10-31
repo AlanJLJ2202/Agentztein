@@ -98,6 +98,13 @@ pnpm env:conflict
 pnpm check
 ```
 
+## Panel de vista previa (2026-10-31)
+- `apps/panel`: panel estático de solo lectura para Vercel, adelanto mínimo de E7. Muestra avance por etapa,
+  tabla del conflicto A/B y R1→R2 (n/N), lotes de ejemplo de adaptation con sus etiquetas, y hashes del
+  manifest. Rotulado como validación del entorno, no resultados del sistema. No incluye el split test.
+- Se construye sin DB (`scripts/snapshot.ts` genera los datos en build). `pnpm check` ahora también
+  construye el panel para detectar fallos de despliegue antes de Vercel.
+
 ## E2 — Ejecutor (plan)
 - `packages/model-adapter`: interfaz `ModelClient`, `FakeModelClient` determinista (scripted), contabilidad
   de tokens y coste con `config/pricing.json` (fallo al arrancar si falta precio). Adaptador Anthropic tras

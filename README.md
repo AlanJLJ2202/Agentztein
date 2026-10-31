@@ -34,6 +34,7 @@ Especificación: anteproyecto v1.0 (contraste en ADR-000). Detalle en [`docs/PRO
 packages/contracts   esquemas Zod (fuente de los tipos) + hashing canónico
 packages/env-recon   entorno sintético de conciliación: generador, reglas R1/R2, oráculos de validación
 packages/db          esquema Drizzle + migraciones (tablas append-only, esquema `sealed`)
+apps/panel           panel estático de solo lectura (Vite + React): validación del entorno, sin agentes aún
 datasets/manifest.json  hashes de todos los splits (los datos se regeneran desde semillas)
 ```
 
@@ -46,7 +47,9 @@ Todo se opera desde el navegador (ADR-015):
 2. **GitHub → Settings → Environments → `production`:** secretos `DATABASE_URL` (cadena del *Session pooler*,
    puerto 5432) y `DATABASE_SSL_CA` (contenido completo del certificado `.crt`).
 3. **GitHub → Actions → `db-migrate` → Run workflow**, escribiendo `migrate`.
-4. Cada push corre `ci` (lint, typecheck, verificación de datasets y tests con Postgres efímero).
+4. **Vercel:** importa el repo; `vercel.json` ya indica cómo construir el panel (`apps/panel`). Producción sale
+   de `main`; cada rama tiene su URL de *preview*.
+5. Cada push corre `ci` (lint, typecheck, verificación de datasets y tests con Postgres efímero).
 
 ## Cómo correr (local, opcional)
 
