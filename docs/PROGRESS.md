@@ -105,12 +105,21 @@ pnpm check
 - Se construye sin DB (`scripts/snapshot.ts` genera los datos en build). `pnpm check` ahora también
   construye el panel para detectar fallos de despliegue antes de Vercel.
 
+## Escenarios de negocio y panel en lenguaje claro (2026-11-01)
+- `@skillab/scenarios`: 5 escenarios (ADR-016) con marco común, contratos genéricos (ADR-017) y 33 pruebas que
+  exigen a cada uno la trampa A/B, el cambio R1→R2 solo en B, solubilidad y separación de splits.
+- Datasets `ds-v2`: 45 conjuntos, manifest `7615ab2bffd5d92ab3dffb40d09139d18f19d5e71860857c9d348d54141f3b69`. `docs/GROUND_TRUTH_REVIEW.md` regenerado para los 5.
+- Panel reescrito para público no técnico: cada sección abre con "De qué trata"; términos técnicos como
+  etiqueta junto a la idea. Secciones: idea, cómo aprende, estrategias, escenarios (con resultados de
+  reglas fijas y datos de ejemplo), qué medimos, bitácora (vacía hasta E2–E3), avance, glosario, detalles técnicos.
+- `pnpm check`: 69 tests en verde + build del panel.
+
 ## E2 — Ejecutor (plan)
 - `packages/model-adapter`: interfaz `ModelClient`, `FakeModelClient` determinista (scripted), contabilidad
   de tokens y coste con `config/pricing.json` (fallo al arrancar si falta precio). Adaptador Anthropic tras
   leer la documentación oficial vigente (nombre exacto de modelo, formato de tool use, límites).
-- Herramientas del entorno (`list_rows`, `get_row`, `get_import_metadata`, `submit_labels`) como funciones
-  puras sobre el fixture; validación Zod de la salida.
+- Herramientas genéricas (`list_items`, `get_item`, `get_context_metadata`, `submit_labels`) como funciones
+  puras sobre el lote de cualquier escenario; validación Zod de la salida.
 - `packages/runner`: episodio con timeout, presupuesto (80% warning, 100% stop), traza completa a `BlobStore`
   local por sha256, persistencia en `episodes` incluso en fallo.
 - Loader de datasets a DB (cases / sealed.test_cases / sealed.truth).

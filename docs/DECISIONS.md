@@ -129,7 +129,7 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
   proveedor × versión de reglas, sus etiquetas y conteos por split (solo adaptation y validation; el test
   sellado no se lee). Ninguna corrida con modelo real (calibración incluida) empieza sin que Alan apruebe
   esa revisión. La aprobación se anota aquí con fecha y hash del manifest.
-- **Estado:** pendiente. Manifest a revisar: `dfff584334683dc5f34c80bbd1c7cc067711446b30c8fdfa45102a5531c9f3ff`.
+- **Estado:** pendiente. Manifest a revisar: `7615ab2bffd5d92ab3dffb40d09139d18f19d5e71860857c9d348d54141f3b69` (ds-v2, 5 escenarios; reemplaza al de ds-v1).
 - **Consecuencias:** cualquier cambio del generador invalida la aprobación y exige una nueva revisión.
 
 ## ADR-012 — Condición de paquetes para H3 **[pendiente de confirmar por Alan]**
@@ -178,3 +178,35 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
   registro del journal de Drizzle).
 - **Consecuencias:** la conexión real a Supabase solo se prueba cuando corre `db-migrate`; el código de
   TLS tiene test unitario, pero no se ha probado contra Supabase desde esta sesión.
+
+## ADR-016 — Varios escenarios de negocio (cambia un "fuera de alcance" del prompt) **[pendiente de confirmar por Alan: tamaño del piloto]**
+- **Contexto:** Alan pidió medir el mecanismo en escenarios reales de distintos negocios. El prompt ponía
+  "múltiples dominios" fuera del alcance del MVP y el PDF (§09) recomendaba un solo dominio si faltaba tiempo.
+  Es decisión del dueño del proyecto; se registra aquí.
+- **Decisión:** paquete `@skillab/scenarios` con un marco común y 5 escenarios sintéticos:
+  conciliación bancaria (el original, sin cambios en su generador), inspección de calidad en manufactura,
+  devoluciones en comercio, clasificación de mensajes de clientes y tarifas de paquetería.
+  Todos comparten la estructura de la pregunta de investigación, y las pruebas lo exigen a cada uno:
+  1. una regla global correcta en el contexto A y que falla en **todos** los lotes del contexto B;
+  2. un cambio R1 → R2 que solo afecta al contexto B (lo aprendido para A y para R1 sigue siendo válido);
+  3. una política de referencia perfecta, que prueba que el problema se resuelve con datos observables;
+  4. un perfil `heldout` para el examen sellado (otros productos, montos, redacciones, lotes más largos).
+  Tipos de cambio cubiertos: formato de campo (conciliación, manufactura), política (devoluciones, mensajes)
+  y parámetro de cálculo (paquetería).
+- **Lo que esto NO es:** no son datos reales ni casos de clientes; son recreaciones sintéticas de problemas
+  comunes. Mejorar en ellos no demuestra que el sistema funcione en un negocio real.
+- **Impacto en el piloto:** 5 escenarios × 3 familias × 10 casos × 4 variantes × 3 repeticiones = 1,800
+  episodios (5 veces el piloto del PDF). Propuesta por defecto: la corrida confirmatoria usa 2 escenarios
+  (conciliación + uno de cambio de política) y los otros 3 se reportan como exploratorios, claramente
+  separados. Se decide con la calibración de E2.
+- **Consecuencias:** dataset `ds-v2` (45 conjuntos, manifest `7615ab2bffd5d92ab3dffb40d09139d18f19d5e71860857c9d348d54141f3b69`); la revisión humana de ADR-011 cubre los
+  5 escenarios.
+
+## ADR-017 — Contratos genéricos de escenario
+- **Decisión:** `Item`/`ScenarioLabel`/`ScenarioBatch`/`ScenarioCase` en `@skillab/contracts`. El alcance de una
+  habilidad pasa de `vendors` a `scenario` + `contexts`; `Evidence` y `FamilyResult` igual. Herramientas del
+  agente genéricas: `list_items`, `get_item`, `get_context_metadata`, `submit_labels`. En DB, migraciones
+  `0003`/`0004` reemplazan `vendor` por `scenario` + `context` (tablas vacías; no hay datos que migrar).
+- **Alternativas:** un esquema por escenario (más tipado, pero el selector y el evaluador tendrían que conocer
+  cada dominio).
+- **Consecuencias:** `env-recon` conserva sus tipos propios y se expone como escenario mediante un adaptador.

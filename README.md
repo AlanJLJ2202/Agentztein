@@ -2,6 +2,11 @@
 
 > Nombre de código provisional (no es el nombre final del proyecto).
 
+**En pocas palabras:** un laboratorio para comprobar, con evidencia, si un asistente de IA puede mejorar por
+sí mismo sin descomponer lo que ya hacía bien, y si sabe qué conservar cuando cambian las reglas del negocio.
+Lo probamos en cinco problemas de negocio recreados con datos ficticios: conciliación bancaria, inspección de
+calidad, devoluciones, mensajes de clientes y tarifas de paquetería.
+
 Laboratorio para estudiar la **evolución verificable de habilidades de agentes LLM**: ante un patrón de
 fallos el sistema formula una hipótesis, genera **una** habilidad candidata, la compara contra la versión
 vigente en entornos aislados y la conserva solo dentro del **alcance** y la **vigencia** (versión de reglas)
@@ -15,7 +20,8 @@ El objetivo es un protocolo reproducible y un reporte honesto, incluido el caso 
 - No reentrena pesos ni hace fine-tuning: el modelo es fijo.
 - No modifica arbitrariamente el código del agente.
 - No detecta drift automáticamente: los cambios de reglas son explícitos.
-- No usa datos reales, bancarios ni personales: el entorno es sintético.
+- No usa datos reales, bancarios ni personales: los escenarios son sintéticos. Mejorar en ellos no demuestra
+  que funcione en un negocio real.
 - No depende de ni reutiliza código del repositorio privado "Control".
 
 ## Estado
@@ -33,6 +39,7 @@ Especificación: anteproyecto v1.0 (contraste en ADR-000). Detalle en [`docs/PRO
 ```
 packages/contracts   esquemas Zod (fuente de los tipos) + hashing canónico
 packages/env-recon   entorno sintético de conciliación: generador, reglas R1/R2, oráculos de validación
+packages/scenarios   marco común + 5 escenarios de negocio (conciliación, manufactura, devoluciones, mensajes, envíos)
 packages/db          esquema Drizzle + migraciones (tablas append-only, esquema `sealed`)
 apps/panel           panel estático de solo lectura (Vite + React): validación del entorno, sin agentes aún
 datasets/manifest.json  hashes de todos los splits (los datos se regeneran desde semillas)
