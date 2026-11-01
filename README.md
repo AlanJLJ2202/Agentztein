@@ -42,6 +42,7 @@ packages/env-recon   entorno sintético de conciliación: generador, reglas R1/R
 packages/scenarios   marco común + 5 escenarios de negocio (conciliación, manufactura, devoluciones, mensajes, envíos)
 packages/db          esquema Drizzle + migraciones (tablas append-only, esquema `sealed`)
 apps/panel           panel estático de solo lectura (Vite + React): validación del entorno, sin agentes aún
+apps/landing         landing page de presentación del proyecto (un solo HTML, sin build)
 datasets/manifest.json  hashes de todos los splits (los datos se regeneran desde semillas)
 ```
 
