@@ -495,6 +495,7 @@ footer .brand { font-size: 1rem; margin-right: auto; }
       <a href="#evidencia">Evidencia</a>
       <a href="#escenarios">Escenarios</a>
       <a href="#avance">Avance</a>
+      <a href="/panel/">Panel ↗</a>
     </div>
     <span class="status"><span class="pulse"></span>E1 lista · E2 en curso</span>
   </div>
@@ -511,6 +512,7 @@ footer .brand { font-size: 1rem; margin-right: auto; }
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
         <a class="btn" href="#escenarios">Explorar los 5 escenarios</a>
+        <a class="btn" href="/panel/">Panel de evidencia</a>
       </div>
     </div>
 
@@ -1058,7 +1060,7 @@ footer .brand { font-size: 1rem; margin-right: auto; }
   }
 
   /* ---------- Nav: active section ---------- */
-  const links = [...document.querySelectorAll(".navlinks a")];
+  const links = [...document.querySelectorAll('.navlinks a[href^="#"]')];
   const sio = new IntersectionObserver((entries) => {
     entries.forEach((en) => {
       if (en.isIntersecting) links.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === `#${en.target.id}`));

@@ -55,8 +55,8 @@ Todo se opera desde el navegador (ADR-015):
 2. **GitHub → Settings → Environments → `production`:** secretos `DATABASE_URL` (cadena del *Session pooler*,
    puerto 5432) y `DATABASE_SSL_CA` (contenido completo del certificado `.crt`).
 3. **GitHub → Actions → `db-migrate` → Run workflow**, escribiendo `migrate`.
-4. **Vercel:** importa el repo; `vercel.json` ya indica cómo construir el panel (`apps/panel`). Producción sale
-   de `main`; cada rama tiene su URL de *preview*.
+4. **Vercel:** importa el repo; `vercel.json` ya indica cómo construir el sitio (`pnpm build:site`): la landing
+   (`apps/landing`) en `/` y el panel (`apps/panel`) en `/panel/`. Producción sale de `main`; cada rama tiene su URL de *preview*.
 5. Cada push corre `ci` (lint, typecheck, verificación de datasets y tests con Postgres efímero).
 
 ## Cómo correr (local, opcional)

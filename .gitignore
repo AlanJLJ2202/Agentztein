@@ -4,6 +4,7 @@ node_modules/
 *.log
 coverage/
 dist/
+site/
 # Sealed split (test + ground truth) is regenerated from seeds; only its manifest hash is committed.
 datasets/adaptation/
 datasets/validation/

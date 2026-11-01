@@ -17,7 +17,8 @@
     "datasets:verify": "tsx packages/scenarios/src/cli/generate.ts --verify",
     "env:conflict": "tsx packages/env-recon/src/cli/conflict.ts",
     "datasets:review": "tsx packages/scenarios/src/cli/review.ts",
-    "build:panel": "pnpm --filter @skillab/panel build"
+    "build:panel": "pnpm --filter @skillab/panel build",
+    "build:site": "pnpm build:panel && rm -rf site && mkdir -p site/panel && cp -r apps/panel/dist/. site/panel/ && cp apps/landing/index.html site/index.html"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
