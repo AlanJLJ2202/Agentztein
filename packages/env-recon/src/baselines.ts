@@ -93,4 +93,6 @@ function labelWith(batch: Batch, dedupeKey: DedupeKey, polarity: Polarity | null
 
 export const referenceOracle: Oracle = (batch) => labelWith(batch, referenceDedupeKey, schemaAwarePolarity);
 export const naiveDedupeOracle: Oracle = (batch) => labelWith(batch, naiveDedupeKey, null);
+/** Correct everywhere except for one global habit: amount + date dedupe. Used for cross-scenario comparison. */
+export const naiveRuleOracle: Oracle = (batch) => labelWith(batch, naiveDedupeKey, schemaAwarePolarity);
 export const signRuleOracle: Oracle = (batch) => labelWith(batch, referenceDedupeKey, signPolarity);

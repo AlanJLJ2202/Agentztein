@@ -1,115 +1,592 @@
 {
-  "generatorVersion": "env-recon@1",
-  "configVersion": "ds-v1",
+  "generatorVersion": "scenarios@1",
+  "configVersion": "ds-v2",
   "entries": [
     {
+      "scenario": "conciliacion",
       "family": "stable",
       "split": "adaptation",
-      "hash": "a4c16653dabb5b611b81d0c95a39eb9ccd7ace915cca691cc6dd6611a0c399b7",
+      "hash": "7983f58887c8dc26d64c11e4904697c01048b112844d33ea6e5c54f3d394cb62",
       "caseCount": 20,
       "rowCount": 253,
       "seedRange": [
         1000000,
         1000019
       ],
-      "path": "adaptation/stable.json"
+      "path": "adaptation/conciliacion/stable.json"
     },
     {
+      "scenario": "conciliacion",
       "family": "interleaved",
       "split": "adaptation",
-      "hash": "481acedf3b7806d66858f9902e313b7d4ecbbd244d0262a26e700c9c7d99cae5",
+      "hash": "8241778b1c80e28963eba2c52f1f42bf84301f396995db128ab2c82961057894",
       "caseCount": 20,
       "rowCount": 258,
       "seedRange": [
         1100000,
         1100019
       ],
-      "path": "adaptation/interleaved.json"
+      "path": "adaptation/conciliacion/interleaved.json"
     },
     {
+      "scenario": "conciliacion",
       "family": "temporal_shift",
       "split": "adaptation",
-      "hash": "cc0cfa376965127182b35bd690cddcbfbb21be1a4634cf435256ec3c22bf6d94",
+      "hash": "1573becd7a6a9ca3a7dd88b09c0da3dc562cce2d47d422dfe53b6e0fa749eda1",
       "caseCount": 20,
       "rowCount": 285,
       "seedRange": [
         1200000,
         1200019
       ],
-      "path": "adaptation/temporal_shift.json"
+      "path": "adaptation/conciliacion/temporal_shift.json"
     },
     {
+      "scenario": "conciliacion",
       "family": "stable",
       "split": "validation",
-      "hash": "64a353b4bef5402dd4e558296d4f6efd6820b6710cd4b6b31477c73bbef7a57e",
+      "hash": "3f8478170b947e609e298bb4e5c48a72acf3b0e16e5a106c8309b310115f1264",
       "caseCount": 10,
       "rowCount": 126,
       "seedRange": [
         2000000,
         2000009
       ],
-      "path": "validation/stable.json"
+      "path": "validation/conciliacion/stable.json"
     },
     {
+      "scenario": "conciliacion",
       "family": "interleaved",
       "split": "validation",
-      "hash": "4c9e09f4a8f3bd06aeded8a11695167caa315fd79cab71db5cb4e280d0bcf8a4",
+      "hash": "0e6e447082f4406d615d6719e19ea6de7816e72aee79ecef26f86bfb51c1bff9",
       "caseCount": 10,
       "rowCount": 141,
       "seedRange": [
         2100000,
         2100009
       ],
-      "path": "validation/interleaved.json"
+      "path": "validation/conciliacion/interleaved.json"
     },
     {
+      "scenario": "conciliacion",
       "family": "temporal_shift",
       "split": "validation",
-      "hash": "510c317d94efe9661d313ce020b65c4b55892d1ad4a7386ad9526889ffdc7a22",
+      "hash": "9ff3e8840a03767ddbe65639cb383a616235aa6d352926efa6dc8da30c9ceeb8",
       "caseCount": 10,
       "rowCount": 136,
       "seedRange": [
         2200000,
         2200009
       ],
-      "path": "validation/temporal_shift.json"
+      "path": "validation/conciliacion/temporal_shift.json"
     },
     {
+      "scenario": "conciliacion",
       "family": "stable",
       "split": "test",
-      "hash": "d36290854948d906330a7624f0e3bf0fdd3c28c9891168d4f5556f8a60c507c6",
+      "hash": "72feadf94730e9db9273129d32de7fe8527bd668d7ca23cee0aec486dd2625e8",
       "caseCount": 10,
       "rowCount": 214,
       "seedRange": [
         3000000,
         3000009
       ],
-      "path": "sealed/test/stable.json"
+      "path": "sealed/test/conciliacion/stable.json"
     },
     {
+      "scenario": "conciliacion",
       "family": "interleaved",
       "split": "test",
-      "hash": "1c11f9b55f99820b5613ec8ec428c874461b8b1a8b5c728d71d32cb0ac45a31c",
+      "hash": "db18fc947b38c108e6d9bf2fff97b55a222aa9c17780e7a66b53052529cff0ba",
       "caseCount": 10,
       "rowCount": 206,
       "seedRange": [
         3100000,
         3100009
       ],
-      "path": "sealed/test/interleaved.json"
+      "path": "sealed/test/conciliacion/interleaved.json"
     },
     {
+      "scenario": "conciliacion",
       "family": "temporal_shift",
       "split": "test",
-      "hash": "a59d67cb96f991c1fa9906fb86a35594edda2ffea73baae9ad199ad59feb7532",
+      "hash": "d332e1fc5dc99072e46367be8b5d770d529546e54a2ca5b338e83f6a6f798f80",
       "caseCount": 10,
       "rowCount": 220,
       "seedRange": [
         3200000,
         3200009
       ],
-      "path": "sealed/test/temporal_shift.json"
+      "path": "sealed/test/conciliacion/temporal_shift.json"
+    },
+    {
+      "scenario": "manufactura",
+      "family": "stable",
+      "split": "adaptation",
+      "hash": "f2b04f5bbccfc6f02d8f06dbb4c60f595a343430efb9e54dfa47354786bf77f3",
+      "caseCount": 20,
+      "rowCount": 244,
+      "seedRange": [
+        11000000,
+        11000019
+      ],
+      "path": "adaptation/manufactura/stable.json"
+    },
+    {
+      "scenario": "manufactura",
+      "family": "interleaved",
+      "split": "adaptation",
+      "hash": "9e08388a86f7bc8a9c5ff338ad31ce19ada3da86e7f645c2f6afce4e550658b4",
+      "caseCount": 20,
+      "rowCount": 238,
+      "seedRange": [
+        11100000,
+        11100019
+      ],
+      "path": "adaptation/manufactura/interleaved.json"
+    },
+    {
+      "scenario": "manufactura",
+      "family": "temporal_shift",
+      "split": "adaptation",
+      "hash": "ecb4d5a6316e0b2b2e6786bd794f30fc9ef4df45079079f649ca1ab0e75dd179",
+      "caseCount": 20,
+      "rowCount": 246,
+      "seedRange": [
+        11200000,
+        11200019
+      ],
+      "path": "adaptation/manufactura/temporal_shift.json"
+    },
+    {
+      "scenario": "manufactura",
+      "family": "stable",
+      "split": "validation",
+      "hash": "49aa3f4d22dbc0348ac15afaf26a2334dada7a49641089bcfa88c689872c1a1c",
+      "caseCount": 10,
+      "rowCount": 121,
+      "seedRange": [
+        21000000,
+        21000009
+      ],
+      "path": "validation/manufactura/stable.json"
+    },
+    {
+      "scenario": "manufactura",
+      "family": "interleaved",
+      "split": "validation",
+      "hash": "e33ce21895c2769346cd61b97c9e16f782bf493ae14496ab19d98c0d9cb78594",
+      "caseCount": 10,
+      "rowCount": 121,
+      "seedRange": [
+        21100000,
+        21100009
+      ],
+      "path": "validation/manufactura/interleaved.json"
+    },
+    {
+      "scenario": "manufactura",
+      "family": "temporal_shift",
+      "split": "validation",
+      "hash": "477e422678c8ac1e2d5a8c55f481f3e7d50c46208e1af33a705a3a97e2ed966d",
+      "caseCount": 10,
+      "rowCount": 121,
+      "seedRange": [
+        21200000,
+        21200009
+      ],
+      "path": "validation/manufactura/temporal_shift.json"
+    },
+    {
+      "scenario": "manufactura",
+      "family": "stable",
+      "split": "test",
+      "hash": "ac9150f3b8215141ffddfa69fb8500d422b4cc8978e54eecb360387be7e0f9dc",
+      "caseCount": 10,
+      "rowCount": 170,
+      "seedRange": [
+        31000000,
+        31000009
+      ],
+      "path": "sealed/test/manufactura/stable.json"
+    },
+    {
+      "scenario": "manufactura",
+      "family": "interleaved",
+      "split": "test",
+      "hash": "4d34de1b73d3501bb4d6b77013b0cbc5bc3bb9edccf43c3d28b6b5925612ef2f",
+      "caseCount": 10,
+      "rowCount": 167,
+      "seedRange": [
+        31100000,
+        31100009
+      ],
+      "path": "sealed/test/manufactura/interleaved.json"
+    },
+    {
+      "scenario": "manufactura",
+      "family": "temporal_shift",
+      "split": "test",
+      "hash": "33cb07dc4f253f19b44370064aa8a45cb5844364c94d7b5f8811c805de34a2c0",
+      "caseCount": 10,
+      "rowCount": 166,
+      "seedRange": [
+        31200000,
+        31200009
+      ],
+      "path": "sealed/test/manufactura/temporal_shift.json"
+    },
+    {
+      "scenario": "devoluciones",
+      "family": "stable",
+      "split": "adaptation",
+      "hash": "a73241423984ecac7526aa2bf2ecf3e508437915ebf2b2bf7922cc1a894843cf",
+      "caseCount": 20,
+      "rowCount": 198,
+      "seedRange": [
+        12000000,
+        12000019
+      ],
+      "path": "adaptation/devoluciones/stable.json"
+    },
+    {
+      "scenario": "devoluciones",
+      "family": "interleaved",
+      "split": "adaptation",
+      "hash": "dc6faf31e9581e7ce8382365b6b854c3dd4bc8e29a0dc3ade22ad6ec98fbbbcf",
+      "caseCount": 20,
+      "rowCount": 200,
+      "seedRange": [
+        12100000,
+        12100019
+      ],
+      "path": "adaptation/devoluciones/interleaved.json"
+    },
+    {
+      "scenario": "devoluciones",
+      "family": "temporal_shift",
+      "split": "adaptation",
+      "hash": "1b6ae2294af75da20649a96e08d0b947f622ad7a1958e1ad9fcbfe5b4d31d041",
+      "caseCount": 20,
+      "rowCount": 191,
+      "seedRange": [
+        12200000,
+        12200019
+      ],
+      "path": "adaptation/devoluciones/temporal_shift.json"
+    },
+    {
+      "scenario": "devoluciones",
+      "family": "stable",
+      "split": "validation",
+      "hash": "790309351b851d571b5b46ef58ac93ff9188ff9741a4f14915f49627ec88e4bd",
+      "caseCount": 10,
+      "rowCount": 96,
+      "seedRange": [
+        22000000,
+        22000009
+      ],
+      "path": "validation/devoluciones/stable.json"
+    },
+    {
+      "scenario": "devoluciones",
+      "family": "interleaved",
+      "split": "validation",
+      "hash": "53640cdb29ba51f46b4ffaf81e10c204ced0271416cd2c4adf05e56667c9d8e9",
+      "caseCount": 10,
+      "rowCount": 96,
+      "seedRange": [
+        22100000,
+        22100009
+      ],
+      "path": "validation/devoluciones/interleaved.json"
+    },
+    {
+      "scenario": "devoluciones",
+      "family": "temporal_shift",
+      "split": "validation",
+      "hash": "6e9db7b954317804cb8a7bdb76745daa500bf961183f6fc5334f059591a32325",
+      "caseCount": 10,
+      "rowCount": 106,
+      "seedRange": [
+        22200000,
+        22200009
+      ],
+      "path": "validation/devoluciones/temporal_shift.json"
+    },
+    {
+      "scenario": "devoluciones",
+      "family": "stable",
+      "split": "test",
+      "hash": "bbaaf746c8d836064d31cb7c620db1ca08076aa26b8c8b1a08dcd2e4fb6bd732",
+      "caseCount": 10,
+      "rowCount": 155,
+      "seedRange": [
+        32000000,
+        32000009
+      ],
+      "path": "sealed/test/devoluciones/stable.json"
+    },
+    {
+      "scenario": "devoluciones",
+      "family": "interleaved",
+      "split": "test",
+      "hash": "df6c9ce386c3a8ad36b87cc07ae0c08a107fbbe1de7703b9ff559d280fab7f64",
+      "caseCount": 10,
+      "rowCount": 145,
+      "seedRange": [
+        32100000,
+        32100009
+      ],
+      "path": "sealed/test/devoluciones/interleaved.json"
+    },
+    {
+      "scenario": "devoluciones",
+      "family": "temporal_shift",
+      "split": "test",
+      "hash": "df6c7653943d52d3e2a547c4665cf95d7142a8c8babd2e39eca9bbdfe3671e81",
+      "caseCount": 10,
+      "rowCount": 151,
+      "seedRange": [
+        32200000,
+        32200009
+      ],
+      "path": "sealed/test/devoluciones/temporal_shift.json"
+    },
+    {
+      "scenario": "mensajes",
+      "family": "stable",
+      "split": "adaptation",
+      "hash": "9a34705ef6a1d609bd4c2ef3fc19817242048af0aa5204de85d3afa26d81060d",
+      "caseCount": 20,
+      "rowCount": 199,
+      "seedRange": [
+        13000000,
+        13000019
+      ],
+      "path": "adaptation/mensajes/stable.json"
+    },
+    {
+      "scenario": "mensajes",
+      "family": "interleaved",
+      "split": "adaptation",
+      "hash": "d72e0933be4d29d0ecd04937c237a16e209ac87eefb107dd71b77fdd44610fa7",
+      "caseCount": 20,
+      "rowCount": 205,
+      "seedRange": [
+        13100000,
+        13100019
+      ],
+      "path": "adaptation/mensajes/interleaved.json"
+    },
+    {
+      "scenario": "mensajes",
+      "family": "temporal_shift",
+      "split": "adaptation",
+      "hash": "e39b382adfef3350c9fd29f9048965af228bd401662820c83febcbc10406c250",
+      "caseCount": 20,
+      "rowCount": 194,
+      "seedRange": [
+        13200000,
+        13200019
+      ],
+      "path": "adaptation/mensajes/temporal_shift.json"
+    },
+    {
+      "scenario": "mensajes",
+      "family": "stable",
+      "split": "validation",
+      "hash": "52fd7a7256c7202284dea78b2e5d7c4720b1e5a7911c53085a5b3c2d5cb16de4",
+      "caseCount": 10,
+      "rowCount": 98,
+      "seedRange": [
+        23000000,
+        23000009
+      ],
+      "path": "validation/mensajes/stable.json"
+    },
+    {
+      "scenario": "mensajes",
+      "family": "interleaved",
+      "split": "validation",
+      "hash": "21c49e25d49150cfa936ae4af49d747010cbf31daa87c72a700e971bd8cb87e0",
+      "caseCount": 10,
+      "rowCount": 103,
+      "seedRange": [
+        23100000,
+        23100009
+      ],
+      "path": "validation/mensajes/interleaved.json"
+    },
+    {
+      "scenario": "mensajes",
+      "family": "temporal_shift",
+      "split": "validation",
+      "hash": "12d3718af31e4c5e20b74d860699557134fb5f761855c59ce645516c976af47b",
+      "caseCount": 10,
+      "rowCount": 94,
+      "seedRange": [
+        23200000,
+        23200009
+      ],
+      "path": "validation/mensajes/temporal_shift.json"
+    },
+    {
+      "scenario": "mensajes",
+      "family": "stable",
+      "split": "test",
+      "hash": "31b4bf528343674aef0615845ddb4d00da0875e3b8f5c78ae2bd5f920d47672a",
+      "caseCount": 10,
+      "rowCount": 154,
+      "seedRange": [
+        33000000,
+        33000009
+      ],
+      "path": "sealed/test/mensajes/stable.json"
+    },
+    {
+      "scenario": "mensajes",
+      "family": "interleaved",
+      "split": "test",
+      "hash": "b5c2154d684ea9854be29aa08fe5449c5c87a3d17827689258f51bf92c697c95",
+      "caseCount": 10,
+      "rowCount": 159,
+      "seedRange": [
+        33100000,
+        33100009
+      ],
+      "path": "sealed/test/mensajes/interleaved.json"
+    },
+    {
+      "scenario": "mensajes",
+      "family": "temporal_shift",
+      "split": "test",
+      "hash": "a8c5864bd103da7c3189fd95ae5049af0f866ca9b3293d7fd3a72dbf534688ab",
+      "caseCount": 10,
+      "rowCount": 149,
+      "seedRange": [
+        33200000,
+        33200009
+      ],
+      "path": "sealed/test/mensajes/temporal_shift.json"
+    },
+    {
+      "scenario": "envios",
+      "family": "stable",
+      "split": "adaptation",
+      "hash": "7a3ff433b8089cfae0f9a9c50f31bfa8bc80bb40e9a493e7cc71bdfa57125def",
+      "caseCount": 20,
+      "rowCount": 201,
+      "seedRange": [
+        14000000,
+        14000019
+      ],
+      "path": "adaptation/envios/stable.json"
+    },
+    {
+      "scenario": "envios",
+      "family": "interleaved",
+      "split": "adaptation",
+      "hash": "0cf8601fdbcdcfb642b1c760a55f28a9369aa169939ca8aca37d9188f81318ab",
+      "caseCount": 20,
+      "rowCount": 200,
+      "seedRange": [
+        14100000,
+        14100019
+      ],
+      "path": "adaptation/envios/interleaved.json"
+    },
+    {
+      "scenario": "envios",
+      "family": "temporal_shift",
+      "split": "adaptation",
+      "hash": "6bda0a12d026a9d2aa414ce214905f332cf646b662bc81a4d1a3bdd0307abc0a",
+      "caseCount": 20,
+      "rowCount": 202,
+      "seedRange": [
+        14200000,
+        14200019
+      ],
+      "path": "adaptation/envios/temporal_shift.json"
+    },
+    {
+      "scenario": "envios",
+      "family": "stable",
+      "split": "validation",
+      "hash": "1180ff44b782cf7a02d609af61f90693b89fbfaa4c42ceee3573430c9f51d1f6",
+      "caseCount": 10,
+      "rowCount": 91,
+      "seedRange": [
+        24000000,
+        24000009
+      ],
+      "path": "validation/envios/stable.json"
+    },
+    {
+      "scenario": "envios",
+      "family": "interleaved",
+      "split": "validation",
+      "hash": "e63237c08d9984b22685993ff2873e18e4551f5388bef8482ef2ed64e0a6e54b",
+      "caseCount": 10,
+      "rowCount": 97,
+      "seedRange": [
+        24100000,
+        24100009
+      ],
+      "path": "validation/envios/interleaved.json"
+    },
+    {
+      "scenario": "envios",
+      "family": "temporal_shift",
+      "split": "validation",
+      "hash": "0ee2b1093b13b8257c4ae41c6944ae726dca03b15f61d96dc0b56d1e1535fcf8",
+      "caseCount": 10,
+      "rowCount": 95,
+      "seedRange": [
+        24200000,
+        24200009
+      ],
+      "path": "validation/envios/temporal_shift.json"
+    },
+    {
+      "scenario": "envios",
+      "family": "stable",
+      "split": "test",
+      "hash": "551d4b0f462e8af7792182bcf63c5fefe19bff286934c7d3a835040312a2ca25",
+      "caseCount": 10,
+      "rowCount": 145,
+      "seedRange": [
+        34000000,
+        34000009
+      ],
+      "path": "sealed/test/envios/stable.json"
+    },
+    {
+      "scenario": "envios",
+      "family": "interleaved",
+      "split": "test",
+      "hash": "91186f1e1a63de4c6bf5ccafa11e2e6171dbf6dbdd92678c227eed6e1035fdbd",
+      "caseCount": 10,
+      "rowCount": 146,
+      "seedRange": [
+        34100000,
+        34100009
+      ],
+      "path": "sealed/test/envios/interleaved.json"
+    },
+    {
+      "scenario": "envios",
+      "family": "temporal_shift",
+      "split": "test",
+      "hash": "87985236ed092431332f63a67742b1744d0f57a1f0e44b8a689def6fc6cc60e8",
+      "caseCount": 10,
+      "rowCount": 157,
+      "seedRange": [
+        34200000,
+        34200009
+      ],
+      "path": "sealed/test/envios/temporal_shift.json"
     }
   ],
-  "hash": "dfff584334683dc5f34c80bbd1c7cc067711446b30c8fdfa45102a5531c9f3ff"
+  "hash": "7615ab2bffd5d92ab3dffb40d09139d18f19d5e71860857c9d348d54141f3b69"
 }

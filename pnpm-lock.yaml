@@ -45,9 +45,9 @@ importers:
       '@skillab/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@skillab/env-recon':
+      '@skillab/scenarios':
         specifier: workspace:*
-        version: link:../../packages/env-recon
+        version: link:../../packages/scenarios
       '@types/react':
         specifier: ^19.3.0
         version: 19.3.0
@@ -94,6 +94,15 @@ importers:
       '@skillab/contracts':
         specifier: workspace:*
         version: link:../contracts
+
+  packages/scenarios:
+    dependencies:
+      '@skillab/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@skillab/env-recon':
+        specifier: workspace:*
+        version: link:../env-recon
 
 packages:
 

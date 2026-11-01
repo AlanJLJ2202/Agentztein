@@ -13,10 +13,10 @@
     "check": "pnpm lint && pnpm typecheck && pnpm datasets:verify && pnpm test && pnpm build:panel",
     "db:generate": "pnpm --filter @skillab/db generate",
     "db:migrate": "pnpm --filter @skillab/db migrate",
-    "datasets:generate": "tsx packages/env-recon/src/cli/generate.ts",
-    "datasets:verify": "tsx packages/env-recon/src/cli/generate.ts --verify",
+    "datasets:generate": "tsx packages/scenarios/src/cli/generate.ts",
+    "datasets:verify": "tsx packages/scenarios/src/cli/generate.ts --verify",
     "env:conflict": "tsx packages/env-recon/src/cli/conflict.ts",
-    "datasets:review": "tsx packages/env-recon/src/cli/review.ts",
+    "datasets:review": "tsx packages/scenarios/src/cli/review.ts",
     "build:panel": "pnpm --filter @skillab/panel build"
   },
   "devDependencies": {
