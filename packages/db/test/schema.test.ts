@@ -93,7 +93,8 @@ describe.skipIf(!hasDatabase)("database schema (Postgres)", () => {
       seed: spec.seed,
       idx: 1,
       batchId: batch.batchId,
-      vendor: batch.vendor,
+      scenario: "conciliacion",
+      context: batch.vendor,
       schemaVersion: batch.schemaVersion,
       rulesVersion: batch.rulesVersion,
       batch,
@@ -104,14 +105,14 @@ describe.skipIf(!hasDatabase)("database schema (Postgres)", () => {
 
     // Test batches are not allowed in the public cases table.
     await expect(
-      db.insert(schema.cases).values({ caseId: "x", datasetId: "ds1", split: "test", family: "stable", seed: 1, idx: 0, batchId: "bx", vendor: "vendorA", schemaVersion: "A@1", rulesVersion: "R1", batch: {} }),
+      db.insert(schema.cases).values({ caseId: "x", datasetId: "ds1", split: "test", family: "stable", seed: 1, idx: 0, batchId: "bx", scenario: "conciliacion", context: "vendorA", schemaVersion: "A@1", rulesVersion: "R1", batch: {} }),
     ).rejects.toThrow();
   });
 
   it("evidence counts are constrained and episodes require a sha256 trace ref", async () => {
     await db.insert(schema.experiments).values({ id: "exp1", name: "t", variants: ["frozen"], status: "planned", budgetUsd: "1" });
     await expect(
-      db.insert(schema.evidence).values({ skillId: skill.skillId, version: 1, experimentId: "exp1", family: "stable", rulesVersion: "R1", vendor: "vendorA", split: "validation", successes: 3, trials: 2, costUsd: "0", traceRefs: [] }),
+      db.insert(schema.evidence).values({ skillId: skill.skillId, version: 1, experimentId: "exp1", family: "stable", rulesVersion: "R1", scenario: "conciliacion", context: "vendorA", split: "validation", successes: 3, trials: 2, costUsd: "0", traceRefs: [] }),
     ).rejects.toThrow();
     const now = new Date();
     const ep = { id: "ep1", experimentId: "exp1", caseId: "c", split: "validation", variant: "frozen", repetition: 0, status: "timeout", modelId: "fake", inputTokens: 10, outputTokens: 0, costUsd: "0.0001", latencyMs: 5, appliedSkills: [], selectorDecision: {}, startedAt: now, finishedAt: now };

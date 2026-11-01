@@ -61,7 +61,8 @@ export const cases = pgTable(
     seed: integer("seed").notNull(),
     idx: integer("idx").notNull(),
     batchId: text("batch_id").notNull().unique(),
-    vendor: text("vendor").notNull(),
+    scenario: text("scenario").notNull(),
+    context: text("context").notNull(),
     schemaVersion: text("schema_version").notNull(),
     rulesVersion: text("rules_version")
       .notNull()
@@ -82,7 +83,8 @@ export const testCases = sealed.table("test_cases", {
   seed: integer("seed").notNull(),
   idx: integer("idx").notNull(),
   batchId: text("batch_id").notNull().unique(),
-  vendor: text("vendor").notNull(),
+  scenario: text("scenario").notNull(),
+  context: text("context").notNull(),
   schemaVersion: text("schema_version").notNull(),
   rulesVersion: text("rules_version")
     .notNull()
@@ -242,7 +244,8 @@ export const evidence = pgTable(
     rulesVersion: text("rules_version")
       .notNull()
       .references(() => ruleVersions.id),
-    vendor: text("vendor").notNull(),
+    scenario: text("scenario").notNull(),
+    context: text("context").notNull(),
     split: text("split").notNull(),
     successes: integer("successes").notNull(),
     trials: integer("trials").notNull(),

@@ -104,6 +104,7 @@ export type Dataset = z.infer<typeof Dataset>;
 
 export const DatasetManifestEntry = z
   .object({
+    scenario: z.string().regex(/^[a-z][a-z0-9_]*$/),
     family: Family,
     split: Split,
     hash: z.string().regex(/^[0-9a-f]{64}$/),

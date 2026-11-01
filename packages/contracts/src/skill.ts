@@ -1,20 +1,22 @@
 import { z } from "zod";
 import { SHA256_RE } from "./canonical.js";
-import { Family, RulesVersionId, SchemaVersion, Split, Vendor } from "./env.js";
+import { Family, RulesVersionId, Split } from "./env.js";
+import { ScenarioId } from "./scenario.js";
 
 const Sha256 = z.string().regex(SHA256_RE);
 const IsoDateTime = z.iso.datetime();
 
-/** Tools the agent can call in env-recon; a skill's permissions must be a subset. */
-export const ToolName = z.enum(["list_rows", "get_row", "get_import_metadata", "submit_labels"]);
+/** Tools the agent can call in any scenario; a skill's permissions must be a subset. */
+export const ToolName = z.enum(["list_items", "get_item", "get_context_metadata", "submit_labels"]);
 export type ToolName = z.infer<typeof ToolName>;
 
 /** Observable conditions under which a skill may be applied (I5). */
 export const SkillScope = z
   .object({
+    scenario: ScenarioId,
     task: z.string().min(1),
-    vendors: z.array(Vendor).min(1),
-    schemaVersions: z.array(SchemaVersion).min(1),
+    contexts: z.array(z.string().min(1)).min(1),
+    schemaVersions: z.array(z.string().min(1)).min(1),
     rulesVersions: z.array(RulesVersionId).min(1),
     requiredFields: z.array(z.string().min(1)).optional(),
     permissions: z.array(ToolName),
@@ -33,7 +35,7 @@ export const SkillProcedure = z
 
 export const SkillValidity = z
   .object({
-    evaluatedAgainst: z.array(z.object({ rulesVersion: RulesVersionId, schemaVersion: SchemaVersion }).strict()),
+    evaluatedAgainst: z.array(z.object({ rulesVersion: RulesVersionId, schemaVersion: z.string().min(1) }).strict()),
     reviewBy: IsoDateTime.optional(),
     revalidateWhen: z.array(z.string().min(1)),
   })
@@ -89,9 +91,10 @@ export const Evidence = z
     skillId: z.string().min(1),
     version: z.number().int().positive(),
     experimentId: z.string().min(1),
+    scenario: ScenarioId,
     family: Family,
     rulesVersion: RulesVersionId,
-    vendor: Vendor,
+    context: z.string().min(1),
     split: Split,
     successes: z.number().int().nonnegative(),
     trials: z.number().int().nonnegative(),
@@ -106,9 +109,10 @@ export const DecisionOutcome = z.enum(["promote", "restrict", "reject", "insuffi
 
 export const FamilyResult = z
   .object({
+    scenario: ScenarioId,
     family: Family,
     rulesVersion: RulesVersionId,
-    vendor: Vendor,
+    context: z.string().min(1),
     baseline: z.object({ successes: z.number().int().nonnegative(), trials: z.number().int().nonnegative() }),
     candidate: z.object({ successes: z.number().int().nonnegative(), trials: z.number().int().nonnegative() }),
     diff: z.number(),

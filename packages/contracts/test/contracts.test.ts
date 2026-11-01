@@ -55,12 +55,13 @@ describe("skill contracts", () => {
     createdBy: "seed",
     hypothesis: "vendorA re-imports keep vendor_txn_id",
     scope: {
+      scenario: "conciliacion",
       task: "reconcile.dedupe",
-      vendors: ["vendorA"],
+      contexts: ["vendorA"],
       schemaVersions: ["A@1"],
       rulesVersions: ["R1"],
       requiredFields: ["vendor_txn_id"],
-      permissions: ["list_rows", "submit_labels"],
+      permissions: ["list_items", "submit_labels"],
     },
     procedure: { instructions: "Rows sharing vendor_txn_id are duplicates.", inputs: [], outputs: [], knownLimits: [] },
     validity: { evaluatedAgainst: [{ rulesVersion: "R1", schemaVersion: "A@1" }], revalidateWhen: ["rulesVersion changes"] },
@@ -68,7 +69,7 @@ describe("skill contracts", () => {
 
   it("accepts a well-formed skill and rejects an empty scope or unknown tool", () => {
     expect(SkillContent.safeParse(skill).success).toBe(true);
-    expect(SkillContent.safeParse({ ...skill, scope: { ...skill.scope, vendors: [] } }).success).toBe(false);
+    expect(SkillContent.safeParse({ ...skill, scope: { ...skill.scope, contexts: [] } }).success).toBe(false);
     expect(SkillContent.safeParse({ ...skill, scope: { ...skill.scope, permissions: ["http_get"] } }).success).toBe(false);
   });
 
@@ -77,9 +78,10 @@ describe("skill contracts", () => {
       skillId: "s",
       version: 1,
       experimentId: "e",
+      scenario: "conciliacion",
       family: "stable",
       rulesVersion: "R1",
-      vendor: "vendorA",
+      context: "vendorA",
       split: "validation",
       successes: 3,
       trials: 2,
