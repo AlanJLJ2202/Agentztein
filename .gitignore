@@ -10,3 +10,4 @@ datasets/adaptation/
 datasets/validation/
 datasets/sealed/*
 !datasets/sealed/.gitkeep
+.taste-skill/
