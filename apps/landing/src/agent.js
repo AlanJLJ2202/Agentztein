@@ -128,19 +128,33 @@ function stitches(n, len, gap, mat) {
   return g;
 }
 
-export function makeAgent() {
+export function makeAgent({ hover = false } = {}) {
   const A = new THREE.Group();
   const ink = std(C.ink, { roughness: 0.5 });
   const white = glossy(C.white);
   const skin = glossy(C.skin, { roughness: 0.5, clearcoat: 0.3 });
   const metal = std(C.metal, { metalness: 0.7, roughness: 0.25 });
 
-  // pedestal
-  const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 0.36, 64), white);
-  ped.position.y = -0.12;
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.06, 0.035, 12, 96), std(C.meta, { emissive: C.meta, emissiveIntensity: 0.4 }));
-  ring.rotation.x = Math.PI / 2; ring.position.y = 0.04;
-  A.add(ped, ring);
+  let thruster = null;
+  if (hover) {
+    // a levitation base, so it can move around the lab
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.48, 0.22, 48), white);
+    base.position.y = 0.0;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.04, 12, 64), std(C.meta, { emissive: C.meta, emissiveIntensity: 0.8 }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = -0.06;
+    thruster = new THREE.Mesh(
+      new THREE.ConeGeometry(0.42, 0.7, 32, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0x7cc2ff, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }),
+    );
+    thruster.rotation.x = Math.PI; thruster.position.y = -0.48;
+    A.add(base, ring, thruster);
+  } else {
+    const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 0.36, 64), white);
+    ped.position.y = -0.12;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.06, 0.035, 12, 96), std(C.meta, { emissive: C.meta, emissiveIntensity: 0.4 }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = 0.04;
+    A.add(ped, ring);
+  }
 
   // torso: two pieces sewn together
   const torso = new THREE.Group();
@@ -260,6 +274,7 @@ export function makeAgent() {
   mouth.userData = { lip };
 
   shadowed(A);
+  if (thruster) thruster.castShadow = false;
   dome.castShadow = false;
   screen.castShadow = false;
 
@@ -267,7 +282,7 @@ export function makeAgent() {
   hit.position.y = 1.4;
   A.add(hit);
 
-  A.userData = { head, eyes, brows, mouth, armL, armR, bolts, brain, screenTex, hit, power: 0, mood: "idle", look: new THREE.Vector2() };
+  A.userData = { head, eyes, brows, mouth, armL, armR, bolts, brain, screenTex, hit, thruster, power: 0, mood: "idle", look: new THREE.Vector2() };
   return A;
 }
 
@@ -569,7 +584,7 @@ export function setupRenderer(canvas, preserve = false) {
   renderer.setClearColor(0x000000, 0);
   return renderer;
 }
-export function addLights(scene, renderer) {
+export function addLights(scene, renderer, { extent = 5, mapSize = 2048 } = {}) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   pmrem.dispose();
@@ -577,13 +592,14 @@ export function addLights(scene, renderer) {
   const sun = new THREE.DirectionalLight(0xffffff, 1.6);
   sun.position.set(3, 7, 5);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5 });
+  sun.shadow.mapSize.set(mapSize, mapSize);
+  Object.assign(sun.shadow.camera, { left: -extent, right: extent, top: extent, bottom: -extent, far: 40 });
   sun.shadow.bias = -0.0005;
   scene.add(sun);
   const rim = new THREE.DirectionalLight(0xbfdcff, 0.8);
   rim.position.set(-4, 4, -4);
   scene.add(rim);
+  return sun;
 }
 export function makeFloor(r = 3.8) {
   const floor = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.3, 96), glossy(0xffffff, { roughness: 0.6, clearcoat: 0.2 }));

@@ -2,7 +2,7 @@
    pointer with its head, and the skills it has built orbit around it. Click it to zap it again, click a
    skill to see it. Also renders the still pictures used on the page. */
 import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { renderRoomStill } from "./room.js";
 import {
   SKILLS, C, makeAgent, pose, setArms, makeCoil, makeBolt, makeChip, makePaper, makeBadge, makeBench,
   setupRenderer, addLights, makeFloor, paintScreen, makeMetaLogo,
@@ -31,157 +31,6 @@ function boltEnds(coil, agent, side) {
   return [a, b];
 }
 
-/**
- * @param {HTMLCanvasElement} canvas
- * @param {{ onSelect?: (id: string) => void, reduced?: boolean }} opts
- */
-export function createLab(canvas, { onSelect = () => {}, reduced = false } = {}) {
-  const renderer = setupRenderer(canvas);
-  const scene = new THREE.Scene();
-  addLights(scene, renderer);
-  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-
-  scene.add(makeFloor());
-  const agent = makeAgent();
-  scene.add(agent);
-  const coils = [makeCoil(-COIL_X), makeCoil(COIL_X)];
-  coils.forEach((c) => { c.position.y = -0.3; c.position.z = -0.4; scene.add(c); });
-  const bolts = [makeBolt(), makeBolt()];
-  bolts.forEach((b) => { b.visible = false; scene.add(b); });
-
-  const chips = SKILLS.map((s, i) => {
-    const ch = makeChip(s);
-    ch.userData.skill = s;
-    ch.userData.i = i;
-    ch.position.set(CROWN[i][0], CROWN[i][1], -0.25);
-    ch.userData.hit = new THREE.Mesh(new THREE.SphereGeometry(0.42, 8, 6), new THREE.MeshBasicMaterial({ visible: false }));
-    ch.add(ch.userData.hit);
-    scene.add(ch);
-    return ch;
-  });
-
-  const controls = new OrbitControls(camera, canvas);
-  controls.target.copy(TARGET);
-  Object.assign(controls, { enableZoom: false, enablePan: false, enableDamping: true, dampingFactor: 0.08, rotateSpeed: 0.55, minPolarAngle: 1.1, maxPolarAngle: 1.62, minAzimuthAngle: -0.8, maxAzimuthAngle: 0.8 });
-  if (window.matchMedia("(pointer: coarse)").matches) { controls.enabled = false; canvas.style.touchAction = "pan-y"; }
-
-  // state
-  let selected = "agent", zap = reduced ? 0 : 1.8, mood = reduced ? "idle" : "sleep", happyUntil = 0, clockT = 0;
-  agent.userData.power = reduced ? 1 : 0;
-  const lookGoal = new THREE.Vector2();
-  const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
-  const pick = (ev) => {
-    const r = canvas.getBoundingClientRect();
-    ptr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
-    ray.setFromCamera(ptr, camera);
-    const hit = ray.intersectObjects([agent.userData.hit, ...chips.map((c) => c.userData.hit)], false)[0];
-    if (!hit) return null;
-    if (hit.object === agent.userData.hit) return "agent";
-    return chips.find((c) => c.userData.hit === hit.object).userData.skill.id;
-  };
-  window.addEventListener("pointermove", (ev) => {
-    const r = canvas.getBoundingClientRect();
-    lookGoal.set(
-      THREE.MathUtils.clamp(((ev.clientX - r.left) / r.width) * 2 - 1, -1, 1),
-      THREE.MathUtils.clamp(-((ev.clientY - r.top) / r.height) * 2 + 1.2, -1, 1),
-    );
-    if (ev.target === canvas && ev.pointerType === "mouse") canvas.style.cursor = pick(ev) ? "pointer" : "grab";
-  }, { passive: true });
-  let down = null;
-  canvas.addEventListener("pointerdown", (ev) => { down = [ev.clientX, ev.clientY]; });
-  canvas.addEventListener("pointerup", (ev) => {
-    if (!down || Math.hypot(ev.clientX - down[0], ev.clientY - down[1]) > 6) return;
-    const id = pick(ev);
-    if (id) { select(id); onSelect(id); }
-  });
-
-  function select(id) {
-    selected = id;
-    if (id === "agent") { if (!reduced) zap = Math.max(zap, 0.9); happyUntil = clockT + 2.2; }
-    else happyUntil = clockT + 1.4;
-  }
-
-  const resize = () => {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    if (!w || !h) return;
-    renderer.setSize(w, h, false);
-    frame(camera, w, h);
-    camera.lookAt(TARGET);
-    controls.update();
-  };
-  new ResizeObserver(resize).observe(canvas);
-  resize();
-
-  let visible = true;
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(canvas);
-  let last = performance.now(), screenTick = 0, boltTick = 0;
-  const tmp = new THREE.Vector3(), v2 = new THREE.Vector2(), one = new THREE.Vector3();
-
-  const tick = () => {
-    requestAnimationFrame(tick);
-    const now = performance.now();
-    const dt = Math.min((now - last) / 1000, 0.05);
-    last = now;
-    if (!visible || document.hidden) return;
-    clockT += dt;
-    const t = reduced ? 2 : clockT;
-    const u = agent.userData;
-
-    // the jolt: the coils fire, then it powers up
-    if (zap > 0) {
-      zap -= dt;
-      if ((boltTick += dt) > 0.06) {
-        boltTick = 0;
-        bolts.forEach((b, i) => { const [a, c] = boltEnds(coils[i], agent, i); b.update(a, c, 0.35); b.visible = Math.random() > 0.15; });
-      }
-      if (zap < 1.0) u.power = Math.min(1, u.power + dt * 1.6);
-      if (zap <= 0) {
-        bolts.forEach((b) => { b.visible = false; });
-        u.power = 1;
-        if (mood === "sleep") { mood = "idle"; happyUntil = clockT + 2.4; }
-      }
-    } else if (!reduced && Math.random() < dt * 0.25) {
-      const i = Math.random() < 0.5 ? 0 : 1;
-      const [a, c] = boltEnds(coils[i], agent, i);
-      bolts[i].update(a, c, 0.3); bolts[i].visible = true;
-      setTimeout(() => { bolts[i].visible = false; }, 90);
-    }
-    const m = mood === "sleep" ? "sleep" : clockT < happyUntil ? "happy" : "idle";
-
-    // look at the selected skill, otherwise at the pointer
-    const sel = chips.find((c) => c.userData.skill.id === selected);
-    if (sel && m !== "sleep") {
-      sel.getWorldPosition(tmp); tmp.project(camera);
-      u.look.lerp(v2.set(tmp.x * 1.4, tmp.y * 0.9), Math.min(1, dt * 4));
-    } else {
-      u.look.lerp(m === "sleep" ? v2.set(0, -0.3) : lookGoal, Math.min(1, dt * 4));
-    }
-    pose(agent, m, t, dt);
-    const waving = m === "happy" && selected === "agent";
-    setArms(agent, -0.14 - Math.sin(t * 1.3) * 0.03, waving ? 2.5 + Math.sin(t * 9) * 0.25 : 0.14 + Math.sin(t * 1.3) * 0.03);
-
-    if ((screenTick += dt) > 0.05) { screenTick = 0; paintScreen(u.screenTex, u.power > 0.3 ? "pulse" : "off", t); }
-
-    chips.forEach((c) => {
-      const d = c.userData, on = d.skill.id === selected;
-      const [x, y] = CROWN[d.i];
-      c.position.x = x;
-      c.position.y += (y + Math.sin(t * 1.3 + d.i) * 0.07 + (on ? 0.1 : 0) - c.position.y) * Math.min(1, dt * 5);
-      c.position.z += ((on ? 0.45 : -0.25) - c.position.z) * Math.min(1, dt * 5);
-      c.lookAt(camera.position.x, c.position.y, camera.position.z);
-      c.rotateY(Math.sin(t * 0.8 + d.i) * 0.2);
-      const s = on ? 1.3 : 1;
-      c.scale.lerp(one.set(s, s, s), Math.min(1, dt * 6));
-      d.body.material.emissiveIntensity = on ? 0.55 : 0.12;
-    });
-
-    controls.update();
-    renderer.render(scene, camera);
-  };
-  tick();
-  return { select };
-}
-
 /* ---------- stills ---------- */
 function awake(agent, mood, t = 2) {
   agent.userData.power = 1;
@@ -192,14 +41,18 @@ function awake(agent, mood, t = 2) {
 export function renderStill(canvas, which, size = 900) {
   const renderer = setupRenderer(canvas, true);
   renderer.setPixelRatio(1);
-  const wide = which === "lab";
+  const wide = which === "lab" || which === "room";
   renderer.setSize(wide ? size * 1.6 : size, size, false);
   const scene = new THREE.Scene();
-  addLights(scene, renderer);
+  addLights(scene, renderer, { extent: which === "room" ? 9 : 5 });
   const camera = new THREE.PerspectiveCamera(30, wide ? 1.6 : 1, 0.1, 100);
   const look = (x, y, z, tx, ty, tz) => { camera.position.set(x, y, z); camera.lookAt(tx, ty, tz); };
 
-  if (which.startsWith("bench-")) {
+  if (which === "room") {
+    renderer.setSize(size * 1.6, size, false);
+    camera.aspect = 1.6;
+    renderRoomStill(renderer, scene, camera);
+  } else if (which.startsWith("bench-")) {
     const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.15, 0.2, 80), new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.5, clearcoat: 0.3 }));
     ped.position.y = -0.1; ped.receiveShadow = true;
     scene.add(ped, makeBench(which.slice(6)));

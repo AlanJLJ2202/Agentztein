@@ -4,17 +4,32 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Agentztein</title>
-<meta name="description" content="Agentztein es la IA que se desarrolla sola: un agente de investigación de IA armado pieza por pieza, como Frankenstein, con Muse Spark de Meta como cerebro. Crea sus propias habilidades y solo se queda con las que mejoran en benchmarks de frontera sin romper lo que ya sabía." />
+<meta name="description" content="Agentztein es la IA que se desarrolla sola: un agente de investigación de IA que crea sus propias habilidades, las pone a prueba en benchmarks de frontera y solo se queda con las que lo hacen mejor. Con Muse Spark de Meta como cerebro." />
 <meta property="og:title" content="Agentztein: la IA que se desarrolla sola" />
 <meta property="og:description" content="Un agente de investigación de IA que se mejora solo y se mide en benchmarks de frontera. Con Muse Spark de Meta." />
 <meta property="og:image" content="img/lab.webp" />
 <meta name="theme-color" content="#ffffff" />
 <link rel="preload" href="fonts/figtree.woff2" as="font" type="font/woff2" crossorigin />
+<script>
+/* Before the first paint: if the 3D can run, the hero starts in a dark lab and waits for the jolt. */
+(() => {
+  const d = document.documentElement;
+  d.classList.add("js");
+  let gl = false;
+  try { const c = document.createElement("canvas"); gl = Boolean(c.getContext("webgl2") || c.getContext("webgl")); } catch { gl = false; }
+  if (gl && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    d.classList.add("intro");
+    setTimeout(() => { if (d.classList.contains("intro") && !d.classList.contains("hero-3d")) { d.classList.remove("intro"); d.classList.add("alive"); } }, 6000);
+  } else {
+    d.classList.add("alive");
+  }
+})();
+</script>
 <style>
 @font-face { font-family: "Figtree"; src: url("fonts/figtree.woff2") format("woff2"); font-weight: 300 900; font-display: swap; }
 
-/* Idea: Agentztein es un agente armado pieza por pieza, como Frankenstein, en un laboratorio luminoso al
-   estilo de Meta. Su cerebro es Muse Spark (Meta), bajo una cúpula; las habilidades que crea son piezas nuevas. */
+/* Idea: Agentztein, un agente cosido pieza por pieza, despierta en un laboratorio luminoso al estilo de Meta.
+   Su cerebro es Muse Spark (Meta), bajo una cúpula; cada habilidad que crea es una pieza nueva. */
 :root {
   color-scheme: light;
   --bg: #ffffff;
@@ -87,27 +102,77 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 .bar .btn { min-height: 40px; padding: 0 18px; font-size: .9375rem; }
 @media (max-width: 900px) { .links { display: none; } .bar .btn { margin-left: auto; } }
 
-/* ---------- Hero ---------- */
-.hero { padding-block: clamp(36px, 5vw, 72px) 0; text-align: center; }
+/* ---------- Hero: Agentztein comes alive ---------- */
+.hero { position: relative; padding: 0; min-height: min(calc(100svh - 64px), 920px); display: grid; align-items: center; overflow: hidden; isolation: isolate;
+  background: radial-gradient(ellipse 55% 70% at 70% 58%, #ffffff 0%, #eef4fa 52%, #e1eaf3 100%); }
+.hero-stage { position: absolute; inset: 0; z-index: 0; }
+.hero-stage canvas, .hero-stage .still { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero-stage canvas { display: block; opacity: 0; transition: opacity .6s var(--ease); }
+.hero-stage .still { object-fit: cover; object-position: 78% 50%; transition: opacity .6s var(--ease); }
+.hero-3d .hero-stage canvas { opacity: 1; }
+.hero-3d .hero-stage .still { opacity: 0; }
+.hero-dim { position: absolute; inset: 0; z-index: 1; background: #0a1620; opacity: 0; pointer-events: none; transition: opacity 1.4s var(--ease); }
+.intro .hero-dim { opacity: .78; }
+.flash { position: absolute; inset: 0; z-index: 4; background: #fff; opacity: 0; pointer-events: none; }
+.flash.blip { animation: blip .16s linear; }
+.flash.go { animation: flash 1.2s ease-out; }
+@keyframes blip { from { opacity: var(--zap, .3); } to { opacity: 0; } }
+@keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+.hero-copy-wrap { position: relative; z-index: 2; pointer-events: none; }
+.hero-copy { max-width: 600px; padding-block: 56px 88px; pointer-events: auto; }
 .hero .lockup { font-size: 1.0625rem; }
-.hero h1 { font-size: clamp(2.6rem, 1rem + 5.4vw, 5.6rem); letter-spacing: -.045em; margin: 28px auto 0; max-width: 12em; }
-.hero .lead { margin: 24px auto 0; max-width: 36em; }
-.cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 32px; }
-@media (max-width: 520px) { .hero .lockup .ev { display: none; } .hero .lockup .sep { display: none; } }
+.hero h1 { font-size: clamp(3rem, 1.2rem + 5vw, 6.2rem); letter-spacing: -.05em; line-height: .96; margin-top: 26px; }
+.hero h1 .w { display: inline-block; }
+.hero .lead { margin-top: 26px; max-width: 30em; color: var(--muted); }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.js .hero-copy > *, .js .hero h1 .w { opacity: 0; transform: translateY(26px); }
+.alive .hero-copy > *, .alive .hero h1 .w { opacity: 1; transform: none; transition: opacity .9s var(--ease), transform .9s var(--ease); }
+.alive .hero-copy > :nth-child(1) { transition-delay: .05s; }
+.alive .hero h1 .w:nth-child(1) { transition-delay: .12s; } .alive .hero h1 .w:nth-child(2) { transition-delay: .18s; }
+.alive .hero h1 .w:nth-child(3) { transition-delay: .24s; } .alive .hero h1 .w:nth-child(4) { transition-delay: .3s; }
+.alive .hero h1 .w:nth-child(5) { transition-delay: .36s; } .alive .hero h1 .w:nth-child(6) { transition-delay: .42s; }
+.alive .hero-copy > :nth-child(3) { transition-delay: .5s; }
+.alive .hero-copy > :nth-child(4) { transition-delay: .62s; }
+.hero-hint { position: absolute; right: var(--gut-r); bottom: 28px; z-index: 2; padding: 8px 14px; border-radius: 999px; background: rgba(255, 255, 255, .85); color: var(--muted); font-size: .875rem; font-weight: 500; pointer-events: none; opacity: 0; transition: opacity .6s var(--ease) 1.2s; }
+.alive.hero-3d .hero-hint { opacity: 1; }
+.scroll-cue { position: absolute; left: 50%; bottom: 20px; z-index: 2; width: 44px; height: 44px; margin-left: -22px; border-radius: 50%; display: grid; place-items: center; color: var(--ink); background: rgba(255, 255, 255, .7); opacity: 0; transition: opacity .6s var(--ease) 1.4s; }
+.alive .scroll-cue { opacity: 1; }
+.scroll-cue svg { width: 18px; height: 18px; animation: nudge 1.8s var(--ease) infinite; }
+@keyframes nudge { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(4px); } }
+@media (max-width: 900px) {
+  .hero { display: block; min-height: 0; background: linear-gradient(#ffffff, #eef4fa 40%, #e4ecf4); }
+  .hero-copy { max-width: none; text-align: center; padding-block: 36px 0; }
+  .hero .lead { margin-inline: auto; }
+  .cta { justify-content: center; }
+  .hero-stage { position: relative; height: min(68svh, 520px); }
+  .hero-hint { bottom: 16px; right: 50%; transform: translateX(50%); white-space: nowrap; font-size: .8125rem; }
+  .hero-stage { height: min(62svh, 500px); }
+  .scroll-cue { display: none; }
+}
+@media (max-width: 520px) { .hero .lockup .ev, .hero .lockup .sep { display: none; } }
+@media (min-width: 901px) and (max-width: 1320px) { .hero-copy { max-width: 470px; } .hero h1 { font-size: clamp(3rem, .6rem + 5vw, 5rem); } }
 
-/* The 3D lab */
-.lab { margin-top: clamp(40px, 5vw, 64px); text-align: left; scroll-margin-top: 80px; }
-.stage { position: relative; height: clamp(440px, 50vw, 720px); border-radius: var(--r); background: #eef3f8; overflow: hidden; }
+/* Speech bubble that follows Agentztein's head */
+.bubble { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; opacity: 0; will-change: transform; }
+.bubble span { display: block; padding: 10px 16px; border-radius: 18px; background: #fff; color: var(--ink); font-weight: 700; font-size: 1.0625rem; white-space: nowrap; box-shadow: 0 10px 30px rgba(10, 22, 32, .16); transform-origin: 50% 100%; }
+.bubble span::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: #fff; transform: rotate(45deg); border-radius: 2px; }
+.bubble.show { animation: show 2.6s var(--ease) forwards; }
+.bubble.show span { animation: popin .5s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes show { 0% { opacity: 0; } 8%, 88% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes popin { from { transform: scale(.6); } to { transform: none; } }
+
+/* ---------- The walkable lab ---------- */
+.stage { position: relative; height: clamp(500px, 54vw, 760px); border-radius: var(--r); background: linear-gradient(#f6f9fc, #e7eef5); overflow: hidden; }
 .stage canvas, .stage .still { position: absolute; inset: 0; width: 100%; height: 100%; }
-.stage canvas { display: block; cursor: grab; opacity: 0; transition: opacity 1s var(--ease); }
-.stage canvas:active { cursor: grabbing; }
-.stage .still { object-fit: cover; object-position: 50% 40%; transition: opacity .8s var(--ease); }
-.has-3d .stage canvas { opacity: 1; }
-.has-3d .stage .still { opacity: 0; pointer-events: none; }
-.hint { position: absolute; right: 20px; top: 18px; padding: 8px 14px; border-radius: 999px; background: rgba(255, 255, 255, .85); color: var(--muted); font-size: .875rem; font-weight: 500; pointer-events: none; display: none; }
-.has-3d .hint { display: block; }
+.stage canvas { display: block; opacity: 0; transition: opacity .8s var(--ease); outline: none; }
+.stage canvas:focus-visible { box-shadow: inset 0 0 0 3px var(--meta); }
+.stage .still { object-fit: cover; object-position: 50% 45%; transition: opacity .8s var(--ease); }
+.room-3d .stage canvas { opacity: 1; }
+.room-3d .stage .still { opacity: 0; pointer-events: none; }
+.hint { position: absolute; right: 20px; top: 18px; z-index: 2; padding: 8px 14px; border-radius: 999px; background: rgba(255, 255, 255, .88); color: var(--muted); font-size: .875rem; font-weight: 500; pointer-events: none; display: none; }
+.room-3d .hint { display: block; }
 .stage-wrap { position: relative; }
-.card { position: absolute; left: 20px; bottom: 20px; width: min(360px, calc(100% - 40px)); padding: 22px 24px 24px; border-radius: 22px; background: #fff; box-shadow: 0 10px 40px rgba(28, 43, 51, .12); }
+.card { position: absolute; left: 20px; bottom: 20px; z-index: 2; width: min(380px, calc(100% - 40px)); padding: 22px 24px 24px; border-radius: 22px; background: #fff; box-shadow: 0 10px 40px rgba(28, 43, 51, .12); }
 .card .who-name { display: flex; align-items: center; gap: 10px; font-size: 1.375rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
 .card .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; background: var(--c, var(--meta)); }
 .card dl { margin: 14px 0 0; display: grid; gap: 10px; }
@@ -123,16 +188,24 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 .pick[aria-pressed="true"] { background: var(--ink); color: #fff; }
 .pick:focus-visible { outline: 3px solid var(--meta); outline-offset: 3px; }
 .note { margin-top: 14px; color: var(--muted); font-size: .9375rem; }
+.room-3d .bench-list { display: none; }
+.bench-list { margin-top: 32px; }
 @media (max-width: 760px) {
-  .stage { height: 360px; }
+  .stage { height: 460px; }
   .card { position: static; width: auto; margin-top: 12px; box-shadow: none; background: var(--soft); }
   .hint { left: 50%; right: auto; transform: translateX(-50%); white-space: nowrap; }
   .picker { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gut-l) * -1) calc(var(--gut-r) * -1); padding-inline: var(--gut-l) var(--gut-r); }
   .pick { flex: none; }
 }
 
+/* Nav lifts once the page scrolls; cards lean toward the pointer */
+.bar { transition: box-shadow .3s var(--ease); }
+.bar.scrolled { box-shadow: 0 6px 24px rgba(28, 43, 51, .08); }
+.tilt { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--ty, 0px)); transition: transform .35s var(--ease); }
+.tilt:hover { --ty: -4px; }
+
 /* ---------- Problem: two bank statements ---------- */
-.problem { background: var(--soft); margin-top: clamp(64px, 7vw, 104px); }
+.problem { background: var(--soft); }
 .choose { display: grid; gap: 14px; }
 .choose p { font-size: var(--t-lead); line-height: 1.4; }
 .choose q { font-weight: 700; }
@@ -167,7 +240,6 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 /* ---------- How it develops itself: one 3D scene per step ---------- */
 .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 1.6vw, 20px); }
 .step { background: var(--soft); border-radius: var(--r); overflow: hidden; display: grid; grid-template-rows: auto 1fr; transition: transform .3s var(--ease); }
-.step:hover { transform: translateY(-4px); }
 .step .ph { background: var(--sky); aspect-ratio: 1; overflow: hidden; }
 .step .ph img { width: 100%; transition: transform .6s var(--ease); }
 .step:hover .ph img { transform: scale(1.04); }
@@ -268,11 +340,10 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 
 <header class="bar">
   <div class="wrap">
-    <a class="word" href="#top" aria-label="Agentztein, inicio"><i aria-hidden="true"></i>Agentztein</a>
+    <a class="word" href="#inicio" aria-label="Agentztein, inicio"><i aria-hidden="true"></i>Agentztein</a>
     <nav class="links" aria-label="Secciones">
-      <a href="#laboratorio">Conócelo</a>
       <a href="#como-funciona">Cómo funciona</a>
-      <a href="#benchmarks">Benchmarks</a>
+      <a href="#laboratorio">Laboratorio</a>
       <a href="#meta">Con Meta</a>
       <a href="#avance">Avance</a>
     </nav>
@@ -284,44 +355,29 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 
 <main id="top">
 
-<section class="hero">
-  <div class="wrap">
-    <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#meta"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Global AI Developer Hackathon 2026</span></span>
-    <h1>La IA que se desarrolla sola</h1>
-    <p class="lead">Agentztein es un agente de investigación de IA que se arma a sí mismo, pieza por pieza, como Frankenstein. Busca sus fallas, crea sus propias habilidades y solo se queda con las que mejoran en benchmarks de frontera sin romper lo que ya sabía.</p>
-    <div class="cta">
-      <a class="btn" href="#laboratorio">Conócelo
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      </a>
-      <a class="btn ghost" href="#como-funciona">Cómo funciona</a>
-    </div>
-
-    <div class="lab" id="laboratorio">
-      <div class="stage-wrap">
-        <div class="stage">
-          <img class="still" src="img/lab.webp" width="1600" height="1000" alt="Agentztein en 3D: un personaje armado por piezas, como Frankenstein, con la cabeza verde cosida, tornillos en el cuello y una cúpula de vidrio con un cerebro azul y el logo de Meta. Está entre dos bobinas de Tesla que le lanzan rayos, y sobre su cabeza flotan cinco fichas: sus habilidades de código, terminal, razonamiento, web e investigación." />
-          <canvas id="lab" aria-label="Agentztein en 3D. Arrastra para girar, toca a Agentztein para darle una descarga o toca una de sus habilidades para verla. También puedes usar los botones de abajo."></canvas>
-          <span class="hint" id="hint">Arrastra para girar · toca a Agentztein</span>
-        </div>
-        <div class="card" id="card" aria-live="polite">
-          <p class="who-name"><span class="dot" id="cDot"></span><span id="cName">Agentztein</span></p>
-          <dl>
-            <div><dt id="cL1">Qué es</dt><dd id="cA">Un agente de investigación de IA que se mejora solo: crea sus propias habilidades y las prueba en benchmarks de frontera.</dd></div>
-            <div><dt id="cL2">Su cerebro</dt><dd id="cB">Muse Spark, de Meta, bajo la cúpula. No lo modificamos: lo que crece son sus habilidades.</dd></div>
-          </dl>
-        </div>
+<section class="hero" id="inicio">
+  <div class="hero-stage">
+    <img class="still" src="img/lab.webp" width="1600" height="1000" alt="Agentztein en 3D: un personaje cosido por piezas, con la cabeza verde, tornillos en el cuello y una cúpula de vidrio con un cerebro azul y el logo de Meta. Está entre dos bobinas de Tesla que le lanzan rayos, y sobre su cabeza flotan sus habilidades de código, terminal, razonamiento, web e investigación." />
+    <canvas id="hero3d" aria-label="Agentztein en 3D. Tócalo para darle otra descarga."></canvas>
+    <div class="bubble" id="heroBubble" aria-live="polite"><span></span></div>
+    <span class="hero-hint">Tócalo para darle otra descarga</span>
+  </div>
+  <div class="hero-dim" aria-hidden="true"></div>
+  <div class="flash" id="heroFlash" aria-hidden="true"></div>
+  <div class="wrap hero-copy-wrap">
+    <div class="hero-copy">
+      <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#meta"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Global AI Developer Hackathon 2026</span></span>
+      <h1><span class="w">La</span> <span class="w">IA</span> <span class="w">que</span> <span class="w">se</span> <span class="w">desarrolla</span> <span class="w">sola</span></h1>
+      <p class="lead">Agentztein es un agente de investigación de IA que crea sus propias habilidades, las pone a prueba en benchmarks de frontera y solo se queda con las que lo hacen mejor, sin olvidar lo que ya sabía.</p>
+      <div class="cta">
+        <a class="btn" href="#laboratorio">Entra a su laboratorio
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </a>
+        <a class="btn ghost" href="#como-funciona">Cómo funciona</a>
       </div>
-      <div class="picker" role="group" aria-label="Elige qué ver">
-        <button class="pick" aria-pressed="true" data-id="agent" style="--c:#0081fb"><i></i>Agentztein</button>
-        <button class="pick" aria-pressed="false" data-id="codigo" style="--c:#5b9bff"><i></i>Código</button>
-        <button class="pick" aria-pressed="false" data-id="terminal" style="--c:#2ec4b6"><i></i>Terminal</button>
-        <button class="pick" aria-pressed="false" data-id="razonamiento" style="--c:#ff8f70"><i></i>Razonamiento</button>
-        <button class="pick" aria-pressed="false" data-id="web" style="--c:#3ccf6e"><i></i>Web</button>
-        <button class="pick" aria-pressed="false" data-id="investigacion" style="--c:#ffb53d"><i></i>Investigación</button>
-      </div>
-      <p class="note">Habilidades de ejemplo: así se verán las que Agentztein cree para cada capacidad.</p>
     </div>
   </div>
+  <a class="scroll-cue" href="#problema" aria-label="Seguir bajando"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></a>
 </section>
 
 <section class="problem" id="problema">
@@ -390,13 +446,39 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   </div>
 </section>
 
-<section id="benchmarks" style="padding-top:0">
+<section id="laboratorio" style="padding-top:0">
   <div class="wrap">
     <div class="head ent">
-      <h2>Dónde se mide</h2>
-      <p class="lead">En benchmarks públicos de frontera, los mismos con los que se comparan los laboratorios más grandes. Y medimos lo que casi nadie mide: si lo nuevo rompió lo anterior y cuánto costó.</p>
+      <h2>Recorre su laboratorio</h2>
+      <p class="lead">Cada estación es un benchmark de frontera. Toca el piso o una estación para mover a Agentztein, o usa las flechas. Si lo llevas a la cuna, vuelve a la vida.</p>
     </div>
-    <div class="biz ent">
+    <div class="stage-wrap">
+      <div class="stage">
+        <img class="still" src="img/room.webp" width="1600" height="1000" alt="El laboratorio de Agentztein en 3D: un cuarto blanco con el logo de Meta en la pared, un pizarrón con los benchmarks, una pantalla de Muse Spark, la cuna con dos bobinas de Tesla y seis mesas, una por benchmark, cada una con su objeto: código, terminal, cubos de colores, un globo, un matraz y un reloj de arena." loading="lazy" />
+        <canvas id="room3d" tabindex="0" aria-label="Laboratorio en 3D. Toca el piso para mover a Agentztein o toca una estación para enviarlo. Con el laboratorio seleccionado, muévelo con las flechas o con W, A, S y D. También puedes usar los botones de abajo."></canvas>
+        <div class="bubble" id="roomBubble" aria-live="polite"><span></span></div>
+        <div class="flash" id="roomFlash" aria-hidden="true"></div>
+        <span class="hint" id="roomHint">Toca el piso o una estación · flechas o WASD</span>
+      </div>
+      <div class="card" id="card" aria-live="polite">
+        <p class="who-name"><span class="dot" id="cDot"></span><span id="cName">Su laboratorio</span></p>
+        <dl>
+          <div><dt id="cL1">Qué es</dt><dd id="cA">Siete estaciones: la cuna donde despierta y una por cada benchmark de frontera que quiere superar.</dd></div>
+          <div><dt id="cL2">Cómo se usa</dt><dd id="cB">Elige una estación y Agentztein va hacia ella para mostrarte qué mide.</dd></div>
+        </dl>
+      </div>
+    </div>
+    <div class="picker" role="group" aria-label="Enviar a Agentztein a una estación">
+      <button class="pick" aria-pressed="false" data-id="cuna" style="--c:#0081fb"><i></i>La cuna</button>
+      <button class="pick" aria-pressed="false" data-id="swe" style="--c:#5b9bff"><i></i>SWE-bench Pro</button>
+      <button class="pick" aria-pressed="false" data-id="terminal" style="--c:#2ec4b6"><i></i>Terminal-Bench</button>
+      <button class="pick" aria-pressed="false" data-id="arc" style="--c:#ff8f70"><i></i>ARC-AGI-3</button>
+      <button class="pick" aria-pressed="false" data-id="web" style="--c:#3ccf6e"><i></i>BrowseComp</button>
+      <button class="pick" aria-pressed="false" data-id="research" style="--c:#ffb53d"><i></i>MLE-bench y PaperBench</button>
+      <button class="pick" aria-pressed="false" data-id="horizon" style="--c:#8a7dff"><i></i>Horizonte de METR</button>
+    </div>
+    <p class="note">Aún no hay resultados de Agentztein en estos benchmarks: son la meta. Cuando los haya, se publicarán todos, también los malos.</p>
+    <div class="biz bench-list">
       <article class="b"><div class="ph"><img src="img/bench-swe.webp" width="700" height="700" alt="Una ventana de código con una línea roja quitada, una verde agregada y una palomita verde." loading="lazy" /></div><div class="tx"><h3>SWE-bench Pro</h3><p>Arreglar errores reales en proyectos de software de código abierto.</p><span class="n">Código</span></div></article>
       <article class="b"><div class="ph"><img src="img/bench-terminal.webp" width="700" height="700" alt="Una terminal oscura que compila un proyecto y corre sus pruebas." loading="lazy" /></div><div class="tx"><h3>Terminal-Bench</h3><p>Tareas largas en la terminal: compilar, configurar servidores y depurar, sin ayuda.</p><span class="n">Terminal</span></div></article>
       <article class="b"><div class="ph"><img src="img/bench-arc.webp" width="700" height="700" alt="Una cuadrícula de cubos de colores que forman un patrón, con un cubo rosa suelto." loading="lazy" /></div><div class="tx"><h3>ARC-AGI-3</h3><p>Juegos interactivos nuevos donde hay que descubrir las reglas sin instrucciones. Al lanzarse en 2026, las personas los resolvían y los mejores modelos casi nada.</p><span class="n">Razonamiento</span></div></article>
@@ -404,7 +486,6 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
       <article class="b"><div class="ph"><img src="img/bench-research.webp" width="700" height="700" alt="Un matraz con líquido naranja junto a una gráfica de barras que sube." loading="lazy" /></div><div class="tx"><h3>MLE-bench y PaperBench</h3><p>Hacer investigación de IA: resolver competencias de machine learning y replicar artículos científicos desde cero.</p><span class="n">Investigación</span></div></article>
       <article class="b"><div class="ph"><img src="img/bench-horizon.webp" width="700" height="700" alt="Un reloj de arena." loading="lazy" /></div><div class="tx"><h3>Horizonte de METR</h3><p>Cuántas horas de trabajo experto puede completar solo. En los mejores modelos se ha duplicado cada pocos meses.</p><span class="n">Autonomía</span></div></article>
     </div>
-    <p class="fine">Aún no hay resultados de Agentztein en estos benchmarks: son la meta. Cuando los haya, se publicarán todos, también los malos.</p>
   </div>
 </section>
 
@@ -464,24 +545,24 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 <script type="module" src="lab.js"></script>
 <script>
 (() => {
-  document.documentElement.classList.add("js");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const $ = (s) => document.querySelector(s);
   const replay = (el, cls) => { if (reduce) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
 
-  /* The lab: Agentztein and the skills it has built */
+  /* The walkable lab: what each station measures */
   const INFO = {
-    agent: { c: "#0081fb", name: "Agentztein", l1: "Qué es", a: "Un agente de investigación de IA que se mejora solo: crea sus propias habilidades y las prueba en benchmarks de frontera.", l2: "Su cerebro", b: "Muse Spark, de Meta, bajo la cúpula. No lo modificamos: lo que crece son sus habilidades." },
-    codigo: { c: "#5b9bff", name: "Habilidad: código", l1: "Qué hace", a: "Arregla errores en proyectos de software reales.", l2: "Cómo se mide", b: "SWE-bench Pro: errores reales de proyectos de código abierto." },
-    terminal: { c: "#2ec4b6", name: "Habilidad: terminal", l1: "Qué hace", a: "Trabaja solo en la terminal: instala, compila y depura.", l2: "Cómo se mide", b: "Terminal-Bench: tareas largas sin ayuda." },
-    razonamiento: { c: "#ff8f70", name: "Habilidad: razonamiento", l1: "Qué hace", a: "Descubre las reglas de un problema que nunca ha visto.", l2: "Cómo se mide", b: "ARC-AGI-3: juegos interactivos sin instrucciones." },
-    web: { c: "#3ccf6e", name: "Habilidad: web", l1: "Qué hace", a: "Investiga en internet y encuentra datos muy difíciles de hallar.", l2: "Cómo se mide", b: "BrowseComp." },
-    investigacion: { c: "#ffb53d", name: "Habilidad: investigación", l1: "Qué hace", a: "Hace investigación de IA: entrena modelos y replica artículos científicos.", l2: "Cómo se mide", b: "MLE-bench y PaperBench." },
+    cuna: { c: "#0081fb", name: "La cuna", l1: "Qué es", a: "Donde Agentztein despierta: las bobinas le dan la descarga que lo pone en marcha.", l2: "Pruébalo", b: "Cada vez que lo traes aquí, vuelve a la vida." },
+    swe: { c: "#5b9bff", name: "SWE-bench Pro", l1: "Qué mide", a: "Si arregla errores reales en proyectos de software de código abierto.", l2: "Habilidad que entrena", b: "Código." },
+    terminal: { c: "#2ec4b6", name: "Terminal-Bench", l1: "Qué mide", a: "Si completa tareas largas en la terminal (compilar, configurar, depurar) sin ayuda.", l2: "Habilidad que entrena", b: "Terminal." },
+    arc: { c: "#ff8f70", name: "ARC-AGI-3", l1: "Qué mide", a: "Si descubre las reglas de juegos interactivos que nunca ha visto. Al lanzarse en 2026, las personas los resolvían y los mejores modelos casi nada.", l2: "Habilidad que entrena", b: "Razonamiento." },
+    web: { c: "#3ccf6e", name: "BrowseComp", l1: "Qué mide", a: "Si encuentra información muy difícil de hallar navegando la web.", l2: "Habilidad que entrena", b: "Web." },
+    research: { c: "#ffb53d", name: "MLE-bench y PaperBench", l1: "Qué mide", a: "Si hace investigación de IA: resolver competencias de machine learning y replicar artículos científicos.", l2: "Habilidad que entrena", b: "Investigación." },
+    horizon: { c: "#8a7dff", name: "Horizonte de METR", l1: "Qué mide", a: "Cuántas horas de trabajo experto completa solo. En los mejores modelos se ha duplicado cada pocos meses.", l2: "Habilidad que entrena", b: "Autonomía." },
   };
   const picks = [...document.querySelectorAll(".pick")];
   const card = $("#card");
-  let current = "agent";
-  const show = (id, fromLab) => {
+  let current = "";
+  const show = (id) => {
     const j = INFO[id];
     if (!j || id === current) return;
     current = id;
@@ -491,12 +572,14 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     $("#cL1").textContent = j.l1; $("#cA").textContent = j.a;
     $("#cL2").textContent = j.l2; $("#cB").textContent = j.b;
     replay(card, "swap");
-    if (!fromLab) document.dispatchEvent(new CustomEvent("lab:select", { detail: id }));
   };
-  $("#cDot").style.setProperty("--c", INFO.agent.c);
-  picks.forEach((p) => p.addEventListener("click", () => show(p.dataset.id, false)));
-  document.addEventListener("lab:picked", (e) => show(e.detail, true));
-  if (matchMedia("(pointer: coarse)").matches) $("#hint").textContent = "Toca a Agentztein";
+  $("#cDot").style.setProperty("--c", "#0081fb");
+  picks.forEach((p) => p.addEventListener("click", () => {
+    document.dispatchEvent(new CustomEvent("room:goto", { detail: p.dataset.id }));
+    if (!document.documentElement.classList.contains("room-3d")) show(p.dataset.id);
+  }));
+  document.addEventListener("room:arrive", (e) => show(e.detail));
+  if (matchMedia("(pointer: coarse)").matches) $("#roomHint").textContent = "Toca el piso o una estación";
 
   /* The problem: where do we use the trick? */
   const bReal = $("#b-real"), bVerdict = $("#b-verdict"), opts = [...document.querySelectorAll(".opt")];
@@ -516,12 +599,43 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     use(n.dataset.where); n.focus(); e.preventDefault();
   });
 
+  /* Nav lifts once the page scrolls */
+  const bar = $(".bar");
+  const onScroll = () => bar.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  /* Numbers count up when they appear */
+  const counters = [...document.querySelectorAll(".facts b")];
+  const cio = new IntersectionObserver((es) => es.forEach((e) => {
+    if (!e.isIntersecting) return;
+    cio.unobserve(e.target);
+    const el = e.target, to = Number(el.textContent);
+    if (reduce || !to) return;
+    const t0 = performance.now();
+    const step = (now) => { const k = Math.min(1, (now - t0) / 900); el.textContent = String(Math.round(to * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(step); };
+    el.textContent = "0"; requestAnimationFrame(step);
+  }), { threshold: .6 });
+  counters.forEach((c) => cio.observe(c));
+
+  /* Cards lean toward the pointer */
+  if (!reduce && matchMedia("(pointer: fine)").matches) {
+    document.querySelectorAll(".step, .road li").forEach((el) => {
+      el.classList.add("tilt");
+      el.addEventListener("pointermove", (e) => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty("--ry", ((e.clientX - r.left) / r.width - .5) * 8 + "deg");
+        el.style.setProperty("--rx", (-(e.clientY - r.top) / r.height + .5) * 8 + "deg");
+      });
+      el.addEventListener("pointerleave", () => { el.style.removeProperty("--rx"); el.style.removeProperty("--ry"); });
+    });
+  }
+
   /* Entrances + nav */
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12, rootMargin: "0px 0px -8% 0px" });
   document.querySelectorAll(".ent").forEach((el) => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add("in"); else io.observe(el); });
   const links = [...document.querySelectorAll(".links a")];
   const nio = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) links.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id)); }), { rootMargin: "-50% 0px -50% 0px" });
-  ["laboratorio", "como-funciona", "benchmarks", "meta", "avance"].forEach((id) => nio.observe(document.getElementById(id)));
+  ["como-funciona", "laboratorio", "meta", "avance"].forEach((id) => nio.observe(document.getElementById(id)));
 })();
 </script>
 </body>
