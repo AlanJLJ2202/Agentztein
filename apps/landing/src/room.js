@@ -4,16 +4,16 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { C, makeAgent, pose, setArms, makeCoil, makeBolt, makeBench, makeChip, setupRenderer, addLights, paintScreen, makeMetaLogo } from "./agent.js";
+import { C, makeAgent, pose, setArms, makeCoil, makeBolt, makeBench, makeChip, setupRenderer, addLights, paintScreen, makeMetaLogo, tr } from "./agent.js";
 
 export const STATIONS = [
-  { id: "cuna", name: "La cuna", color: C.meta, pos: [0, -3.5], screen: "pulse", say: "¡Estoy vivo!" },
-  { id: "swe", name: "SWE-bench Pro", color: 0x5b9bff, pos: [-5.0, -2.4], screen: "ok", say: "Errores reales, arreglos reales." },
-  { id: "terminal", name: "Terminal-Bench", color: 0x2ec4b6, pos: [-5.3, 1.7], screen: "test", say: "Solo yo y la terminal." },
-  { id: "arc", name: "ARC-AGI-3", color: 0xff8f70, pos: [-2.6, -4.0], screen: "alert", say: "Reglas nuevas… déjame pensar." },
-  { id: "web", name: "BrowseComp", color: 0x3ccf6e, pos: [2.6, -4.0], screen: "pulse", say: "Lo encuentro, esté donde esté." },
-  { id: "research", name: "MLE-bench · PaperBench", color: 0xffb53d, pos: [5.0, -2.4], screen: "test", say: "Investigar IA… con IA." },
-  { id: "horizon", name: "Horizonte de METR", color: 0x8a7dff, pos: [5.3, 1.7], screen: "sync", say: "¿Cuántas horas aguanto solo?" },
+  { id: "cuna", name: { en: "The cradle", es: "La cuna" }, color: C.meta, pos: [0, -3.5], screen: "pulse", say: { en: "I'm alive!", es: "¡Estoy vivo!" } },
+  { id: "swe", name: "SWE-bench Pro", color: 0x5b9bff, pos: [-5.0, -2.4], screen: "ok", say: { en: "Real bugs, real fixes.", es: "Errores reales, arreglos reales." } },
+  { id: "terminal", name: "Terminal-Bench", color: 0x2ec4b6, pos: [-5.3, 1.7], screen: "test", say: { en: "Just me and the terminal.", es: "Solo yo y la terminal." } },
+  { id: "arc", name: "ARC-AGI-3", color: 0xff8f70, pos: [-2.6, -4.0], screen: "alert", say: { en: "New rules… let me think.", es: "Reglas nuevas… déjame pensar." } },
+  { id: "web", name: "BrowseComp", color: 0x3ccf6e, pos: [2.6, -4.0], screen: "pulse", say: { en: "I'll find it, wherever it is.", es: "Lo encuentro, esté donde esté." } },
+  { id: "research", name: "MLE-bench · PaperBench", color: 0xffb53d, pos: [5.0, -2.4], screen: "test", say: { en: "Doing AI research… with AI.", es: "Investigar IA… con IA." } },
+  { id: "horizon", name: { en: "METR time horizon", es: "Horizonte de METR" }, color: 0x8a7dff, pos: [5.3, 1.7], screen: "sync", say: { en: "How many hours can I go alone?", es: "¿Cuántas horas aguanto solo?" } },
 ];
 const BENCH = { swe: "swe", terminal: "terminal", arc: "arc", web: "web", research: "research", horizon: "horizon" };
 const BOUNDS = { x: 6.7, zMin: -4.7, zMax: 4.9 };
@@ -31,6 +31,7 @@ function tex(w, h, draw) {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 8;
+  t.userData.redraw = () => { const g = c.getContext("2d"); g.clearRect(0, 0, w, h); draw(g, w, h); t.needsUpdate = true; };
   return t;
 }
 function pill(g, x, y, w, h) {
@@ -39,8 +40,9 @@ function pill(g, x, y, w, h) {
   g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
 }
 
-function makeSign(text, color) {
+function makeSign(label, color) {
   const map = tex(1024, 160, (g, w, h) => {
+    const text = tr(label);
     let size = 70;
     g.font = `700 ${size}px ${FONT}`;
     while (g.measureText(text).width > w - 190 && size > 40) { size -= 4; g.font = `700 ${size}px ${FONT}`; }
@@ -101,9 +103,9 @@ export function buildRoom(scene) {
     map: tex(1020, 570, (g, w, h) => {
       g.fillStyle = "#ffffff"; g.fillRect(0, 0, w, h);
       g.strokeStyle = "#dfe6ed"; g.lineWidth = 16; g.strokeRect(0, 0, w, h);
-      g.fillStyle = "#1c2b33"; g.font = `800 58px ${FONT}`; g.fillText("Benchmarks de frontera", 50, 100);
+      g.fillStyle = "#1c2b33"; g.font = `800 58px ${FONT}`; g.fillText(tr({ en: "Frontier benchmarks", es: "Benchmarks de frontera" }), 50, 100);
       g.font = `600 40px ${FONT}`;
-      ["SWE-bench Pro", "Terminal-Bench", "ARC-AGI-3", "BrowseComp", "MLE-bench · PaperBench", "Horizonte de METR"].forEach((t, i) => {
+      ["SWE-bench Pro", "Terminal-Bench", "ARC-AGI-3", "BrowseComp", "MLE-bench · PaperBench", tr(STATIONS[6].name)].forEach((t, i) => {
         const x = 50 + (i % 2) * 470, y = 190 + Math.floor(i / 2) * 110;
         g.fillStyle = hex(STATIONS[i + 1].color); g.beginPath(); g.arc(x + 14, y - 13, 13, 0, Math.PI * 2); g.fill();
         g.fillStyle = "#1c2b33"; g.fillText(t, x + 44, y);
@@ -116,7 +118,7 @@ export function buildRoom(scene) {
     map: tex(900, 510, (g, w, h) => {
       g.fillStyle = "#0f1d26"; g.fillRect(0, 0, w, h);
       g.fillStyle = "#4aa8ff"; g.font = `800 64px ${FONT}`; g.fillText("Muse Spark", 50, 120);
-      g.fillStyle = "#c9d3da"; g.font = `500 36px ${FONT}`; g.fillText("El cerebro de Agentztein · de Meta", 50, 180);
+      g.fillStyle = "#c9d3da"; g.font = `500 36px ${FONT}`; g.fillText(tr({ en: "Agentztein's brain · by Meta", es: "El cerebro de Agentztein · de Meta" }), 50, 180);
       g.strokeStyle = "#4aa8ff"; g.lineWidth = 8; g.lineJoin = "round"; g.beginPath();
       for (let x = 50; x <= w - 50; x += 6) {
         const k = (x % 180) / 180;
@@ -168,7 +170,12 @@ export function buildRoom(scene) {
     return { ...s, group: g, ring, prop, sign, hit, coils, stand, center: new THREE.Vector3(s.pos[0], 0, s.pos[1]), baseY: prop.position.y };
   });
 
-  return { room, floorHit, stations };
+  const relabel = () => {
+    stations.forEach((st) => st.sign.material.map.userData.redraw());
+    board.material.map.userData.redraw();
+    screen.material.map.userData.redraw();
+  };
+  return { room, floorHit, stations, relabel };
 }
 
 /**
@@ -181,7 +188,7 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
   const scene = new THREE.Scene();
   addLights(scene, renderer, { extent: 9 });
   const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
-  const { floorHit, stations } = buildRoom(scene);
+  const { floorHit, stations, relabel } = buildRoom(scene);
 
   const agent = makeAgent({ hover: true });
   agent.scale.setScalar(0.85);
@@ -251,7 +258,7 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
       u.power = reduced ? 1 : 0.2;
     } else {
       thinkUntil = t + 0.9; happyUntil = t + 2.4;
-      onSay(s.say);
+      onSay(tr(s.say));
     }
   }
 
@@ -322,7 +329,7 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
     if (kind === "new") {
       screenMode = "test";
       if (fresh) fresh.removeFromParent();
-      fresh = makeChip({ id: s.id, name: "Nueva", color: s.color });
+      fresh = makeChip({ id: s.id, name: { en: "New", es: "Nueva" }, color: s.color });
       fresh.position.set(s.center.x, 2.2, s.center.z);
       fresh.scale.setScalar(0.001);
       fresh.userData.grow = 0;
@@ -414,7 +421,7 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
         bolts.forEach((b) => { b.visible = false; });
         u.power = 1; armsUp = t + 2; happyUntil = t + 2.6;
         onFlash();
-        onSay(stations[0].say);
+        onSay(tr(stations[0].say));
       }
     }
 
@@ -449,7 +456,7 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
         flight = null;
         armsUp = t + 1.6; happyUntil = t + 2.2;
         onFlash();
-        onSay(installed.size > 1 ? `¡Pieza nueva! Ya van ${installed.size}.` : "¡Pieza nueva!");
+        onSay(installed.size > 1 ? tr({ en: `New piece! That's ${installed.size}.`, es: `¡Pieza nueva! Ya van ${installed.size}.` }) : tr({ en: "New piece!", es: "¡Pieza nueva!" }));
       }
     }
     installed.forEach((c) => { c.userData.body.material.emissiveIntensity += (0.35 - c.userData.body.material.emissiveIntensity) * Math.min(1, dt * 2); });
@@ -491,8 +498,8 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
     controls.update();
     renderer.render(scene, camera);
 
-    u.head.getWorldPosition(tmp);
-    tmp.y += 1.0;
+    u.brain.getWorldPosition(tmp);
+    tmp.y += 0.05;
     tmp.project(camera);
     onFrame({ x: (tmp.x * 0.5 + 0.5) * canvas.clientWidth, y: (-tmp.y * 0.5 + 0.5) * canvas.clientHeight });
   };
@@ -501,6 +508,7 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
   return {
     goTo,
     react,
+    relabel,
     press: (k, isDown) => { engaged = true; if (isDown) keys.add(k); else keys.delete(k); },
   };
 }

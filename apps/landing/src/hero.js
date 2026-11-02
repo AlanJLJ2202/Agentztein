@@ -2,12 +2,16 @@
    and it comes alive. It follows the pointer, and a click gives it another jolt. The page drives the
    lights (dim/flash overlays), the headline and the speech bubble through the callbacks. */
 import * as THREE from "three";
-import { SKILLS, makeAgent, pose, setArms, makeCoil, makeBolt, makeChip, setupRenderer, addLights, makeFloor, paintScreen } from "./agent.js";
+import { SKILLS, makeAgent, pose, setArms, makeCoil, makeBolt, makeChip, setupRenderer, addLights, makeFloor, paintScreen, tr } from "./agent.js";
 
 const COIL_X = 2.35;
 const CENTER = new THREE.Vector3(0, 1.75, 0);
 const CROWN = [[-2.15, 2.5], [-1.2, 3.3], [0, 3.6], [1.2, 3.3], [2.15, 2.5]];
-const LINES = ["¡Estoy vivo!", "¡Más voltaje!", "Listo para el siguiente benchmark.", "¡Bzzzt! Gracias.", "¿Otra prueba? ¡Venga!"];
+const LINES = [
+  { en: "I'm alive!", es: "¡Estoy vivo!" }, { en: "More voltage!", es: "¡Más voltaje!" },
+  { en: "Ready for the next benchmark.", es: "Listo para el siguiente benchmark." }, { en: "Bzzzt! Thanks.", es: "¡Bzzzt! Gracias." },
+  { en: "Another test? Bring it on!", es: "¿Otra prueba? ¡Venga!" },
+];
 
 /**
  * @param {HTMLCanvasElement} canvas
@@ -102,7 +106,7 @@ export function createHero(canvas, { reduced = false, onPhase = () => {}, onSay 
     if (!reduced) jolt(0.7, false);
     happyUntil = t + 2.2; armsUp = t + 1.6;
     lineIx = (lineIx + 1) % LINES.length;
-    onSay(LINES[lineIx]);
+    onSay(tr(LINES[lineIx]));
   }
 
   let visible = true;
@@ -146,7 +150,7 @@ export function createHero(canvas, { reduced = false, onPhase = () => {}, onSay 
           intro = false;
           happyUntil = t + 2.8; armsUp = t + 2.2;
           onPhase("alive");
-          onSay(LINES[0]);
+          onSay(tr(LINES[0]));
         }
       }
     }
@@ -173,8 +177,8 @@ export function createHero(canvas, { reduced = false, onPhase = () => {}, onSay 
     world.rotation.y += ((scroll * 0.7) - world.rotation.y) * Math.min(1, dt * 6);
 
     renderer.render(scene, camera);
-    agent.userData.head.getWorldPosition(tmp);
-    tmp.y += 1.25;
+    agent.userData.brain.getWorldPosition(tmp);
+    tmp.y += 0.1;
     tmp.project(camera);
     onFrame({ x: (tmp.x * 0.5 + 0.5) * canvas.clientWidth, y: (-tmp.y * 0.5 + 0.5) * canvas.clientHeight });
   };
@@ -183,5 +187,6 @@ export function createHero(canvas, { reduced = false, onPhase = () => {}, onSay 
   return {
     poke,
     setScroll: (p) => { scroll = p; },
+    relabel: () => chips.forEach((c) => c.userData.relabel && c.userData.relabel()),
   };
 }

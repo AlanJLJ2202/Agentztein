@@ -5,10 +5,18 @@
 // "room:move" (the visitor moved it, so a running exercise stops).
 import { createHero } from "./hero.js";
 import { createRoom } from "./room.js";
+import { setLanguage } from "./agent.js";
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+setLanguage(root.lang);
+let hero3d = null;
+document.addEventListener("lang:change", (e) => {
+  setLanguage(e.detail);
+  if (hero3d) hero3d.relabel();
+  if (room) room.relabel();
+});
 const hasWebGL = () => {
   try {
     const c = document.createElement("canvas");
@@ -80,6 +88,7 @@ function startHero() {
         if (room) room.goTo(STATION_OF[id]); else roomQueue = STATION_OF[id];
       },
     });
+    hero3d = h;
     // scrolling the hero away turns the stage a little
     const onScroll = () => {
       const r = hero.getBoundingClientRect();

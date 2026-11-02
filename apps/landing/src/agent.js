@@ -21,13 +21,18 @@ export const C = {
   red: 0xf0533c,
 };
 
+/* Language for the words drawn inside the 3D scenes (English by default). */
+let LANG = "en";
+export const setLanguage = (l) => { LANG = l === "es" ? "es" : "en"; };
+export const tr = (o) => (typeof o === "string" ? o : o[LANG] ?? o.en);
+
 /* The five frontier capabilities it builds skills for. */
 export const SKILLS = [
-  { id: "codigo", name: "Código", color: 0x5b9bff },
-  { id: "terminal", name: "Terminal", color: 0x2ec4b6 },
-  { id: "razonamiento", name: "Razonamiento", color: 0xff8f70 },
-  { id: "web", name: "Web", color: 0x3ccf6e },
-  { id: "investigacion", name: "Investigación", color: 0xffb53d },
+  { id: "codigo", name: { en: "Code", es: "Código" }, color: 0x5b9bff },
+  { id: "terminal", name: { en: "Terminal", es: "Terminal" }, color: 0x2ec4b6 },
+  { id: "razonamiento", name: { en: "Reasoning", es: "Razonamiento" }, color: 0xff8f70 },
+  { id: "web", name: { en: "Web", es: "Web" }, color: 0x3ccf6e },
+  { id: "investigacion", name: { en: "Research", es: "Investigación" }, color: 0xffb53d },
 ];
 
 const hex = (n) => "#" + n.toString(16).padStart(6, "0");
@@ -406,17 +411,22 @@ export function makeChip(skill, { label = true } = {}) {
   face.rotation.z = Math.PI / 6;
   g.add(body, face);
   if (label) {
-    const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.17), new THREE.MeshBasicMaterial({
-      map: canvasTex(512, 140, (c, w, h) => {
-        c.fillStyle = "rgba(255,255,255,0.94)"; rr(c, 0, 0, w, h, 70); c.fill();
-        c.fillStyle = hex(skill.color); c.beginPath(); c.arc(56, h / 2, 20, 0, Math.PI * 2); c.fill();
-        c.fillStyle = "#1c2b33"; c.font = `700 64px ${FONT}`; c.textBaseline = "middle"; c.fillText(skill.name, 92, h / 2 + 4);
-      }),
-      transparent: true, toneMapped: false, depthWrite: false,
-    }));
+    const draw = (c, w, h) => {
+      c.clearRect(0, 0, w, h);
+      const text = tr(skill.name);
+      let size = 64;
+      c.font = `700 ${size}px ${FONT}`;
+      while (c.measureText(text).width > w - 110 && size > 36) { size -= 4; c.font = `700 ${size}px ${FONT}`; }
+      c.fillStyle = "rgba(255,255,255,0.94)"; rr(c, 0, 0, w, h, 70); c.fill();
+      c.fillStyle = hex(skill.color); c.beginPath(); c.arc(56, h / 2, 20, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "#1c2b33"; c.textBaseline = "middle"; c.fillText(text, 92, h / 2 + 4);
+    };
+    const map = canvasTex(512, 140, draw);
+    const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.17), new THREE.MeshBasicMaterial({ map, transparent: true, toneMapped: false, depthWrite: false }));
     tag.position.set(0, -0.4, 0);
     g.add(tag);
     g.userData.tag = tag;
+    g.userData.relabel = () => { draw(map.userData.g, 512, 140); map.needsUpdate = true; };
   }
   g.userData.body = body;
   return shadowed(g);

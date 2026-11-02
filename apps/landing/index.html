@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Agentztein</title>
-<meta name="description" content="Agentztein es la IA que se desarrolla sola: un agente de investigación de IA que crea sus propias habilidades, las pone a prueba en benchmarks de frontera y solo se queda con las que lo hacen mejor. Con Muse Spark de Meta como cerebro." />
-<meta property="og:title" content="Agentztein: la IA que se desarrolla sola" />
-<meta property="og:description" content="Un agente de investigación de IA que se mejora solo y se mide en benchmarks de frontera. Con Muse Spark de Meta." />
+<title>Agentztein · The AI that builds itself</title>
+<meta name="description" content="Agentztein is an AI research agent that creates its own skills, tests them on frontier benchmarks and keeps only the ones that make it better. With Meta's Muse Spark as its brain." />
+<meta property="og:title" content="Agentztein: the AI that builds itself" />
+<meta property="og:description" content="An AI research agent that improves itself and is measured on frontier benchmarks. With Meta's Muse Spark." />
 <meta property="og:image" content="img/lab.webp" />
 <meta name="theme-color" content="#ffffff" />
 <link rel="preload" href="fonts/figtree.woff2" as="font" type="font/woff2" crossorigin />
@@ -15,6 +15,9 @@
 (() => {
   const d = document.documentElement;
   d.classList.add("js");
+  try { const saved = localStorage.getItem("agz-lang"); if (saved === "es" || saved === "en") d.lang = saved; } catch { /* private mode */ }
+  const q = new URLSearchParams(location.search).get("lang");
+  if (q === "es" || q === "en") d.lang = q;
   let gl = false;
   try { const c = document.createElement("canvas"); gl = Boolean(c.getContext("webgl2") || c.getContext("webgl")); } catch { gl = false; }
   if (gl && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -75,7 +78,8 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 @media (max-width: 900px) { .head { grid-template-columns: minmax(0, 1fr); } }
 
 /* Meta lockup */
-.meta-logo { width: 1.6em; height: auto; flex: none; }
+.meta-logo { width: 1.6em; height: auto; flex: none; color: #0081fb; }
+.meta-logo.white { color: #fff; }
 .lockup { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -.01em; color: var(--ink); text-decoration: none; }
 .lockup .sep { width: 1px; height: 1.2em; background: var(--soft-2); }
 .lockup .ev { font-weight: 500; color: var(--muted); }
@@ -315,7 +319,6 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .foot .lockup { color: #fff; }
 .foot .lockup .ev { color: #d6e6ff; }
 .foot .lockup .sep { background: rgba(255, 255, 255, .35); }
-.foot .meta-logo path { fill: #fff; }
 .right { display: grid; gap: 28px; justify-items: start; }
 .name { font-weight: 800; font-size: clamp(3.4rem, -.2rem + 15vw, 15rem); letter-spacing: -.06em; line-height: .8; margin-top: clamp(56px, 7vw, 96px); padding-bottom: .12em; white-space: nowrap; color: rgba(255, 255, 255, .14); }
 .fine-foot { padding-block: 18px; font-size: .9375rem; background: #0050b8; color: #d6e6ff; }
@@ -335,135 +338,221 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   .js .ent > * { opacity: 1; transform: none; }
   html { scroll-behavior: auto; }
 }
+
+/* Language switch */
+.lang { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--soft); }
+.lang button { all: unset; box-sizing: border-box; min-width: 40px; height: 32px; padding: 0 10px; border-radius: 999px; display: grid; place-items: center; font-size: .8125rem; font-weight: 700; color: var(--muted); cursor: pointer; transition: background-color .2s var(--ease), color .2s var(--ease); }
+.lang button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 4px rgba(28, 43, 51, .12); }
+.lang button:focus-visible { outline: 3px solid var(--meta); outline-offset: 2px; }
+.links { margin-left: auto; }
+.menu-cta { display: none; }
+.burger { all: unset; box-sizing: border-box; display: none; width: 44px; height: 44px; border-radius: 12px; cursor: pointer; position: relative; }
+.burger span { position: absolute; left: 12px; right: 12px; height: 2px; border-radius: 2px; background: var(--ink); transition: transform .3s var(--ease), top .3s var(--ease); }
+.burger span:first-child { top: 17px; } .burger span:last-child { top: 25px; }
+.open .burger span:first-child { top: 21px; transform: rotate(45deg); } .open .burger span:last-child { top: 21px; transform: rotate(-45deg); }
+.burger:focus-visible { outline: 3px solid var(--meta); outline-offset: 2px; }
+@media (max-width: 900px) {
+  .bar .wrap { gap: 10px; }
+  .bar-cta { display: none; }
+  .burger { display: block; }
+  .lang { margin-left: auto; }
+  .links { position: absolute; left: 0; right: 0; top: 64px; display: grid; gap: 4px; padding: 12px var(--gut-r) 20px var(--gut-l); background: #fff; box-shadow: 0 16px 30px rgba(28, 43, 51, .1); opacity: 0; transform: translateY(-8px); pointer-events: none; transition: opacity .25s var(--ease), transform .25s var(--ease); }
+  .open .links { opacity: 1; transform: none; pointer-events: auto; }
+  .links a { padding: 12px 4px; font-size: 1.125rem; color: var(--ink); }
+  .links .menu-cta { display: inline-flex; justify-self: start; margin-top: 8px; padding: 0 22px; color: #fff; }
+}
+
+/* Step cards: the whole card opens its detail */
+.step { position: relative; }
+.step .tx { gap: 10px; }
+.more { all: unset; box-sizing: border-box; justify-self: start; display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.more svg { width: 16px; height: 16px; transition: transform .25s var(--ease); }
+.more::after { content: ""; position: absolute; inset: 0; border-radius: var(--r); }
+.step:hover .more svg { transform: translateX(4px); }
+.more:focus-visible { outline: none; }
+.more:focus-visible::after { box-shadow: inset 0 0 0 3px var(--meta); }
+
+/* Step detail sheet */
+.sheet { width: min(980px, calc(100% - 32px)); max-height: calc(100svh - 48px); padding: 0; border: 0; border-radius: 28px; background: #fff; color: var(--ink); overflow: auto; }
+.sheet::backdrop { background: rgba(10, 22, 32, .45); backdrop-filter: blur(4px); }
+.sheet[open] { animation: rise .45s var(--ease); }
+@keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
+.sheet-in { position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
+.sheet-ph { background: var(--sky); }
+.sheet-ph img { width: 100%; height: 100%; object-fit: cover; }
+.sheet-tx { padding: clamp(24px, 3vw, 40px); display: grid; gap: 12px; align-content: start; }
+.sheet .kicker { display: inline-flex; align-items: center; gap: 8px; font-size: .875rem; font-weight: 700; color: var(--muted); }
+.sheet .kicker::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+.sheet h3 { font-size: clamp(1.8rem, 1.3rem + 1.4vw, 2.5rem); letter-spacing: -.035em; }
+.sheet h4 { margin: 10px 0 0; font-size: 1rem; }
+.sheet p { color: var(--muted); font-size: 1.0625rem; line-height: 1.5; }
+.sheet ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.sheet li { position: relative; padding: 10px 14px 10px 36px; border-radius: 14px; background: var(--soft); line-height: 1.4; }
+.sheet li::before { content: "✓"; position: absolute; left: 13px; top: 10px; font-weight: 800; color: var(--ok); }
+.sheet-nav { display: flex; gap: 10px; margin-top: 12px; }
+.sheet-nav .btn[disabled] { opacity: .4; pointer-events: none; }
+.sheet .x { all: unset; position: absolute; right: 14px; top: 14px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .9); font-size: 1.5rem; cursor: pointer; }
+.sheet .x:focus-visible { outline: 3px solid var(--meta); }
+@media (max-width: 760px) { .sheet-in { grid-template-columns: minmax(0, 1fr); } .sheet-ph { max-height: 280px; overflow: hidden; } }
 </style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="meta" viewBox="0 0 24 24"><path fill="#0081FB" d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a6.624 6.624 0 0 0 .265.86 5.297 5.297 0 0 0 .371.761c.696 1.159 1.818 1.927 3.593 1.927 1.497 0 2.633-.671 3.965-2.444.76-1.012 1.144-1.626 2.663-4.32l.756-1.339.186-.325c.061.1.121.196.183.3l2.152 3.595c.724 1.21 1.665 2.556 2.47 3.314 1.046.987 1.992 1.22 3.06 1.22 1.075 0 1.876-.355 2.455-.843a3.743 3.743 0 0 0 .81-.973c.542-.939.861-2.127.861-3.745 0-2.72-.681-5.357-2.084-7.45-1.282-1.912-2.957-2.93-4.716-2.93-1.047 0-2.088.467-3.053 1.308-.652.57-1.257 1.29-1.82 2.05-.69-.875-1.335-1.547-1.958-2.056-1.182-.966-2.315-1.303-3.454-1.303zm10.16 2.053c1.147 0 2.188.758 2.992 1.999 1.132 1.748 1.647 4.195 1.647 6.4 0 1.548-.368 2.9-1.839 2.9-.58 0-1.027-.23-1.664-1.004-.496-.601-1.343-1.878-2.832-4.358l-.617-1.028a44.908 44.908 0 0 0-1.255-1.98c.07-.109.141-.224.211-.327 1.12-1.667 2.118-2.602 3.358-2.602zm-10.201.553c1.265 0 2.058.791 2.675 1.446.307.327.737.871 1.234 1.579l-1.02 1.566c-.757 1.163-1.882 3.017-2.837 4.338-1.191 1.649-1.81 1.817-2.486 1.817-.524 0-1.038-.237-1.383-.794-.263-.426-.464-1.13-.464-2.046 0-2.221.63-4.535 1.66-6.088.454-.687.964-1.226 1.533-1.533a2.264 2.264 0 0 1 1.088-.285z"/></symbol>
+  <symbol id="meta" viewBox="0 0 24 24"><path fill="currentColor" d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a6.624 6.624 0 0 0 .265.86 5.297 5.297 0 0 0 .371.761c.696 1.159 1.818 1.927 3.593 1.927 1.497 0 2.633-.671 3.965-2.444.76-1.012 1.144-1.626 2.663-4.32l.756-1.339.186-.325c.061.1.121.196.183.3l2.152 3.595c.724 1.21 1.665 2.556 2.47 3.314 1.046.987 1.992 1.22 3.06 1.22 1.075 0 1.876-.355 2.455-.843a3.743 3.743 0 0 0 .81-.973c.542-.939.861-2.127.861-3.745 0-2.72-.681-5.357-2.084-7.45-1.282-1.912-2.957-2.93-4.716-2.93-1.047 0-2.088.467-3.053 1.308-.652.57-1.257 1.29-1.82 2.05-.69-.875-1.335-1.547-1.958-2.056-1.182-.966-2.315-1.303-3.454-1.303zm10.16 2.053c1.147 0 2.188.758 2.992 1.999 1.132 1.748 1.647 4.195 1.647 6.4 0 1.548-.368 2.9-1.839 2.9-.58 0-1.027-.23-1.664-1.004-.496-.601-1.343-1.878-2.832-4.358l-.617-1.028a44.908 44.908 0 0 0-1.255-1.98c.07-.109.141-.224.211-.327 1.12-1.667 2.118-2.602 3.358-2.602zm-10.201.553c1.265 0 2.058.791 2.675 1.446.307.327.737.871 1.234 1.579l-1.02 1.566c-.757 1.163-1.882 3.017-2.837 4.338-1.191 1.649-1.81 1.817-2.486 1.817-.524 0-1.038-.237-1.383-.794-.263-.426-.464-1.13-.464-2.046 0-2.221.63-4.535 1.66-6.088.454-.687.964-1.226 1.533-1.533a2.264 2.264 0 0 1 1.088-.285z"/></symbol>
 </svg>
 
 <header class="bar">
   <div class="wrap">
-    <a class="word" href="#inicio" aria-label="Agentztein, inicio"><i aria-hidden="true"></i>Agentztein</a>
-    <nav class="links" aria-label="Secciones">
-      <a href="#como-funciona">Cómo funciona</a>
-      <a href="#laboratorio">Laboratorio</a>
-      <a href="#meta">Con Meta</a>
-      <a href="#avance">Avance</a>
+    <a class="word" href="#inicio" aria-label="Agentztein, home" data-es-aria-label="Agentztein, inicio"><i aria-hidden="true"></i>Agentztein</a>
+    <nav class="links" id="menu" aria-label="Sections" data-es-aria-label="Secciones">
+      <a href="#como-funciona" data-es="Cómo funciona">How it works</a>
+      <a href="#laboratorio" data-es="Laboratorio">The lab</a>
+      <a href="#meta" data-es="Con Meta">Muse by Meta</a>
+      <a href="#avance" data-es="Avance">Progress</a>
+      <a class="btn menu-cta" href="/panel/" data-es="Ver los datos">See the data</a>
     </nav>
-    <a class="btn" href="/panel/">Ver los datos
+    <div class="lang" role="group" aria-label="Language" data-es-aria-label="Idioma">
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-lang="es" aria-pressed="false">ES</button>
+    </div>
+    <a class="btn bar-cta" href="/panel/"><span data-es="Ver los datos">See the data</span>
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5 4h7v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </a>
+    <button class="burger" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu" data-es-aria-label="Abrir menú"><span></span><span></span></button>
   </div>
 </header>
 
-<main id="top">
+<main>
 
 <section class="hero" id="inicio">
   <div class="hero-stage">
-    <img class="still" src="img/lab.webp" width="1600" height="1000" alt="Agentztein en 3D: un personaje cosido por piezas, con la cabeza verde, tornillos en el cuello y una cúpula de vidrio con un cerebro azul y el logo de Meta. Está entre dos bobinas de Tesla que le lanzan rayos, y sobre su cabeza flotan sus habilidades de código, terminal, razonamiento, web e investigación." />
-    <canvas id="hero3d" aria-label="Agentztein en 3D. Tócalo para darle otra descarga."></canvas>
+    <img class="still" src="img/lab.webp" width="1600" height="1000" alt="Agentztein in 3D: a plush, hooded creature stitched back together, with a cream face, rosy cheeks, bolts on its sides and a glass dome with a blue brain and the Meta logo. It stands between two Tesla coils firing lightning, with its skills floating over its head." data-es-alt="Agentztein en 3D: una criatura de felpa con capucha, cosida por piezas, con cara crema, mejillas rosadas, tornillos a los lados y una cúpula de vidrio con un cerebro azul y el logo de Meta. Está entre dos bobinas de Tesla que le lanzan rayos, con sus habilidades flotando sobre su cabeza." />
+    <canvas id="hero3d" aria-label="Agentztein in 3D. Tap it to give it another jolt." data-es-aria-label="Agentztein en 3D. Tócalo para darle otra descarga."></canvas>
     <div class="bubble" id="heroBubble" aria-live="polite"><span></span></div>
-    <span class="hero-hint">Tócalo para darle otra descarga</span>
+    <span class="hero-hint" data-es="Tócalo para darle otra descarga">Tap it for another jolt</span>
   </div>
   <div class="hero-dim" aria-hidden="true"></div>
   <div class="flash" id="heroFlash" aria-hidden="true"></div>
   <div class="wrap hero-copy-wrap">
     <div class="hero-copy">
       <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#meta"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Global AI Developer Hackathon 2026</span></span>
-      <h1><span class="w">La</span> <span class="w">IA</span> <span class="w">que</span> <span class="w">se</span> <span class="w">desarrolla</span> <span class="w">sola</span></h1>
-      <p class="lead">Agentztein es un agente de investigación de IA que crea sus propias habilidades, las pone a prueba en benchmarks de frontera y solo se queda con las que lo hacen mejor, sin olvidar lo que ya sabía.</p>
+      <h1 data-es='<span class="w">La</span> <span class="w">IA</span> <span class="w">que</span> <span class="w">se</span> <span class="w">desarrolla</span> <span class="w">sola</span>'><span class="w">The</span> <span class="w">AI</span> <span class="w">that</span> <span class="w">builds</span> <span class="w">itself</span></h1>
+      <p class="lead" data-es="Agentztein es un agente de investigación de IA que crea sus propias habilidades, las pone a prueba en benchmarks de frontera y solo se queda con las que lo hacen mejor, sin olvidar lo que ya sabía.">Agentztein is an AI research agent that creates its own skills, tests them on frontier benchmarks and keeps only the ones that make it better, without forgetting what it already knew.</p>
       <div class="cta">
-        <a class="btn" href="#laboratorio">Entra a su laboratorio
+        <a class="btn" href="#laboratorio"><span data-es="Entra a su laboratorio">Enter its lab</span>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </a>
-        <a class="btn ghost" href="#como-funciona">Cómo funciona</a>
+        <a class="btn ghost" href="#como-funciona" data-es="Cómo funciona">How it works</a>
       </div>
     </div>
   </div>
-  <a class="scroll-cue" href="#como-funciona" aria-label="Seguir bajando"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></a>
+  <a class="scroll-cue" href="#como-funciona" aria-label="Keep scrolling" data-es-aria-label="Seguir bajando"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></a>
 </section>
 
 <section id="como-funciona">
   <div class="wrap">
     <div class="head ent">
-      <h2>Así se desarrolla sola</h2>
-      <p class="lead">Nadie le escribe sus habilidades: las crea él mismo al revisar sus fallas. Pero ninguna se usa sin pasar por el laboratorio.</p>
+      <h2 data-es="Así se desarrolla sola">How it builds itself</h2>
+      <p class="lead" data-es="Nadie le escribe sus habilidades: las crea él mismo al revisar sus fallas. Pero ninguna se usa sin pasar por el laboratorio.">Nobody writes its skills: it creates them by reviewing its own failures. But none is used without going through the lab.</p>
     </div>
     <ol class="steps ent">
       <li class="step" style="--c:#f0533c">
-        <div class="ph"><img src="img/step1.webp" width="900" height="900" alt="Agentztein revisa con una lupa la hoja de sus pruebas, donde falló un acertijo, marcado con una X roja; en su pecho brilla una alerta." /></div>
-        <div class="tx"><span class="sh"><i></i>Aprende de sus errores</span><p>Revisa las pruebas en que falló, encuentra el patrón y crea una habilidad nueva para corregirlo. Solo una a la vez.</p></div>
+        <div class="ph"><img src="img/step1.webp" width="900" height="900" alt="Agentztein checks its test sheet with a magnifying glass: one puzzle failed, marked with a red X; its belly window shows an alert." data-es-alt="Agentztein revisa con una lupa la hoja de sus pruebas: falló un acertijo, marcado con una X roja; la ventanita de su panza muestra una alerta." /></div>
+        <div class="tx"><h3 class="sh"><i></i><span data-es="Aprende de sus errores">Learns from its mistakes</span></h3><p data-es="Revisa las pruebas en que falló, encuentra el patrón y crea una habilidad nueva para corregirlo. Solo una a la vez.">It reviews the tests it failed, finds the pattern and creates a new skill to fix it. One at a time.</p>
+          <button class="more" type="button" data-step="0"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
       </li>
       <li class="step" style="--c:#0081fb">
-        <div class="ph"><img src="img/step2.webp" width="900" height="900" alt="Agentztein sostiene una ficha nueva mientras una bobina de Tesla le lanza rayos para probarla; su pantalla muestra una lista de pruebas." /></div>
-        <div class="tx"><span class="sh"><i></i>La pone a prueba</span><p>En el laboratorio la prueba con tareas que nunca ha visto, incluidas las que ya resolvía bien, para que nada se rompa.</p></div>
+        <div class="ph"><img src="img/step2.webp" width="900" height="900" alt="Agentztein holds out a new skill chip while a Tesla coil fires lightning through it to test it." data-es-alt="Agentztein sostiene una ficha nueva mientras una bobina de Tesla le lanza rayos para probarla." /></div>
+        <div class="tx"><h3 class="sh"><i></i><span data-es="La pone a prueba">Tests it</span></h3><p data-es="En el laboratorio la prueba con tareas que nunca ha visto, incluidas las que ya resolvía bien, para que nada se rompa.">In the lab it tests it on tasks it has never seen, including the ones it already solved, so nothing breaks.</p>
+          <button class="more" type="button" data-step="1"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
       </li>
       <li class="step" style="--c:#22b864">
-        <div class="ph"><img src="img/step3.webp" width="900" height="900" alt="Agentztein celebra con los brazos arriba: la ficha nueva ya está cosida en su cuerpo, su pantalla muestra una palomita verde y hay confeti." /></div>
-        <div class="tx"><span class="sh"><i></i>Se la queda</span><p>Si mejora sin romper nada y una persona la aprueba, la nueva pieza se le integra, solo donde demostró servir.</p></div>
+        <div class="ph"><img src="img/step3.webp" width="900" height="900" alt="Agentztein celebrates with its arms up: the new chip is already sewn onto its body, its belly window shows a green check and there is confetti." data-es-alt="Agentztein celebra con los brazos arriba: la ficha nueva ya está cosida en su cuerpo, su ventanita muestra una palomita verde y hay confeti." /></div>
+        <div class="tx"><h3 class="sh"><i></i><span data-es="Se la queda">Keeps it</span></h3><p data-es="Si mejora sin romper nada y una persona la aprueba, la nueva pieza se le integra, solo donde demostró servir.">If it improves without breaking anything and a person approves it, the new piece is sewn on, only where it proved useful.</p>
+          <button class="more" type="button" data-step="2"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
       </li>
       <li class="step" style="--c:#ffa928">
-        <div class="ph"><img src="img/step4.webp" width="900" height="900" alt="Agentztein lee la hoja de un benchmark en versión nueva con un cambio marcado; una de sus fichas se separa en color ámbar con la etiqueta A revisión." /></div>
-        <div class="tx"><span class="sh"><i></i>Se mantiene al día</span><p>Cuando sale una versión nueva de un benchmark o cambian las reglas, esa habilidad vuelve a revisión. Nada se borra.</p></div>
+        <div class="ph"><img src="img/step4.webp" width="900" height="900" alt="Agentztein reads the sheet of a new benchmark version with one change marked; one of its chips comes off in amber, labeled Review." data-es-alt="Agentztein lee la hoja de un benchmark en versión nueva con un cambio marcado; una de sus fichas se separa en color ámbar con la etiqueta Review." /></div>
+        <div class="tx"><h3 class="sh"><i></i><span data-es="Se mantiene al día">Keeps up to date</span></h3><p data-es="Cuando sale una versión nueva de un benchmark o cambian las reglas, esa habilidad vuelve a revisión. Nada se borra.">When a new version of a benchmark comes out or the rules change, that skill goes back to review. Nothing is deleted.</p>
+          <button class="more" type="button" data-step="3"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
       </li>
     </ol>
   </div>
 </section>
 
+<dialog class="sheet" id="stepDlg" aria-labelledby="dlgTitle">
+  <div class="sheet-in">
+    <div class="sheet-ph"><img id="dlgImg" src="img/step1.webp" width="900" height="900" alt="" /></div>
+    <div class="sheet-tx">
+      <p class="kicker" id="dlgKicker"></p>
+      <h3 id="dlgTitle"></h3>
+      <p id="dlgBody"></p>
+      <h4 data-es="Ejemplo">Example</h4>
+      <p id="dlgEx"></p>
+      <h4 data-es="Cómo lo cuidamos">How we keep it safe</h4>
+      <ul id="dlgList"></ul>
+      <div class="sheet-nav">
+        <button class="btn ghost" type="button" id="dlgPrev" data-es="Anterior">Previous</button>
+        <button class="btn" type="button" id="dlgNext" data-es="Siguiente">Next</button>
+      </div>
+    </div>
+    <button class="x" type="button" id="dlgClose" aria-label="Close" data-es-aria-label="Cerrar">×</button>
+  </div>
+</dialog>
+
 <section id="laboratorio" style="padding-top:0">
   <div class="wrap">
     <div class="head ent">
-      <h2>Recorre su laboratorio</h2>
-      <p class="lead">Cada estación es un benchmark de frontera. Mueve a Agentztein, llévalo a una estación y córrele un ejercicio: verás cómo falla, crea una habilidad, la prueba y se la queda.</p>
+      <h2 data-es="Recorre su laboratorio">Walk through its lab</h2>
+      <p class="lead" data-es="Cada estación es un benchmark de frontera. Mueve a Agentztein, llévalo a una estación y córrele un ejercicio: verás cómo falla, crea una habilidad, la prueba y se la queda.">Each station is a frontier benchmark. Move Agentztein, take it to a station and run an exercise: watch it fail, create a skill, test it and keep it.</p>
     </div>
     <div class="stage-wrap">
       <div class="stage">
-        <img class="still" src="img/room.webp" width="1600" height="1000" alt="El laboratorio de Agentztein en 3D: un cuarto blanco con el logo de Meta en la pared, un pizarrón con los benchmarks, una pantalla de Muse Spark, la cuna con dos bobinas de Tesla y seis mesas, una por benchmark, cada una con su objeto: código, terminal, cubos de colores, un globo, un matraz y un reloj de arena." loading="lazy" />
-        <canvas id="room3d" tabindex="0" aria-label="Laboratorio en 3D. Toca el piso para mover a Agentztein o toca una estación para enviarlo. Con el laboratorio seleccionado, muévelo con las flechas o con W, A, S y D. También puedes usar los botones de abajo."></canvas>
+        <img class="still" src="img/room.webp" width="1600" height="1000" alt="Agentztein's lab in 3D: a white room with the Meta logo on the wall, a whiteboard of frontier benchmarks, a Muse Spark screen, the cradle between two Tesla coils and six tables, one per benchmark, each with its object." data-es-alt="El laboratorio de Agentztein en 3D: un cuarto blanco con el logo de Meta en la pared, un pizarrón con los benchmarks de frontera, una pantalla de Muse Spark, la cuna entre dos bobinas de Tesla y seis mesas, una por benchmark, cada una con su objeto." loading="lazy" />
+        <canvas id="room3d" tabindex="0" aria-label="3D lab. Drag Agentztein, tap the floor or a station to move it, or use the arrow keys and W, A, S, D. You can also use the buttons below." data-es-aria-label="Laboratorio en 3D. Arrastra a Agentztein, toca el piso o una estación para moverlo, o usa las flechas y W, A, S, D. También puedes usar los botones de abajo."></canvas>
         <div class="bubble" id="roomBubble" aria-live="polite"><span></span></div>
         <div class="flash" id="roomFlash" aria-hidden="true"></div>
-        <span class="hint" id="roomHint">Arrástralo, toca el piso o usa las flechas</span>
-        <div class="pad" role="group" aria-label="Mover a Agentztein">
-          <button class="pk up" data-k="f" aria-label="Adelante"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3 3 9h10z"/></svg></button>
-          <button class="pk left" data-k="l" aria-label="Izquierda"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8l6-5v10z"/></svg></button>
-          <button class="pk right" data-k="r" aria-label="Derecha"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8 7 3v10z"/></svg></button>
-          <button class="pk down" data-k="b" aria-label="Atrás"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13 3 7h10z"/></svg></button>
+        <span class="hint" id="roomHint" data-es="Arrástralo, toca el piso o usa las flechas">Drag it, tap the floor or use the arrows</span>
+        <div class="pad" role="group" aria-label="Move Agentztein" data-es-aria-label="Mover a Agentztein">
+          <button class="pk up" data-k="f" aria-label="Forward" data-es-aria-label="Adelante"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3 3 9h10z"/></svg></button>
+          <button class="pk left" data-k="l" aria-label="Left" data-es-aria-label="Izquierda"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8l6-5v10z"/></svg></button>
+          <button class="pk right" data-k="r" aria-label="Right" data-es-aria-label="Derecha"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8 7 3v10z"/></svg></button>
+          <button class="pk down" data-k="b" aria-label="Back" data-es-aria-label="Atrás"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13 3 7h10z"/></svg></button>
         </div>
-        <section class="console" id="console" aria-label="Ejercicio de ejemplo" hidden>
-          <header><b id="exTitle">Ejercicio de ejemplo</b><span class="sim">Simulación</span><button class="x" id="exClose" aria-label="Cerrar ejercicio">×</button></header>
+        <section class="console" id="console" aria-label="Example exercise" data-es-aria-label="Ejercicio de ejemplo" hidden>
+          <header><b id="exTitle"></b><span class="sim" data-es="Simulación">Simulation</span><button class="x" id="exClose" aria-label="Close exercise" data-es-aria-label="Cerrar ejercicio">×</button></header>
           <ol id="exLog" aria-live="polite"></ol>
           <p class="ex-end" id="exEnd"></p>
         </section>
       </div>
       <div class="card" id="card" aria-live="polite">
-        <p class="who-name"><span class="dot" id="cDot"></span><span id="cName">Su laboratorio</span></p>
+        <p class="who-name"><span class="dot" id="cDot"></span><span id="cName" data-es="Su laboratorio">Its lab</span></p>
         <dl>
-          <div><dt id="cL1">Qué es</dt><dd id="cA">Siete estaciones: la cuna donde despierta y una por cada benchmark de frontera que quiere superar.</dd></div>
-          <div><dt id="cL2">Cómo se usa</dt><dd id="cB">Elige una estación y Agentztein va hacia ella para mostrarte qué mide.</dd></div>
+          <div><dt id="cL1" data-es="Qué es">What it is</dt><dd id="cA" data-es="Siete estaciones: la cuna donde despierta y una por cada benchmark de frontera que quiere superar.">Seven stations: the cradle where it wakes up and one for each frontier benchmark it wants to beat.</dd></div>
+          <div><dt id="cL2" data-es="Cómo se usa">How to use it</dt><dd id="cB" data-es="Elige una estación y Agentztein va hacia ella para mostrarte qué mide.">Pick a station and Agentztein goes there to show you what it measures.</dd></div>
         </dl>
-        <button class="btn run" id="runBtn" hidden>Correr un ejercicio
+        <button class="btn run" id="runBtn" hidden><span id="runTxt">Run an exercise</span>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor"/></svg>
         </button>
       </div>
     </div>
-    <div class="picker" role="group" aria-label="Enviar a Agentztein a una estación">
-      <button class="pick" aria-pressed="false" data-id="cuna" style="--c:#0081fb"><i></i>La cuna</button>
+    <div class="picker" role="group" aria-label="Send Agentztein to a station" data-es-aria-label="Enviar a Agentztein a una estación">
+      <button class="pick" aria-pressed="false" data-id="cuna" style="--c:#0081fb"><i></i><span data-es="La cuna">The cradle</span></button>
       <button class="pick" aria-pressed="false" data-id="swe" style="--c:#5b9bff"><i></i>SWE-bench Pro</button>
       <button class="pick" aria-pressed="false" data-id="terminal" style="--c:#2ec4b6"><i></i>Terminal-Bench</button>
       <button class="pick" aria-pressed="false" data-id="arc" style="--c:#ff8f70"><i></i>ARC-AGI-3</button>
       <button class="pick" aria-pressed="false" data-id="web" style="--c:#3ccf6e"><i></i>BrowseComp</button>
-      <button class="pick" aria-pressed="false" data-id="research" style="--c:#ffb53d"><i></i>MLE-bench y PaperBench</button>
-      <button class="pick" aria-pressed="false" data-id="horizon" style="--c:#8a7dff"><i></i>Horizonte de METR</button>
+      <button class="pick" aria-pressed="false" data-id="research" style="--c:#ffb53d"><i></i><span data-es="MLE-bench y PaperBench">MLE-bench &amp; PaperBench</span></button>
+      <button class="pick" aria-pressed="false" data-id="horizon" style="--c:#8a7dff"><i></i><span data-es="Horizonte de METR">METR time horizon</span></button>
     </div>
-    <p class="note">Aún no hay resultados de Agentztein en estos benchmarks: son la meta. Cuando los haya, se publicarán todos, también los malos.</p>
+    <p class="note" data-es="Aún no hay resultados de Agentztein en estos benchmarks: son la meta. Cuando los haya, se publicarán todos, también los malos.">There are no Agentztein results on these benchmarks yet: they are the goal. When there are, all of them will be published, including the bad ones.</p>
     <div class="biz bench-list">
-      <article class="b"><div class="ph"><img src="img/bench-swe.webp" width="700" height="700" alt="Una ventana de código con una línea roja quitada, una verde agregada y una palomita verde." loading="lazy" /></div><div class="tx"><h3>SWE-bench Pro</h3><p>Arreglar errores reales en proyectos de software de código abierto.</p><span class="n">Código</span></div></article>
-      <article class="b"><div class="ph"><img src="img/bench-terminal.webp" width="700" height="700" alt="Una terminal oscura que compila un proyecto y corre sus pruebas." loading="lazy" /></div><div class="tx"><h3>Terminal-Bench</h3><p>Tareas largas en la terminal: compilar, configurar servidores y depurar, sin ayuda.</p><span class="n">Terminal</span></div></article>
-      <article class="b"><div class="ph"><img src="img/bench-arc.webp" width="700" height="700" alt="Una cuadrícula de cubos de colores que forman un patrón, con un cubo rosa suelto." loading="lazy" /></div><div class="tx"><h3>ARC-AGI-3</h3><p>Juegos interactivos nuevos donde hay que descubrir las reglas sin instrucciones. Al lanzarse en 2026, las personas los resolvían y los mejores modelos casi nada.</p><span class="n">Razonamiento</span></div></article>
-      <article class="b"><div class="ph"><img src="img/bench-web.webp" width="700" height="700" alt="Un globo terráqueo con una lupa." loading="lazy" /></div><div class="tx"><h3>BrowseComp</h3><p>Encontrar información muy difícil de hallar, navegando la web como un investigador.</p><span class="n">Web</span></div></article>
-      <article class="b"><div class="ph"><img src="img/bench-research.webp" width="700" height="700" alt="Un matraz con líquido naranja junto a una gráfica de barras que sube." loading="lazy" /></div><div class="tx"><h3>MLE-bench y PaperBench</h3><p>Hacer investigación de IA: resolver competencias de machine learning y replicar artículos científicos desde cero.</p><span class="n">Investigación</span></div></article>
-      <article class="b"><div class="ph"><img src="img/bench-horizon.webp" width="700" height="700" alt="Un reloj de arena." loading="lazy" /></div><div class="tx"><h3>Horizonte de METR</h3><p>Cuántas horas de trabajo experto puede completar solo. En los mejores modelos se ha duplicado cada pocos meses.</p><span class="n">Autonomía</span></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-swe.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>SWE-bench Pro</h3><p data-es="Arreglar errores reales en proyectos de software de código abierto.">Fixing real bugs in open-source software projects.</p></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-terminal.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>Terminal-Bench</h3><p data-es="Tareas largas en la terminal: compilar, configurar servidores y depurar, sin ayuda.">Long terminal tasks: building, configuring servers and debugging, without help.</p></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-arc.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>ARC-AGI-3</h3><p data-es="Juegos interactivos nuevos donde hay que descubrir las reglas sin instrucciones.">New interactive games where the rules must be figured out without instructions.</p></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-web.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>BrowseComp</h3><p data-es="Encontrar información muy difícil de hallar, navegando la web.">Finding very hard-to-find information by browsing the web.</p></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-research.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>MLE-bench &amp; PaperBench</h3><p data-es="Investigación de IA: competencias de machine learning y replicar artículos.">AI research: machine learning competitions and replicating papers.</p></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-horizon.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3 data-es="Horizonte de METR">METR time horizon</h3><p data-es="Cuántas horas de trabajo experto completa solo.">How many hours of expert work it completes on its own.</p></div></article>
     </div>
   </div>
 </section>
@@ -472,30 +561,30 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   <div class="wrap brain">
     <div class="ent">
       <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#meta"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Muse Spark</span></span>
-      <h2>El cerebro lo pone Meta</h2>
-      <p class="lead">Bajo la cúpula de Agentztein vive Muse Spark, el modelo de frontera de Meta. Es el que piensa y decide.</p>
-      <p class="lead">No lo modificamos ni lo reentrenamos. Lo que crece son las piezas que Agentztein se va cosiendo, y cualquiera puede revisarlas para ver qué aprendió y por qué.</p>
+      <h2 data-es="El cerebro lo pone Meta">The brain is Meta's</h2>
+      <p class="lead" data-es="Bajo la cúpula de Agentztein vive Muse Spark, el modelo de frontera de Meta. Es el que piensa y decide. Y su cuerpo es un homenaje a Muse, el compañero de IA de Meta: de felpa y un poco cosido.">Under Agentztein's dome lives Muse Spark, Meta's frontier model. It does the thinking and deciding. And its body is a tribute to Muse, Meta's AI companion: plush, and a little stitched together.</p>
+      <p class="lead" data-es="No lo modificamos ni lo reentrenamos. Lo que crece son las piezas que Agentztein se va cosiendo, y cualquiera puede revisarlas para ver qué aprendió y por qué.">We don't modify or retrain it. What grows are the pieces Agentztein keeps sewing on, and anyone can inspect them to see what it learned and why.</p>
       <div class="facts">
-        <div><b>5</b><span>capacidades de frontera</span></div>
-        <div><b>6</b><span>benchmarks públicos como meta</span></div>
-        <div><b>0</b><span>resultados inventados</span></div>
+        <div><b>5</b><span data-es="capacidades de frontera">frontier capabilities</span></div>
+        <div><b>6</b><span data-es="benchmarks públicos como meta">public benchmarks as goals</span></div>
+        <div><b>0</b><span data-es="resultados inventados">made-up results</span></div>
       </div>
     </div>
-    <div class="art ent"><img src="img/muse.webp" width="900" height="900" alt="La cabeza de Agentztein: una cúpula de vidrio con un cerebro azul, el logo de Meta en 3D encima, ojos azules y costuras." loading="lazy" /></div>
+    <div class="art ent"><img src="img/muse.webp" width="900" height="900" alt="Agentztein's face: a plush hood with a cream face, button eyes, rosy cheeks, stitches, and a glass dome with a blue brain under the Meta logo." data-es-alt="La cara de Agentztein: una capucha de felpa con cara crema, ojos de botón, mejillas rosadas, costuras y una cúpula de vidrio con un cerebro azul bajo el logo de Meta." loading="lazy" /></div>
   </div>
 </section>
 
 <section id="avance">
   <div class="wrap">
     <div class="head ent">
-      <h2>¿En qué vamos?</h2>
-      <p class="lead">El laboratorio ya está armado. Ahora toca conectarle el cerebro y despertar a Agentztein.</p>
+      <h2 data-es="¿En qué vamos?">Where are we?</h2>
+      <p class="lead" data-es="El laboratorio ya está armado. Ahora toca conectarle el cerebro y despertar a Agentztein.">The lab is built. Next: connect its brain and wake Agentztein up.</p>
     </div>
     <ol class="road ent" id="road">
-      <li class="done"><span class="st">Listo</span><h3>Laboratorio armado</h3><p>El sistema para crear, probar y aprobar habilidades, con registro de todo, ya probado con tareas de práctica.</p><div class="bar-prog" aria-hidden="true"><i style="--w:100%"></i></div></li>
-      <li class="now"><span class="st">Ahora</span><h3>Conectar el cerebro</h3><p>Muse Spark resolviendo su primer benchmark de frontera y dejando registro de todo.</p><div class="bar-prog" aria-hidden="true"><i style="--w:20%"></i></div></li>
-      <li><span class="st">Después</span><h3>Crear sus habilidades</h3><p>Que proponga sus propias habilidades y las pruebe sin romper lo anterior.</p><div class="bar-prog" aria-hidden="true"><i></i></div></li>
-      <li><span class="st">Al final</span><h3>Un reporte honesto</h3><p>Lo comparamos con otras tres formas de mejorarse. Si no gana, lo diremos.</p><div class="bar-prog" aria-hidden="true"><i></i></div></li>
+      <li class="done"><span class="st" data-es="Listo">Done</span><h3 data-es="Laboratorio armado">Lab built</h3><p data-es="El sistema para crear, probar y aprobar habilidades, con registro de todo, ya probado con tareas de práctica.">The system to create, test and approve skills, with a record of everything, already tested on practice tasks.</p><div class="bar-prog" aria-hidden="true"><i style="--w:100%"></i></div></li>
+      <li class="now"><span class="st" data-es="Ahora">Now</span><h3 data-es="Conectar el cerebro">Connect the brain</h3><p data-es="Muse Spark resolviendo su primer benchmark de frontera y dejando registro de todo.">Muse Spark solving its first frontier benchmark and recording everything.</p><div class="bar-prog" aria-hidden="true"><i style="--w:20%"></i></div></li>
+      <li><span class="st" data-es="Después">Next</span><h3 data-es="Crear sus habilidades">Create its skills</h3><p data-es="Que proponga sus propias habilidades y las pruebe sin romper lo anterior.">Have it propose its own skills and test them without breaking what came before.</p><div class="bar-prog" aria-hidden="true"><i></i></div></li>
+      <li><span class="st" data-es="Al final">Finally</span><h3 data-es="Un reporte honesto">An honest report</h3><p data-es="Lo comparamos con otras tres formas de mejorarse. Si no gana, lo diremos.">We compare it with three other ways of improving. If it doesn't win, we'll say so.</p><div class="bar-prog" aria-hidden="true"><i></i></div></li>
     </ol>
   </div>
 </section>
@@ -506,19 +595,24 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   <div class="wrap">
     <div class="foot">
       <div>
-        <h2>Mira el laboratorio por dentro</h2>
-        <p>El registro del laboratorio: las pruebas, las decisiones y lo que falta por medir.</p>
+        <h2 data-es="Mira el laboratorio por dentro">See the lab from the inside</h2>
+        <p data-es="El registro del laboratorio: las pruebas, las decisiones y lo que falta por medir.">The lab's record: the tests, the decisions and what is still to be measured.</p>
       </div>
       <div class="right">
-        <a class="btn" href="/panel/">Ver los datos
+        <a class="btn" href="/panel/"><span data-es="Ver los datos">See the data</span>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5 4h7v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </a>
-        <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><path fill="#fff" d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a6.624 6.624 0 0 0 .265.86 5.297 5.297 0 0 0 .371.761c.696 1.159 1.818 1.927 3.593 1.927 1.497 0 2.633-.671 3.965-2.444.76-1.012 1.144-1.626 2.663-4.32l.756-1.339.186-.325c.061.1.121.196.183.3l2.152 3.595c.724 1.21 1.665 2.556 2.47 3.314 1.046.987 1.992 1.22 3.06 1.22 1.075 0 1.876-.355 2.455-.843a3.743 3.743 0 0 0 .81-.973c.542-.939.861-2.127.861-3.745 0-2.72-.681-5.357-2.084-7.45-1.282-1.912-2.957-2.93-4.716-2.93-1.047 0-2.088.467-3.053 1.308-.652.57-1.257 1.29-1.82 2.05-.69-.875-1.335-1.547-1.958-2.056-1.182-.966-2.315-1.303-3.454-1.303zm10.16 2.053c1.147 0 2.188.758 2.992 1.999 1.132 1.748 1.647 4.195 1.647 6.4 0 1.548-.368 2.9-1.839 2.9-.58 0-1.027-.23-1.664-1.004-.496-.601-1.343-1.878-2.832-4.358l-.617-1.028a44.908 44.908 0 0 0-1.255-1.98c.07-.109.141-.224.211-.327 1.12-1.667 2.118-2.602 3.358-2.602zm-10.201.553c1.265 0 2.058.791 2.675 1.446.307.327.737.871 1.234 1.579l-1.02 1.566c-.757 1.163-1.882 3.017-2.837 4.338-1.191 1.649-1.81 1.817-2.486 1.817-.524 0-1.038-.237-1.383-.794-.263-.426-.464-1.13-.464-2.046 0-2.221.63-4.535 1.66-6.088.454-.687.964-1.226 1.533-1.533a2.264 2.264 0 0 1 1.088-.285z"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Global AI Developer Hackathon 2026</span></span>
+        <span class="lockup"><svg class="meta-logo white" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#meta"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Global AI Developer Hackathon 2026</span></span>
       </div>
     </div>
     <div class="name" aria-hidden="true">Agentztein</div>
   </div>
-  <div class="fine-foot"><div class="wrap"><span>Hecho en el Bajío, México</span><span>Proyecto participante en el Meta Global AI Developer Hackathon 2026, organizado con Cerebral Valley</span><span>Sin resultados inventados</span></div></div>
+  <div class="fine-foot"><div class="wrap">
+    <span data-es="Hecho en el Bajío, México">Made in the Bajío, Mexico</span>
+    <span data-es="Proyecto participante en el Meta Global AI Developer Hackathon 2026, organizado con Cerebral Valley">Participating project in the Meta Global AI Developer Hackathon 2026, organized with Cerebral Valley</span>
+    <span data-es="Sin resultados inventados">No made-up results</span>
+    <span data-es="Agentztein es un homenaje a Muse; no es un producto oficial de Meta">Agentztein is a tribute to Muse; not an official Meta product</span>
+  </div></div>
 </footer>
 
 <script type="module" src="lab.js"></script>
@@ -526,40 +620,146 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 (() => {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const $ = (s) => document.querySelector(s);
+  const root = document.documentElement;
   const replay = (el, cls) => { if (reduce) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+  let lang = root.lang === "es" ? "es" : "en";
+  const L = (o) => (typeof o === "string" ? o : o[lang] ?? o.en);
 
-  /* The walkable lab: what each station measures */
-  const INFO = {
-    cuna: { c: "#0081fb", name: "La cuna", l1: "Qué es", a: "Donde Agentztein despierta: las bobinas le dan la descarga que lo pone en marcha.", l2: "Pruébalo", b: "Cada vez que lo traes aquí, vuelve a la vida." },
-    swe: { c: "#5b9bff", name: "SWE-bench Pro", l1: "Qué mide", a: "Si arregla errores reales en proyectos de software de código abierto.", l2: "Habilidad que entrena", b: "Código." },
-    terminal: { c: "#2ec4b6", name: "Terminal-Bench", l1: "Qué mide", a: "Si completa tareas largas en la terminal (compilar, configurar, depurar) sin ayuda.", l2: "Habilidad que entrena", b: "Terminal." },
-    arc: { c: "#ff8f70", name: "ARC-AGI-3", l1: "Qué mide", a: "Si descubre las reglas de juegos interactivos que nunca ha visto. Al lanzarse en 2026, las personas los resolvían y los mejores modelos casi nada.", l2: "Habilidad que entrena", b: "Razonamiento." },
-    web: { c: "#3ccf6e", name: "BrowseComp", l1: "Qué mide", a: "Si encuentra información muy difícil de hallar navegando la web.", l2: "Habilidad que entrena", b: "Web." },
-    research: { c: "#ffb53d", name: "MLE-bench y PaperBench", l1: "Qué mide", a: "Si hace investigación de IA: resolver competencias de machine learning y replicar artículos científicos.", l2: "Habilidad que entrena", b: "Investigación." },
-    horizon: { c: "#8a7dff", name: "Horizonte de METR", l1: "Qué mide", a: "Cuántas horas de trabajo experto completa solo. En los mejores modelos se ha duplicado cada pocos meses.", l2: "Habilidad que entrena", b: "Autonomía." },
+  /* ---------- Language: English in the markup, Spanish next to it in data-es ---------- */
+  const ATTRS = ["aria-label", "alt"];
+  document.querySelectorAll("[data-es]").forEach((el) => { el.dataset.en = el.innerHTML; });
+  ATTRS.forEach((a) => document.querySelectorAll(`[data-es-${a}]`).forEach((el) => { el.dataset[`en${a.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase())}`] = el.getAttribute(a); }));
+  const META = {
+    en: { title: "Agentztein · The AI that builds itself", desc: "Agentztein is an AI research agent that creates its own skills, tests them on frontier benchmarks and keeps only the ones that make it better. With Meta's Muse Spark as its brain." },
+    es: { title: "Agentztein · La IA que se desarrolla sola", desc: "Agentztein es un agente de investigación de IA que crea sus propias habilidades, las pone a prueba en benchmarks de frontera y solo se queda con las que lo hacen mejor. Con Muse Spark de Meta como cerebro." },
   };
+  const applyLang = (l, announce) => {
+    lang = l;
+    root.lang = l;
+    document.querySelectorAll("[data-es]").forEach((el) => { el.innerHTML = l === "es" ? el.dataset.es : el.dataset.en; });
+    ATTRS.forEach((a) => {
+      const key = `en${a.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase())}`;
+      document.querySelectorAll(`[data-es-${a}]`).forEach((el) => el.setAttribute(a, l === "es" ? el.getAttribute(`data-es-${a}`) : el.dataset[key]));
+    });
+    document.title = META[l].title;
+    document.querySelector('meta[name="description"]').setAttribute("content", META[l].desc);
+    document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
+    try { localStorage.setItem("agz-lang", l); } catch { /* private mode */ }
+    if (announce) {
+      document.dispatchEvent(new CustomEvent("lang:change", { detail: l }));
+      if (current) { const id = current; current = ""; show(id); }
+      if (dlg.open) fillStep(stepIx);
+      if (running) closeConsole();
+    }
+    runTxt.textContent = L(running ? T.running : T.run);
+    if (matchMedia("(pointer: coarse)").matches) $("#roomHint").textContent = L(T.hintTouch);
+  };
+  document.querySelectorAll(".lang button").forEach((b) => b.addEventListener("click", () => { if (b.dataset.lang !== lang) applyLang(b.dataset.lang, true); }));
+
+  const T = {
+    run: { en: "Run an exercise ", es: "Correr un ejercicio " },
+    running: { en: "Running… ", es: "Corriendo… " },
+    hintTouch: { en: "Tap the floor or use the buttons", es: "Toca el piso o usa los botones" },
+    end: { en: "This is how the cycle will work. It's an illustrative simulation: these are not real results yet.", es: "Así funcionará el ciclo. Es una simulación ilustrativa: todavía no son resultados reales." },
+    stepOf: { en: (i) => `Step ${i} of 4`, es: (i) => `Paso ${i} de 4` },
+  };
+
+  /* ---------- Nav: mobile menu, lifts on scroll, current section ---------- */
+  const bar = $(".bar"), burger = $(".burger"), menu = $("#menu");
+  const setMenu = (open) => { bar.classList.toggle("open", open); burger.setAttribute("aria-expanded", String(open)); burger.setAttribute("aria-label", open ? (lang === "es" ? "Cerrar menú" : "Close menu") : (lang === "es" ? "Abrir menú" : "Open menu")); };
+  burger.addEventListener("click", () => setMenu(!bar.classList.contains("open")));
+  menu.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setMenu(false)));
+  addEventListener("keydown", (e) => { if (e.key === "Escape") setMenu(false); });
+  const onScroll = () => bar.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  /* ---------- Step details ---------- */
+  const STEPS = [
+    {
+      c: "#f0533c", img: "img/step1.webp",
+      title: { en: "Learns from its mistakes", es: "Aprende de sus errores" },
+      body: { en: "Every run leaves a full record: what it saw, what it decided, how long it took and what it cost. Agentztein reads its failures, groups them by pattern and writes one new skill to fix the most common one.", es: "Cada corrida deja un registro completo: qué vio, qué decidió, cuánto tardó y cuánto costó. Agentztein lee sus fallas, las agrupa por patrón y escribe una sola habilidad nueva para corregir la más común." },
+      ex: { en: "In ARC-AGI-3 puzzles it kept searching the web for answers that don't exist. Pattern found: in new games, searching only wastes time. New skill: “explore first: move a piece and watch”.", es: "En los acertijos de ARC-AGI-3 buscaba en la web respuestas que no existen. Patrón: en juegos nuevos, buscar solo gasta tiempo. Habilidad nueva: «primero explora: mueve una pieza y observa»." },
+      list: { en: ["One skill at a time, so we know exactly what changed.", "It never sees the sealed final exam while learning.", "The model's weights are never touched: a skill is written instructions."], es: ["Una habilidad a la vez, para saber exactamente qué cambió.", "Nunca ve el examen final sellado mientras aprende.", "Los pesos del modelo no se tocan: una habilidad son instrucciones escritas."] },
+    },
+    {
+      c: "#0081fb", img: "img/step2.webp",
+      title: { en: "Tests it", es: "La pone a prueba" },
+      body: { en: "The new skill is compared against the current version on tasks it has never seen, including the ones it already solved. If it helps in one place but breaks another, it doesn't pass.", es: "La habilidad nueva se compara contra la versión actual en tareas que nunca ha visto, incluidas las que ya resolvía. Si ayuda en un lado pero rompe otro, no pasa." },
+      ex: { en: "“Explore first” improves the puzzles, but we also rerun BrowseComp, where searching the web is exactly what's needed, to make sure nothing broke.", es: "«Primero explora» mejora los acertijos, pero también se vuelve a correr BrowseComp, donde buscar en la web es justo lo necesario, para confirmar que nada se rompió." },
+      list: { en: ["Success criteria are written before the experiment, so they can't be adjusted afterwards.", "Results come with ranges, and inconclusive ones are marked as such.", "The cost of trying counts too, including the ideas that were discarded."], es: ["Los criterios de éxito se escriben antes del experimento, para no acomodarlos después.", "Los resultados llevan rangos y los no concluyentes se marcan como tales.", "También cuenta el costo de intentar, incluidas las ideas descartadas."] },
+    },
+    {
+      c: "#22b864", img: "img/step3.webp",
+      title: { en: "Keeps it", es: "Se la queda" },
+      body: { en: "If it improves without breaking anything and a person approves it, the skill is sewn on with a label: where it applies (its scope) and which version of the rules it was tested with (its validity).", es: "Si mejora sin romper nada y una persona la aprueba, la habilidad se cose con una etiqueta: dónde aplica (su alcance) y con qué versión de las reglas se probó (su vigencia)." },
+      ex: { en: "“Explore first” is sewn on only for new puzzle games. In web research, Agentztein keeps searching as before.", es: "«Primero explora» se cose solo para juegos nuevos. En investigación web, Agentztein sigue buscando como antes." },
+      list: { en: ["A person approves every new piece.", "The skill only activates where it proved it works.", "Everything goes into a log that can't be edited."], es: ["Una persona aprueba cada pieza nueva.", "La habilidad solo se activa donde demostró funcionar.", "Todo queda en un registro que no se puede editar."] },
+    },
+    {
+      c: "#ffa928", img: "img/step4.webp",
+      title: { en: "Keeps up to date", es: "Se mantiene al día" },
+      body: { en: "Benchmarks change: new versions, new rules, new judges. When that happens, only the skills whose label covers the change go back to review. Nothing is deleted: old versions are kept in case they're needed again.", es: "Los benchmarks cambian: versiones nuevas, reglas nuevas, jueces nuevos. Cuando pasa, solo vuelven a revisión las habilidades cuya etiqueta cubre ese cambio. Nada se borra: las versiones viejas se guardan por si hacen falta." },
+      ex: { en: "If Benchmark v2 turns the internet off, the skills that depend on searching go back to the lab. Code and terminal skills keep working untouched.", es: "Si el Benchmark v2 apaga internet, las habilidades que dependen de buscar vuelven al laboratorio. Las de código y terminal siguen intactas." },
+      list: { en: ["Changes are declared explicitly; nothing is guessed.", "Any change can be undone without losing history.", "We measure how long it takes to recover after a change."], es: ["Los cambios se declaran de forma explícita; nada se adivina.", "Cualquier cambio se puede deshacer sin perder el historial.", "Medimos cuánto tarda en recuperarse después de un cambio."] },
+    },
+  ];
+  const dlg = $("#stepDlg");
+  let stepIx = 0;
+  const fillStep = (i) => {
+    stepIx = i;
+    const s = STEPS[i];
+    dlg.style.setProperty("--c", s.c);
+    $("#dlgImg").src = s.img;
+    $("#dlgImg").alt = document.querySelectorAll(".step .ph img")[i].alt;
+    $("#dlgKicker").textContent = L(T.stepOf)(i + 1);
+    $("#dlgTitle").textContent = L(s.title);
+    $("#dlgBody").textContent = L(s.body);
+    $("#dlgEx").textContent = L(s.ex);
+    const ul = $("#dlgList"); ul.innerHTML = "";
+    L(s.list).forEach((t) => { const li = document.createElement("li"); li.textContent = t; ul.append(li); });
+    $("#dlgPrev").disabled = i === 0;
+    $("#dlgNext").disabled = i === STEPS.length - 1;
+  };
+  document.querySelectorAll(".more").forEach((b) => b.addEventListener("click", () => { fillStep(Number(b.dataset.step)); dlg.showModal(); }));
+  $("#dlgPrev").addEventListener("click", () => { if (stepIx > 0) { fillStep(stepIx - 1); replay($(".sheet-in"), "swap"); } });
+  $("#dlgNext").addEventListener("click", () => { if (stepIx < STEPS.length - 1) { fillStep(stepIx + 1); replay($(".sheet-in"), "swap"); } });
+  $("#dlgClose").addEventListener("click", () => dlg.close());
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") $("#dlgNext").click(); if (e.key === "ArrowLeft") $("#dlgPrev").click(); });
+
+  /* ---------- The walkable lab: what each station measures ---------- */
+  const INFO = {
+    cuna: { c: "#0081fb", name: { en: "The cradle", es: "La cuna" }, l1: { en: "What it is", es: "Qué es" }, a: { en: "Where Agentztein wakes up: the coils give it the jolt that gets it going.", es: "Donde Agentztein despierta: las bobinas le dan la descarga que lo pone en marcha." }, l2: { en: "Try it", es: "Pruébalo" }, b: { en: "Every time you bring it here, it comes back to life.", es: "Cada vez que lo traes aquí, vuelve a la vida." } },
+    swe: { c: "#5b9bff", name: "SWE-bench Pro", a: { en: "Whether it fixes real bugs in open-source software projects.", es: "Si arregla errores reales en proyectos de software de código abierto." }, b: { en: "Code.", es: "Código." } },
+    terminal: { c: "#2ec4b6", name: "Terminal-Bench", a: { en: "Whether it completes long terminal tasks (building, configuring, debugging) without help.", es: "Si completa tareas largas en la terminal (compilar, configurar, depurar) sin ayuda." }, b: { en: "Terminal.", es: "Terminal." } },
+    arc: { c: "#ff8f70", name: "ARC-AGI-3", a: { en: "Whether it figures out the rules of interactive games it has never seen. At launch in 2026, people solved them and the best models almost none.", es: "Si descubre las reglas de juegos interactivos que nunca ha visto. Al lanzarse en 2026, las personas los resolvían y los mejores modelos casi nada." }, b: { en: "Reasoning.", es: "Razonamiento." } },
+    web: { c: "#3ccf6e", name: "BrowseComp", a: { en: "Whether it finds very hard-to-find information by browsing the web.", es: "Si encuentra información muy difícil de hallar navegando la web." }, b: { en: "Web.", es: "Web." } },
+    research: { c: "#ffb53d", name: { en: "MLE-bench & PaperBench", es: "MLE-bench y PaperBench" }, a: { en: "Whether it does AI research: solving machine learning competitions and replicating scientific papers.", es: "Si hace investigación de IA: resolver competencias de machine learning y replicar artículos científicos." }, b: { en: "Research.", es: "Investigación." } },
+    horizon: { c: "#8a7dff", name: { en: "METR time horizon", es: "Horizonte de METR" }, a: { en: "How many hours of expert work it completes on its own. For the best models it has doubled every few months.", es: "Cuántas horas de trabajo experto completa solo. En los mejores modelos se ha duplicado cada pocos meses." }, b: { en: "Autonomy.", es: "Autonomía." } },
+  };
+  const MEASURES = { en: "What it measures", es: "Qué mide" }, TRAINS = { en: "Skill it trains", es: "Habilidad que entrena" };
   const picks = [...document.querySelectorAll(".pick")];
-  const card = $("#card");
+  const card = $("#card"), runBtn = $("#runBtn"), runTxt = $("#runTxt");
   let current = "";
-  const show = (id) => {
+  function show(id) {
     const j = INFO[id];
     if (!j || id === current) return;
     current = id;
     picks.forEach((p) => p.setAttribute("aria-pressed", String(p.dataset.id === id)));
     $("#cDot").style.setProperty("--c", j.c);
-    $("#cName").textContent = j.name;
-    $("#cL1").textContent = j.l1; $("#cA").textContent = j.a;
-    $("#cL2").textContent = j.l2; $("#cB").textContent = j.b;
-    runBtn.hidden = !(EX[id] && document.documentElement.classList.contains("room-3d"));
+    $("#cName").textContent = L(j.name);
+    $("#cL1").textContent = L(j.l1 || MEASURES); $("#cA").textContent = L(j.a);
+    $("#cL2").textContent = L(j.l2 || TRAINS); $("#cB").textContent = L(j.b);
+    runBtn.hidden = !(EX[id] && root.classList.contains("room-3d"));
     replay(card, "swap");
-  };
+  }
   $("#cDot").style.setProperty("--c", "#0081fb");
   picks.forEach((p) => p.addEventListener("click", () => {
     document.dispatchEvent(new CustomEvent("room:goto", { detail: p.dataset.id }));
-    if (!document.documentElement.classList.contains("room-3d")) show(p.dataset.id);
+    if (!root.classList.contains("room-3d")) show(p.dataset.id);
   }));
   document.addEventListener("room:arrive", (e) => show(e.detail));
-  if (matchMedia("(pointer: coarse)").matches) $("#roomHint").textContent = "Toca el piso o usa los botones";
   if (matchMedia("(max-width: 760px)").matches) $(".stage-wrap").append($("#console"));
 
   /* The pad: hold a button to move */
@@ -571,50 +771,51 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   });
 
   /* An example exercise per station: the whole cycle, acted out in the lab. A simulation, not a result. */
+  const S = (kind, en, es) => [kind, { en, es }];
   const EX = {
-    swe: ["Arreglar un error en una librería de fechas", [
-      ["run", "Lee el reporte del error y el código"], ["fail", "Intento 1: cambia la función, pero 3 pruebas fallan"],
-      ["think", "Revisa sus fallas: entrega sin correr las pruebas"], ["new", "Crea una habilidad: «corre las pruebas antes de entregar»"],
-      ["ok", "Intento 2 con la habilidad: todas las pruebas pasan"], ["ok", "Revisa tareas viejas de código: siguen bien"],
-      ["install", "Se la queda, solo para tareas de código"]]],
-    terminal: ["Compilar un proyecto y levantar su servidor", [
-      ["run", "Instala dependencias y compila"], ["fail", "Intento 1: falta una librería y se atora"],
-      ["think", "Patrón: no lee el mensaje de error completo"], ["new", "Crea una habilidad: «lee el error completo antes de reintentar»"],
-      ["ok", "Intento 2: compila y el servidor responde"], ["ok", "Revisa tareas viejas de terminal: siguen bien"],
-      ["install", "Se la queda, solo para la terminal"]]],
-    arc: ["Un juego nuevo, sin instrucciones", [
-      ["run", "Mira el tablero: bloques de colores"], ["fail", "Intento 1: busca la respuesta en internet… no existe"],
-      ["think", "Patrón: en juegos nuevos, buscar en la web solo gasta tiempo"], ["new", "Crea una habilidad: «primero explora: mueve una pieza y observa»"],
-      ["ok", "Intento 2: descubre la regla y pasa el nivel"], ["ok", "Revisa BrowseComp: ahí buscar en la web sigue funcionando"],
-      ["install", "Se la queda, solo para juegos nuevos"]]],
-    web: ["¿En qué año se publicó un dataset poco conocido?", [
-      ["run", "Busca en la web"], ["fail", "Intento 1: confía en el primer resultado… era otro dataset"],
-      ["think", "Patrón: no confirma con una segunda fuente"], ["new", "Crea una habilidad: «confirma cada dato en dos fuentes»"],
-      ["ok", "Intento 2: encuentra el año correcto"], ["ok", "Revisa preguntas viejas: siguen bien"],
-      ["install", "Se la queda, solo para investigación web"]]],
-    research: ["Replicar el resultado de un artículo", [
-      ["run", "Lee el artículo y prepara el experimento"], ["fail", "Intento 1: el número no coincide"],
-      ["think", "Patrón: cambió la semilla aleatoria sin anotarla"], ["new", "Crea una habilidad: «fija y anota la semilla en cada corrida»"],
-      ["ok", "Intento 2: el resultado coincide con el artículo"], ["ok", "Revisa competencias de ML viejas: siguen bien"],
-      ["install", "Se la queda, solo para investigación"]]],
-    horizon: ["Una tarea de varias horas seguidas", [
-      ["run", "Empieza la tarea larga"], ["fail", "Intento 1: a la mitad pierde el hilo y repite pasos"],
-      ["think", "Patrón: no lleva registro de lo que ya hizo"], ["new", "Crea una habilidad: «lleva una bitácora y revísala cada hora»"],
-      ["ok", "Intento 2: termina la tarea completa"], ["ok", "Revisa tareas cortas: siguen igual de bien"],
-      ["install", "Se la queda, para tareas largas"]]],
+    swe: [{ en: "Fix a bug in a date library", es: "Arreglar un error en una librería de fechas" }, [
+      S("run", "Reads the bug report and the code", "Lee el reporte del error y el código"), S("fail", "Attempt 1: changes the function, but 3 tests fail", "Intento 1: cambia la función, pero 3 pruebas fallan"),
+      S("think", "Reviews its failures: it ships without running the tests", "Revisa sus fallas: entrega sin correr las pruebas"), S("new", "Creates a skill: “run the tests before shipping”", "Crea una habilidad: «corre las pruebas antes de entregar»"),
+      S("ok", "Attempt 2 with the skill: all tests pass", "Intento 2 con la habilidad: todas las pruebas pasan"), S("ok", "Checks old code tasks: still fine", "Revisa tareas viejas de código: siguen bien"),
+      S("install", "Keeps it, only for code tasks", "Se la queda, solo para tareas de código")]],
+    terminal: [{ en: "Build a project and start its server", es: "Compilar un proyecto y levantar su servidor" }, [
+      S("run", "Installs dependencies and builds", "Instala dependencias y compila"), S("fail", "Attempt 1: a library is missing and it gets stuck", "Intento 1: falta una librería y se atora"),
+      S("think", "Pattern: it doesn't read the full error message", "Patrón: no lee el mensaje de error completo"), S("new", "Creates a skill: “read the whole error before retrying”", "Crea una habilidad: «lee el error completo antes de reintentar»"),
+      S("ok", "Attempt 2: it builds and the server answers", "Intento 2: compila y el servidor responde"), S("ok", "Checks old terminal tasks: still fine", "Revisa tareas viejas de terminal: siguen bien"),
+      S("install", "Keeps it, only for the terminal", "Se la queda, solo para la terminal")]],
+    arc: [{ en: "A new game, no instructions", es: "Un juego nuevo, sin instrucciones" }, [
+      S("run", "Looks at the board: colored blocks", "Mira el tablero: bloques de colores"), S("fail", "Attempt 1: searches the web for the answer… it doesn't exist", "Intento 1: busca la respuesta en internet… no existe"),
+      S("think", "Pattern: in new games, searching the web only wastes time", "Patrón: en juegos nuevos, buscar en la web solo gasta tiempo"), S("new", "Creates a skill: “explore first: move a piece and watch”", "Crea una habilidad: «primero explora: mueve una pieza y observa»"),
+      S("ok", "Attempt 2: finds the rule and clears the level", "Intento 2: descubre la regla y pasa el nivel"), S("ok", "Checks BrowseComp: searching the web still works there", "Revisa BrowseComp: ahí buscar en la web sigue funcionando"),
+      S("install", "Keeps it, only for new games", "Se la queda, solo para juegos nuevos")]],
+    web: [{ en: "What year was an obscure dataset published?", es: "¿En qué año se publicó un dataset poco conocido?" }, [
+      S("run", "Searches the web", "Busca en la web"), S("fail", "Attempt 1: trusts the first result… it was a different dataset", "Intento 1: confía en el primer resultado… era otro dataset"),
+      S("think", "Pattern: it doesn't confirm with a second source", "Patrón: no confirma con una segunda fuente"), S("new", "Creates a skill: “confirm every fact in two sources”", "Crea una habilidad: «confirma cada dato en dos fuentes»"),
+      S("ok", "Attempt 2: finds the right year", "Intento 2: encuentra el año correcto"), S("ok", "Checks old questions: still fine", "Revisa preguntas viejas: siguen bien"),
+      S("install", "Keeps it, only for web research", "Se la queda, solo para investigación web")]],
+    research: [{ en: "Replicate a paper's result", es: "Replicar el resultado de un artículo" }, [
+      S("run", "Reads the paper and sets up the experiment", "Lee el artículo y prepara el experimento"), S("fail", "Attempt 1: the number doesn't match", "Intento 1: el número no coincide"),
+      S("think", "Pattern: it changed the random seed without writing it down", "Patrón: cambió la semilla aleatoria sin anotarla"), S("new", "Creates a skill: “fix and log the seed on every run”", "Crea una habilidad: «fija y anota la semilla en cada corrida»"),
+      S("ok", "Attempt 2: the result matches the paper", "Intento 2: el resultado coincide con el artículo"), S("ok", "Checks old ML competitions: still fine", "Revisa competencias de ML viejas: siguen bien"),
+      S("install", "Keeps it, only for research", "Se la queda, solo para investigación")]],
+    horizon: [{ en: "A task several hours long", es: "Una tarea de varias horas seguidas" }, [
+      S("run", "Starts the long task", "Empieza la tarea larga"), S("fail", "Attempt 1: halfway through it loses track and repeats steps", "Intento 1: a la mitad pierde el hilo y repite pasos"),
+      S("think", "Pattern: it doesn't keep a record of what it already did", "Patrón: no lleva registro de lo que ya hizo"), S("new", "Creates a skill: “keep a log and review it every hour”", "Crea una habilidad: «lleva una bitácora y revísala cada hora»"),
+      S("ok", "Attempt 2: finishes the whole task", "Intento 2: termina la tarea completa"), S("ok", "Checks short tasks: just as good", "Revisa tareas cortas: siguen igual de bien"),
+      S("install", "Keeps it, for long tasks", "Se la queda, para tareas largas")]],
   };
   const ICON = { run: "▸", fail: "✕", think: "…", new: "✦", ok: "✓", install: "✓" };
-  const runBtn = $("#runBtn"), con = $("#console"), log = $("#exLog"), end = $("#exEnd");
+  const con = $("#console"), log = $("#exLog"), end = $("#exEnd");
   let timers = [], running = "";
-  const stop = () => { timers.forEach(clearTimeout); timers = []; running = ""; runBtn.disabled = false; runBtn.firstChild.textContent = "Correr un ejercicio "; };
+  const stop = () => { timers.forEach(clearTimeout); timers = []; running = ""; runBtn.disabled = false; runTxt.textContent = L(T.run); };
   const closeConsole = () => { stop(); con.hidden = true; };
   const run = () => {
     const id = current, ex = EX[id];
     if (!ex) return;
     stop();
     running = id;
-    runBtn.disabled = true; runBtn.firstChild.textContent = "Corriendo… ";
-    $("#exTitle").textContent = ex[0];
+    runBtn.disabled = true; runTxt.textContent = L(T.running);
+    $("#exTitle").textContent = L(ex[0]);
     log.innerHTML = ""; end.textContent = ""; con.hidden = false;
     const gap = reduce ? 500 : 1500;
     ex[1].forEach(([kind, text], i) => {
@@ -623,14 +824,11 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         const li = document.createElement("li");
         li.className = kind + (i < ex[1].length - 1 ? " now" : "");
         li.innerHTML = `<i aria-hidden="true">${ICON[kind]}</i><span></span>`;
-        li.lastChild.textContent = text;
+        li.lastChild.textContent = L(text);
         log.append(li);
         li.scrollIntoView({ block: "nearest" });
         document.dispatchEvent(new CustomEvent("room:react", { detail: kind }));
-        if (i === ex[1].length - 1) {
-          end.textContent = "Así funcionará el ciclo. Es una simulación ilustrativa: todavía no son resultados reales.";
-          stop();
-        }
+        if (i === ex[1].length - 1) { end.textContent = L(T.end); stop(); }
       }, 300 + i * gap));
     });
   };
@@ -638,12 +836,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   $("#exClose").addEventListener("click", closeConsole);
   document.addEventListener("room:move", () => { if (running || !con.hidden) closeConsole(); });
 
-  /* Nav lifts once the page scrolls */
-  const bar = $(".bar");
-  const onScroll = () => bar.classList.toggle("scrolled", scrollY > 8);
-  addEventListener("scroll", onScroll, { passive: true }); onScroll();
-
-  /* Numbers count up when they appear */
+  /* ---------- Motion ---------- */
   const counters = [...document.querySelectorAll(".facts b")];
   const cio = new IntersectionObserver((es) => es.forEach((e) => {
     if (!e.isIntersecting) return;
@@ -655,8 +848,6 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     el.textContent = "0"; requestAnimationFrame(step);
   }), { threshold: .6 });
   counters.forEach((c) => cio.observe(c));
-
-  /* Cards lean toward the pointer */
   if (!reduce && matchMedia("(pointer: fine)").matches) {
     document.querySelectorAll(".step, .road li").forEach((el) => {
       el.classList.add("tilt");
@@ -668,13 +859,13 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
       el.addEventListener("pointerleave", () => { el.style.removeProperty("--rx"); el.style.removeProperty("--ry"); });
     });
   }
-
-  /* Entrances + nav */
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12, rootMargin: "0px 0px -8% 0px" });
   document.querySelectorAll(".ent").forEach((el) => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add("in"); else io.observe(el); });
-  const links = [...document.querySelectorAll(".links a")];
+  const links = [...document.querySelectorAll(".links a[href^='#']")];
   const nio = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) links.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id)); }), { rootMargin: "-50% 0px -50% 0px" });
   ["como-funciona", "laboratorio", "meta", "avance"].forEach((id) => nio.observe(document.getElementById(id)));
+
+  applyLang(lang, false);
 })();
 </script>
 </body>

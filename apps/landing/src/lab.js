@@ -93,7 +93,7 @@ export function renderStill(canvas, which, size = 900) {
       awake(agent, "think");
       setArms(agent, -1.3, 0.14, 0.2, 0);
       paintScreen(u.screenTex, "alert");
-      const paper = makePaper([["Código", "✓"], ["Terminal", "✓"], ["Acertijo", "✗"], ["Web", "✓"], ["Paper", "✓"]], { title: "Mis pruebas", bad: 2 });
+      const paper = makePaper([["Code", "✓"], ["Terminal", "✓"], ["Puzzle", "✗"], ["Web", "✓"], ["Paper", "✓"]], { title: "My tests", bad: 2 });
       paper.position.set(-1.3, 1.75, 0.6); paper.rotation.set(0, 0.45, 0.04);
       const x = makeBadge("x"); x.position.set(-1.55, 2.55, 0.85); x.rotation.y = 0.35;
       const glass = new THREE.Group();
@@ -112,7 +112,7 @@ export function renderStill(canvas, which, size = 900) {
       setArms(agent, -0.14, 1.5, 0, -0.3);
       paintScreen(u.screenTex, "test");
       const coil = makeCoil(1.85); coil.position.set(1.85, -0.3, -0.7); scene.add(coil);
-      const chip = makeChip({ ...SKILLS[0], name: "Nueva" });
+      const chip = makeChip({ ...SKILLS[0], name: "New" });
       chip.position.set(1.1, 2.15, 0.6); chip.rotation.y = -0.3; chip.scale.setScalar(1.2);
       chip.userData.body.material.emissiveIntensity = 0.5;
       scene.add(chip);
@@ -145,9 +145,9 @@ export function renderStill(canvas, which, size = 900) {
       awake(agent, "think");
       setArms(agent, -0.14, 1.2, 0, -0.2);
       paintScreen(u.screenTex, "sync");
-      const paper = makePaper([["Tareas", "v2"], ["Tiempo", "12 h"], ["Internet", "ya no"], ["Juez", "nuevo"]], { title: "Benchmark v2", warn: 2 });
+      const paper = makePaper([["Tasks", "v2"], ["Time", "12 h"], ["Internet", "off"], ["Judge", "new"]], { title: "Benchmark v2", warn: 2 });
       paper.position.set(-1.3, 1.8, 0.6); paper.rotation.set(0, 0.45, -0.03);
-      const chip = makeChip({ ...SKILLS[4], color: C.amber, name: "A revisión" });
+      const chip = makeChip({ ...SKILLS[4], color: C.amber, name: "Review" });
       chip.position.set(1.35, 1.95, 0.6); chip.rotation.y = -0.35;
       const ring = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.03, 10, 64, Math.PI * 1.6), new THREE.MeshStandardMaterial({ color: C.amber, emissive: C.amber, emissiveIntensity: 0.3 }));
       ring.position.copy(chip.position); ring.rotation.y = -0.35;
