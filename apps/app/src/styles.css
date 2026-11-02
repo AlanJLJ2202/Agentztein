@@ -95,7 +95,7 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 /* ---------- Sign in ---------- */
 .signin { min-height: 100svh; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); background: #fff; }
 .signin-art { position: relative; overflow: hidden; background: radial-gradient(ellipse 60% 70% at 60% 55%, #fff 0%, #eef4fa 55%, #e1eaf3 100%); }
-.signin-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 50%; }
+.signin-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 60%; }
 .signin-box { display: grid; grid-template-rows: auto 1fr auto; gap: 24px; padding: 28px clamp(24px, 4vw, 56px); }
 .signin-copy { align-self: center; display: grid; gap: 18px; max-width: 460px; }
 .signin h1 { font-size: clamp(2.2rem, 1.4rem + 2.6vw, 3.4rem); font-weight: 800; letter-spacing: -.045em; line-height: 1; }
@@ -199,3 +199,20 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- Email sign-in ---------- */
+.or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: .875rem; font-weight: 600; }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: 999px; background: var(--soft); }
+.seg button { all: unset; box-sizing: border-box; text-align: center; padding: 10px 12px; border-radius: 999px; font-weight: 700; color: var(--muted); cursor: pointer; }
+.seg button[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 4px rgba(28, 43, 51, .12); }
+.seg button:focus-visible { outline: 3px solid var(--meta); }
+.authform { display: grid; gap: 14px; }
+.authform .btn { width: 100%; }
+.authform .link.small { justify-self: center; }
+.authform small { font-size: .8125rem; }
+.code { font: 700 1.5rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .5em; text-align: center; }
+.back { justify-self: start; }
+.signin-copy .h2 { font-size: clamp(1.8rem, 1.4rem + 1.2vw, 2.4rem); font-weight: 800; letter-spacing: -.035em; }
+.meta-note { margin-top: 16px; max-width: 46em; display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-radius: 14px; background: var(--sky); color: var(--ink); font-size: .9375rem; line-height: 1.45; }
+.meta-note svg { flex: none; margin-top: 1px; }

@@ -61,6 +61,39 @@ const table = (x, w) => `<rect x="${x}" y="300" width="${w}" height="12" rx="4" 
 
 /* ================= The cycle ================= */
 
+function researchDesk(L) {
+  const rows = [
+    ["Tree search for game-playing agents", L("Experiment", "Experimentar"), VIOLET, "#efeaff"],
+    ["New open model tops a leaderboard", L("Watch", "Vigilar"), AMBER, AMBERBG],
+    ["Prompt tricks that 10x everything", L("Skip", "Descartar"), "#7d8a96", "#eef2f6"],
+    ["Sandboxes for terminal agents", L("Experiment", "Experimentar"), VIOLET, "#efeaff"],
+  ];
+  let body = `<g transform="translate(30 60)"><rect width="370" height="250" rx="14" fill="#fff" stroke="#e1e7ed" stroke-width="2"/>
+    <rect width="370" height="40" rx="14" fill="#ff6600"/><rect y="26" width="370" height="14" fill="#ff6600"/>
+    <rect x="12" y="9" width="22" height="22" rx="3" fill="#fff"/>${t(23, 26, "Y", { size: 15, weight: 800, fill: "#ff6600", anchor: "middle" })}
+    ${t(44, 26, "Hacker News", { size: 15, weight: 800, fill: "#fff" })}
+    ${rows.map(([h, v, c, bg], i) => `<g transform="translate(12 ${54 + i * 48})">
+      ${rect(0, 0, 346, 40, "#f6f6ef", { r: 8 })}${t(12, 25, `${i + 1}. ${h}`, { size: 12, weight: 700 })}
+      <g transform="translate(262 6)"><g class="a-stamp"${d(0.6 + i * 0.7)}>${rect(0, 0, 78, 28, bg, { r: 14, stroke: c, sw: 1.5 })}${t(39, 19, v, { size: 10.5, weight: 800, fill: c, anchor: "middle" })}</g></g>
+    </g>`).join("")}
+  </g>`;
+  body += `<g transform="translate(500 110)">
+    <path d="M0 -40 V60 M-60 -20 H60" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>
+    <g class="a-tilt">
+      <path d="M-60 -20 l-22 40 h44 z M60 -20 l-22 40 h44 z" fill="none" stroke="#9aa8b5" stroke-width="2"/>
+      ${rect(-86, 20, 52, 30, OKBG, { r: 8 })}${t(-60, 40, L("gain", "gana"), { size: 11.5, weight: 800, fill: OK, anchor: "middle" })}
+      ${rect(34, 20, 52, 30, AMBERBG, { r: 8 })}${t(60, 40, L("cost", "cuesta"), { size: 11.5, weight: 800, fill: AMBER, anchor: "middle" })}
+    </g>
+    ${rect(-30, 60, 60, 10, "#cfd9e3", { r: 4 })}
+    ${t(0, 100, L("Trade-off", "Trade-off"), { size: 13, weight: 800, anchor: "middle" })}
+    ${t(0, 118, L("tokens · time · interference", "tokens · tiempo · interferencia"), { size: 11, weight: 600, fill: MUTED, anchor: "middle" })}
+  </g>`;
+  body += `<path class="a-flow" d="M402 120 C 440 120, 430 250, 470 268" fill="none" stroke="${VIOLET}" stroke-width="2.5" stroke-dasharray="6 6"/>`;
+  body += chip(470, 252, L("→ to the lab", "→ al laboratorio"), VIOLET, { cls: "a-pop", delay: 3.4, fill: "#f6f3ff", w: 150 });
+  return room(L("Research desk", "Mesa de investigación"), "#ff6600", body,
+    L("Research desk: a Hacker News page with four AI headlines, each stamped with a verdict (experiment, watch or skip). A balance weighs gain against cost, and the ideas worth an experiment go to the lab.", "Mesa de investigación: una página de Hacker News con cuatro titulares de IA, cada uno sellado con un veredicto (experimentar, vigilar o descartar). Una balanza pesa ganancia contra costo y las ideas que valen un experimento van al laboratorio."));
+}
+
 function failureLab(L) {
   const runs = [
     [70, "#3ccf6e", false, L("run 9", "corrida 9")],
@@ -283,7 +316,7 @@ function horizonLab(L) {
   return room(L("Time-horizon observatory", "Observatorio del horizonte"), "#8a7dff", body, L("METR time-horizon lab: a chart with task length for a skilled person on a log scale (1 minute to 1 day) and success rate from 0 to 100%. A newer model's S-shaped curve sits to the right of an older one; where it crosses 50% is its time horizon.", "Laboratorio del horizonte de METR: una gráfica con la duración de la tarea para una persona experta en escala logarítmica (de 1 minuto a 1 día) y la tasa de éxito de 0 a 100%. La curva en S de un modelo más nuevo queda a la derecha de una vieja; donde cruza el 50% es su horizonte de tiempo."));
 }
 
-const STEP_SCENES = [failureLab, testChamber, sewingBench, versionArchive];
+const STEP_SCENES = [researchDesk, failureLab, testChamber, sewingBench, versionArchive];
 const BENCH_SCENES = { swe: sweLab, terminal: terminalLab, arc: arcLab, web: webLab, research: researchLab, horizon: horizonLab };
 
 /** @param {number} i @param {"en"|"es"} lang */

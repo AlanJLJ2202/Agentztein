@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { renderRoomStill } from "./room.js";
 import {
   SKILLS, C, makeAgent, pose, setArms, makeCoil, makeBolt, makeChip, makePaper, makeBadge, makeBench,
-  setupRenderer, addLights, makeFloor, paintScreen, makeMetaLogo,
+  setupRenderer, addLights, makeFloor, paintScreen, makeMetaLogo, windowPanel, rr,
 } from "./agent.js";
 
 const COIL_X = 2.35;
@@ -87,6 +87,34 @@ export function renderStill(canvas, which, size = 900) {
       camera.lookAt(TARGET);
       scene.updateMatrixWorld(true);
       scene.children.filter((o) => o.userData.body).forEach((ch) => ch.lookAt(camera.position.x, ch.position.y, camera.position.z));
+    } else if (which === "step0") {
+      // researches: reads the week's AI news on Hacker News and sorts each idea
+      u.look.set(-0.85, 0.2);
+      awake(agent, "think");
+      setArms(agent, -1.25, 0.2, 0.15, 0);
+      paintScreen(u.screenTex, "pulse", 0.6);
+      const heads = ["Tree search for agents", "New open model tops a board", "Prompt tricks that 10x it all", "Sandboxes for terminal agents"];
+      const news = windowPanel(1.3, 1.4, false, (c, W) => {
+        c.fillStyle = "#ff6600"; c.fillRect(0, 50, W, 64);
+        c.fillStyle = "#ffffff"; c.fillRect(22, 62, 40, 40);
+        c.fillStyle = "#ff6600"; c.font = "800 34px Figtree, Arial"; c.fillText("Y", 31, 95);
+        c.fillStyle = "#ffffff"; c.font = "800 30px Figtree, Arial"; c.fillText("Hacker News", 78, 93);
+        heads.forEach((h, i) => {
+          const y = 150 + i * 92;
+          c.fillStyle = "#f6f6ef"; rr(c, 18, y, W - 36, 76, 12); c.fill();
+          c.fillStyle = "#828282"; c.font = "600 22px Figtree, Arial"; c.fillText(`${i + 1}.`, 32, y + 46);
+          c.fillStyle = "#1c2b33"; c.font = "700 24px Figtree, Arial"; c.fillText(h, 66, y + 46);
+        });
+      });
+      news.position.set(-1.35, 1.8, 0.5); news.rotation.set(0, 0.45, 0.02);
+      const tags = [
+        [{ ...SKILLS[0], color: 0x6d5ce8, name: "Try it" }, 1.3, 2.7],
+        [{ ...SKILLS[0], color: 0xffa928, name: "Watch" }, 1.5, 2.05],
+        [{ ...SKILLS[0], color: 0x9aa8b5, name: "Skip" }, 1.3, 1.4],
+      ].map(([s, x, y]) => { const ch = makeChip(s); ch.position.set(x, y, 0.4); ch.rotation.y = -0.35; ch.scale.setScalar(0.85); return ch; });
+      tags[0].userData.body.material.emissiveIntensity = 0.5;
+      scene.add(news, ...tags);
+      look(0, 2.1, 8.4, 0, 1.6, 0);
     } else if (which === "step1") {
       // learns from its mistakes: a page of results with one wrong row
       u.look.set(-0.9, 0.1);

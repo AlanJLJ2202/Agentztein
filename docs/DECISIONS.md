@@ -244,3 +244,19 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
 - **Marca:** el logo "Y" de Hacker News se usa para indicar la fuente, con aviso de no afiliación a
   Y Combinator; no se dice ni sugiere respaldo de YC.
 - **Pendiente:** fase 2 (créditos), que el radar corra solo a diario (cron) y conectar sus candidatas al ciclo E2–E5.
+
+## ADR-020 — Solo modelos de Meta, login con correo y ciclo de cinco fases
+- **Contexto:** Alan pidió (2 nov 2026) que Agentztein trabaje solo con modelos de Meta, que haya login con
+  correo y contraseña con código de verificación, y que investigar no pese más que las otras fases.
+- **Decisión:**
+  - **Meta Model API** (`https://api.meta.ai/v1`, compatible con OpenAI) como único proveedor: la Llama API se
+    retiró el 6 jul 2026. Modelo por defecto: el `muse-spark-X.Y` estándar más nuevo que liste la llave
+    (respaldo `muse-spark-1.1`); nunca un `-contributor` por defecto. Se quitó el SDK de Anthropic y los demás
+    proveedores. Limitación conocida: la vista previa de Meta está abierta a desarrolladores en EE. UU.
+  - **Correo + contraseña** con Supabase Auth: el código de 6 dígitos viene de las plantillas
+    (`supabase/templates/`, `{{ .Token }}`); `verifyOtp` tipo `email` (con respaldo `signup`) para confirmar y
+    tipo `recovery` para cambiar la contraseña.
+  - **Landing:** "Así se desarrolla sola" es un ciclo de 5 fases con el mismo peso (Investiga es la primera),
+    cada una con su imagen 3D de Agentztein y su animación; el feed en vivo de Hacker News vive en el detalle
+    de "Investiga". Cada benchmark abre un laboratorio 3D interactivo (three.js) con sus tres pasos; en
+    ARC-AGI-3 se puede jugar el nivel. Son ilustraciones, no resultados.

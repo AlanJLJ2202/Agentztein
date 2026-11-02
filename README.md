@@ -44,7 +44,7 @@ packages/env-recon   entorno sintético de conciliación: generador, reglas R1/R
 packages/scenarios   marco común + 5 escenarios de negocio (conciliación, manufactura, devoluciones, mensajes, envíos)
 packages/db          esquema Drizzle + migraciones (tablas append-only, esquema `sealed`)
 apps/panel           panel estático de solo lectura (Vite + React): validación del entorno, sin agentes aún
-apps/app             app con sesión (Vite + React) en /app/: login con Google, API key propia por usuario y radar de investigación
+apps/app             app con sesión (Vite + React) en /app/: login con Google o correo + código, llave de Meta por usuario y radar de investigación
 api/                 funciones de Vercel: /api/config, /api/keys (llaves cifradas), /api/radar (Hacker News + triage con el modelo del usuario)
 packages/research    lógica compartida del radar: búsqueda en Hacker News, capacidades y triage (prompt + validación)
 apps/landing         landing de presentación: Agentztein en 3D (three.js) al estilo Meta; `pnpm --filter @skillab/landing stills` regenera sus imágenes
@@ -64,21 +64,30 @@ Todo se opera desde el navegador (ADR-015):
    (`apps/landing`) en `/` y el panel (`apps/panel`) en `/panel/`. Producción sale de `main`; cada rama tiene su URL de *preview*.
 5. Cada push corre `ci` (lint, typecheck, verificación de datasets y tests con Postgres efímero).
 
-### Login con Google y API key propia (`/app/`, ADR-019)
+### Login (Google o correo con código) y llave de Meta (`/app/`, ADR-019 y ADR-020)
 
 1. **Google Cloud → APIs & Services → Credentials:** crear un *OAuth client ID* (Web). En *Authorized redirect URIs*
    poner `https://<proyecto>.supabase.co/auth/v1/callback`.
-2. **Supabase → Authentication → Sign In / Providers → Google:** activarlo con el Client ID y el Client Secret.
-   En *Authentication → URL Configuration*: *Site URL* = el dominio de producción y en *Redirect URLs* agregar
-   `https://<dominio>/app/` y `https://*-<equipo>.vercel.app/app/` (previews).
-3. **Vercel → Settings → Environment Variables:** `SUPABASE_URL`, `SUPABASE_ANON_KEY` (públicas),
+2. **Supabase → Authentication → Sign In / Providers:**
+   - **Google:** activarlo con el Client ID y el Client Secret.
+   - **Email:** activado, con *Confirm email* encendido y *Email OTP length* = 6.
+3. **Supabase → Authentication → Emails:** pegar las plantillas de `supabase/templates/` en *Confirm signup* y
+   *Reset password*. Usan `{{ .Token }}`, así que el usuario recibe un código de 6 dígitos en vez de un enlace.
+   El correo integrado de Supabase tiene un límite muy bajo de envíos por hora: para producción configura un
+   SMTP propio (*Authentication → Emails → SMTP Settings*, p. ej. Resend o SES).
+4. **Supabase → Authentication → URL Configuration:** *Site URL* = el dominio de producción; en *Redirect URLs*
+   agregar `https://<dominio>/app/` y `https://*-<equipo>.vercel.app/app/` (previews).
+5. **Vercel → Settings → Environment Variables:** `SUPABASE_URL`, `SUPABASE_ANON_KEY` (públicas),
    `DATABASE_URL` (Transaction pooler, puerto 6543), `DATABASE_SSL_CA` y `KEYS_ENCRYPTION_SECRET`
    (32+ caracteres aleatorios, p. ej. `openssl rand -base64 48`). Si falta alguna, `/app/` dice cuál.
-4. Correr `db-migrate` para crear el esquema `app` (migración `0005`). No se expone por la Data API de Supabase.
+6. Correr `db-migrate` para crear el esquema `app` (migración `0005`). No se expone por la Data API de Supabase.
 
-Las llaves se verifican con el proveedor, se cifran con AES-256-GCM (atadas a usuario y proveedor) y nunca
-regresan al navegador. Proveedores: Anthropic (SDK oficial), Meta Llama API, OpenAI, Google Gemini y OpenRouter.
-Comprar créditos de IA queda para la fase 2.
+**Solo modelos de Meta.** Cada usuario pega su llave de la **Meta Model API** (`https://api.meta.ai/v1`,
+compatible con OpenAI; se crea en dev.meta.ai). Es la que reemplazó a la Llama API (retirada el 6 jul 2026) y
+sirve los modelos Muse Spark. Está en vista previa pública para desarrolladores en EE. UU. La llave se verifica
+con Meta, se cifra con AES-256-GCM (atada a usuario y proveedor) y nunca regresa al navegador. Por defecto se usa
+el Muse Spark estándar más nuevo; los modelos `-contributor` nunca se eligen solos porque Meta puede entrenar con
+sus datos. Comprar créditos de IA queda para la fase 2.
 
 ## Cómo correr (local, opcional)
 

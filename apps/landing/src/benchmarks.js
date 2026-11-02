@@ -9,6 +9,7 @@ export const BENCHES = [
   {
     id: "swe", name: "SWE-bench Pro", color: "#5b9bff", cap: E("Code", "Código"),
     tagline: E("Fix real bugs and ship real features in real repositories, then let hidden tests decide.", "Arreglar errores reales y entregar funciones reales en repositorios reales; después deciden pruebas ocultas."),
+    steps: [E("The issue", "El issue"), E("The patch", "El parche"), E("Hidden tests", "Pruebas ocultas")],
     how: [
       E("It receives a repository at a fixed commit and an issue written by a person.", "Recibe un repositorio en un commit fijo y un issue escrito por una persona."),
       E("It explores the code, edits as many files as it needs and submits one patch.", "Explora el código, edita los archivos que necesite y entrega un parche."),
@@ -32,6 +33,7 @@ export const BENCHES = [
   {
     id: "terminal", name: "Terminal-Bench", color: "#2ec4b6", cap: E("Terminal", "Terminal"),
     tagline: E("Hard, realistic jobs done only through a terminal inside a container: build, configure, debug, secure, train.", "Trabajos difíciles y realistas hechos solo desde una terminal dentro de un contenedor: compilar, configurar, depurar, asegurar, entrenar."),
+    steps: [E("The task", "La tarea"), E("Commands", "Comandos"), E("Tests", "Pruebas")],
     how: [
       E("Each task is a container plus an instruction, like “build this project and serve it on port 8080”.", "Cada tarea es un contenedor con una instrucción, como «compila este proyecto y sírvelo en el puerto 8080»."),
       E("The agent types commands, reads the output and decides the next step, against a time limit.", "El agente teclea comandos, lee la salida y decide el siguiente paso, contra un límite de tiempo."),
@@ -55,6 +57,7 @@ export const BENCHES = [
   {
     id: "arc", name: "ARC-AGI-3", color: "#ff8f70", cap: E("Reasoning", "Razonamiento"),
     tagline: E("Interactive games with no instructions: work out the controls, the rules and the goal, and win efficiently.", "Juegos interactivos sin instrucciones: descubrir los controles, las reglas y la meta, y ganar con eficiencia."),
+    steps: [E("Look", "Observa"), E("Your turn: play", "Tu turno: juega"), E("Efficient route", "Ruta eficiente")],
     how: [
       E("The agent sees a grid frame and can act: move, click, interact.", "El agente ve un cuadro de cuadrícula y puede actuar: mover, hacer clic, interactuar."),
       E("Each action changes the game; from that it has to infer what it controls and what winning means.", "Cada acción cambia el juego; con eso debe deducir qué controla y qué significa ganar."),
@@ -77,6 +80,7 @@ export const BENCHES = [
   {
     id: "web", name: "BrowseComp", color: "#3ccf6e", cap: E("Web", "Web"),
     tagline: E("1,266 questions whose answers are short and easy to check, but buried deep in the web.", "1,266 preguntas cuya respuesta es corta y fácil de comprobar, pero está enterrada en lo profundo de la web."),
+    steps: [E("The question", "La pregunta"), E("Search", "Búsqueda"), E("The answer", "La respuesta")],
     how: [
       E("Each question stacks several clues about one thing: a person, a paper, an event.", "Cada pregunta junta varias pistas sobre una sola cosa: una persona, un artículo, un evento."),
       E("The agent searches, opens pages, rewrites its queries and combines what it finds.", "El agente busca, abre páginas, reescribe sus búsquedas y combina lo que encuentra."),
@@ -99,6 +103,7 @@ export const BENCHES = [
   {
     id: "research", name: E("MLE-bench & PaperBench", "MLE-bench y PaperBench"), color: "#ffb53d", cap: E("AI research", "Investigación de IA"),
     tagline: E("Doing AI research itself: win machine-learning competitions and replicate scientific papers from scratch.", "Hacer investigación de IA: ganar competencias de machine learning y replicar artículos científicos desde cero."),
+    steps: [E("Two benches", "Dos bancos"), E("A medal", "Una medalla"), E("Rubric", "Rúbrica")],
     how: [
       E("MLE-bench: 75 Kaggle competitions offline. It gets the data and description, trains models and submits predictions.", "MLE-bench: 75 competencias de Kaggle sin conexión. Recibe los datos y la descripción, entrena modelos y envía predicciones."),
       E("PaperBench: 20 ICML 2024 papers (Spotlight and Oral). It rebuilds each one's code from the paper alone and runs it.", "PaperBench: 20 artículos de ICML 2024 (Spotlight y Oral). Reconstruye el código de cada uno solo con el artículo y lo corre."),
@@ -122,6 +127,7 @@ export const BENCHES = [
   {
     id: "horizon", name: E("METR time horizon", "Horizonte de METR"), color: "#8a7dff", cap: E("Autonomy", "Autonomía"),
     tagline: E("Not one test but a measure: how long a task (in expert time) it completes on its own half of the time.", "No es una prueba sino una medida: qué tan larga es la tarea (en tiempo de un experto) que completa solo la mitad de las veces."),
+    steps: [E("Timed tasks", "Tareas cronometradas"), E("50% horizon", "Horizonte al 50%"), E("Newer model", "Modelo nuevo")],
     how: [
       E("Skilled people are timed on hundreds of tasks, from seconds to many hours.", "Se cronometra a personas expertas en cientos de tareas, de segundos a muchas horas."),
       E("The model tries each task about 8 times.", "El modelo intenta cada tarea unas 8 veces."),

@@ -617,4 +617,4 @@ export function makeFloor(r = 3.8) {
   floor.receiveShadow = true;
   return floor;
 }
-export { paintScreen };
+export { paintScreen, canvasTex, rr, glossy, std, shadowed, hex, FONT, windowPanel };

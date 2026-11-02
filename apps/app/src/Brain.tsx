@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { Api, ProviderInfo, SavedKey } from "./api.js";
 import type { Tab } from "./App.js";
 import { T, useT } from "./i18n.js";
+import { MetaMark } from "./Logos.js";
 
 type Props = { client: Api; keys: SavedKey[] | null; onKeys: (k: SavedKey[]) => void; go: (t: Tab) => void };
 
@@ -25,6 +26,7 @@ export function Brain({ client, keys, onKeys, go }: Props) {
     <section>
       <h1 className="h1">{t(T.brainTitle)}</h1>
       <p className="lead">{t(T.brainLead)}</p>
+      <p className="meta-note"><MetaMark />{t(T.metaNote)}</p>
       {error && <p className="error" role="alert">{error}</p>}
       {!providers.length && !error && <p className="muted">{t(T.loading)}</p>}
       <div className="providers">

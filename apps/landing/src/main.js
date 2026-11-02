@@ -7,6 +7,7 @@ import { createHero } from "./hero.js";
 import { createRoom } from "./room.js";
 import { setLanguage } from "./agent.js";
 import "./details.js";
+import "./cycle.js";
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;

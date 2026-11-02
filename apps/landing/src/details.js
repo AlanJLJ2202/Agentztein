@@ -3,6 +3,7 @@
 import { CAPABILITIES, fetchAiStories } from "@skillab/research";
 import { BENCHES } from "./benchmarks.js";
 import { benchScene, stepScene } from "./scenes.js";
+import { createBenchLab } from "./benchlab.js";
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -36,6 +37,10 @@ const W = {
   prev: { en: "Previous", es: "Anterior" },
   next: { en: "Next", es: "Siguiente" },
   explore: { en: "Explore the lab", es: "Explora el laboratorio" },
+  runAll: { en: "Run it all", es: "Correr todo" },
+  hint3d: { en: "Drag to turn · tap objects to inspect", es: "Arrastra para girar · toca objetos para inspeccionarlos" },
+  lab3d: { en: "Interactive 3D lab", es: "Laboratorio 3D interactivo" },
+  illus: { en: "Illustration of how it works, not a result.", es: "Ilustración de cómo funciona, no un resultado." },
   points: { en: "points", es: "puntos" },
   comments: { en: "comments", es: "comentarios" },
   liveErr: { en: "Hacker News didn't answer right now. Open it directly:", es: "Hacker News no respondió ahora. Ábrelo directo:" },
@@ -68,6 +73,48 @@ function bars(part) {
   }).join("")}</ul>`;
 }
 
+
+/* The benchmark's lab: interactive 3D when WebGL works, the drawing otherwise. */
+let lab3d = null;
+const hasGL = (() => { try { const c = document.createElement("canvas"); return Boolean(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; } })();
+function dropLab() { lab3d?.dispose(); lab3d = null; }
+function mountLab(b) {
+  dropLab();
+  const host = $("#bLab");
+  if (!hasGL) { host.innerHTML = benchScene(b.id, lang()); settle(host); return; }
+  host.innerHTML = `<div class="lab3d">
+    <canvas tabindex="0" aria-label="${esc(L(W.lab3d))}: ${esc(L(b.name))}"></canvas>
+    <span class="l3-tag"><i></i>${L(W.lab3d)}</span>
+    <span class="l3-hint">${L(W.hint3d)}</span>
+    <p class="l3-info" aria-live="polite"></p>
+  </div>
+  <div class="l3-bar" role="group" aria-label="${esc(L(W.how))}">
+    ${b.steps.map((st, i) => `<button type="button" class="l3-step" data-i="${i}"><b>${i + 1}</b>${esc(L(st))}</button>`).join("")}
+    <button type="button" class="btn l3-run"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor"/></svg>${L(W.runAll)}</button>
+    <span class="l3-note">${L(W.illus)}</span>
+  </div>`;
+  const info = host.querySelector(".l3-info");
+  const btns = [...host.querySelectorAll(".l3-step")];
+  try {
+    lab3d = createBenchLab(host.querySelector("canvas"), b.id, {
+      lang: lang(),
+      reduced: reduce,
+      onStep: (i) => {
+        btns.forEach((x, k) => x.setAttribute("aria-pressed", String(k === i)));
+        document.querySelectorAll("#bBody .howl li").forEach((li, k) => li.classList.toggle("on", k === i));
+        info.textContent = L(b.how[i]); info.classList.remove("show"); void info.offsetWidth; info.classList.add("show");
+      },
+      onInfo: (text) => { info.textContent = text; info.classList.remove("show"); void info.offsetWidth; info.classList.add("show"); },
+    });
+  } catch (err) {
+    console.warn("3D lab unavailable", err);
+    host.innerHTML = benchScene(b.id, lang()); settle(host); return;
+  }
+  btns.forEach((x) => x.addEventListener("click", () => lab3d?.setStep(Number(x.dataset.i))));
+  host.querySelector(".l3-run").addEventListener("click", () => lab3d?.play());
+  setTimeout(() => lab3d?.setStep(0), 60);
+}
+
 function fillBench(i) {
   benchIx = (i + BENCHES.length) % BENCHES.length;
   const b = BENCHES[benchIx];
@@ -76,9 +123,7 @@ function fillBench(i) {
   $("#bTitle").textContent = L(b.name);
   $("#bTag").textContent = L(b.tagline);
   $("#bNores").textContent = L(W.nores);
-  const lab = $("#bLab");
-  lab.innerHTML = benchScene(b.id, lang());
-  settle(lab);
+  mountLab(b);
   $("#bBody").innerHTML = `
     <section class="bsec"><h4>${L(W.how)}</h4><ol class="howl">${b.how.map((h) => `<li>${esc(L(h))}</li>`).join("")}</ol></section>
     <section class="bsec"><h4>${L(W.parts)}</h4>${b.parts.map((p) => `<div class="part"><h5>${esc(L(p.title))}</h5>${p.bars ? bars(p) : `<ul class="chips">${p.chips.map((c) => `<li>${esc(L(c))}</li>`).join("")}</ul>`}</div>`).join("")}</section>
@@ -103,8 +148,10 @@ if (dlg) {
   $("#bPrev").addEventListener("click", () => fillBench(benchIx - 1));
   $("#bNext").addEventListener("click", () => fillBench(benchIx + 1));
   $("#bClose").addEventListener("click", () => dlg.close());
+  dlg.addEventListener("close", dropLab);
   dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "CANVAS") return; // the arrows play ARC-AGI-3 inside the lab
     if (e.key === "ArrowRight") fillBench(benchIx + 1);
     if (e.key === "ArrowLeft") fillBench(benchIx - 1);
   });
@@ -138,16 +185,16 @@ function renderLive() {
   if (stamp && fetchedAt) stamp.textContent = `${L(W.updated)} ${fetchedAt.toLocaleTimeString(lang() === "es" ? "es-MX" : "en-US", { hour: "numeric", minute: "2-digit" })}`;
 }
 
-if (live) {
-  const load = () => {
-    fetchAiStories({ limit: 6, signal: AbortSignal.timeout(9000) })
-      .then((s) => { stories = s; fetchedAt = new Date(); })
-      .catch(() => { failed = true; })
-      .finally(renderLive);
-  };
-  const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { io.disconnect(); load(); } }, { rootMargin: "400px 0px" });
-  io.observe(live);
-}
+// The live feed lives in the "Researches" phase detail; it loads the first time that detail opens.
+let requested = false;
+document.addEventListener("step:open", (e) => {
+  if (!live || e.detail !== 0 || requested) return;
+  requested = true;
+  fetchAiStories({ limit: 5, signal: AbortSignal.timeout(9000) })
+    .then((s) => { stories = s; fetchedAt = new Date(); })
+    .catch(() => { failed = true; })
+    .finally(renderLive);
+});
 
 document.addEventListener("lang:change", () => {
   renderLive();

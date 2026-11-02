@@ -54,12 +54,21 @@ export function createHero(canvas, { reduced = false, onPhase = () => {}, onSay 
     if (!w || !h) return;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    // wide screens: the copy sits on the left, so the agent moves to the right third
-    shift = w > 900 ? Math.min(w * 0.3, w - 900 + 300) : 0;
+    const vt = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+    let dist = 2.35 / vt;
+    if (w > 900) {
+      // Wide screens: the copy sits on the left. Centre the lab in the free space to its right and step
+      // back until the coils and every skill chip (about 6.4 units across) fit inside that space.
+      const copy = canvas.closest(".hero")?.querySelector(".hero-copy");
+      const copyRight = copy ? copy.getBoundingClientRect().right - canvas.getBoundingClientRect().left : w * 0.45;
+      const free = Math.max(w - copyRight - 24, w * 0.42);
+      dist = Math.max(dist, (6.4 * h) / (2 * vt * free));
+      shift = copyRight + free / 2 - w / 2;
+    } else {
+      shift = 0;
+      dist = Math.max(dist, 2.3 / (vt * camera.aspect));
+    }
     camera.setViewOffset(w, h, -shift, 0, w, h);
-    const vfov = THREE.MathUtils.degToRad(camera.fov);
-    const hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
-    const dist = Math.max(2.35 / Math.tan(vfov / 2), (w > 900 ? 3.1 : 2.3) / Math.tan(hfov / 2));
     camera.position.set(0, CENTER.y + dist * 0.16, dist);
     camera.lookAt(CENTER);
     camera.updateProjectionMatrix();
@@ -92,7 +101,7 @@ export function createHero(canvas, { reduced = false, onPhase = () => {}, onSay 
   };
   window.addEventListener("pointermove", (ev) => {
     const r = canvas.getBoundingClientRect();
-    const cx = r.left + r.width / 2 + shift / 2;
+    const cx = r.left + r.width / 2 + shift;
     lookGoal.set(THREE.MathUtils.clamp((ev.clientX - cx) / (r.width * 0.45), -1, 1), THREE.MathUtils.clamp(-((ev.clientY - r.top) / r.height) * 2 + 0.9, -1, 1));
     if (ev.target === canvas && ev.pointerType === "mouse") canvas.style.cursor = pick(ev) ? "pointer" : "default";
   }, { passive: true });
