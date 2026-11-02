@@ -47,7 +47,7 @@ apps/panel           panel estático de solo lectura (Vite + React): validación
 apps/app             app con sesión (Vite + React) en /app/: login con Google o correo + código, llave de Meta por usuario y radar de investigación
 api/                 funciones de Vercel: /api/config, /api/keys (llaves cifradas), /api/radar (Hacker News + triage con el modelo del usuario)
 packages/research    lógica compartida del radar: búsqueda en Hacker News, capacidades y triage (prompt + validación)
-apps/landing         landing de presentación: Agentztein en 3D (three.js) al estilo Meta; `pnpm --filter @skillab/landing stills` regenera sus imágenes
+apps/landing         landing de presentación: Agentztein en 3D (three.js); un edificio recorrible (cuna + un cuarto por benchmark, 1.ª/3.ª persona) y un laboratorio 3D por benchmark; `pnpm --filter @skillab/landing stills` regenera sus imágenes
 datasets/manifest.json  hashes de todos los splits (los datos se regeneran desde semillas)
 ```
 

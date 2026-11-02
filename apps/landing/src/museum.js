@@ -1,0 +1,86 @@
+/* What the building teaches. One room per benchmark around the cradle, each with three exhibits explained in
+   plain words and an everyday analogy, so anyone can follow. The 3D lives in room.js; this is the text. */
+const E = (en, es) => ({ en, es });
+
+export const ROOMS = {
+  cuna: {
+    name: E("The cradle", "La cuna"), color: 0x0081fb, kind: E("Where Agentztein is born", "Donde nace Agentztein"),
+    intro: E("Agentztein wakes up here. Each door leads to a benchmark: every room explains, with an example, what is measured and why it matters.",
+      "Aquí despierta Agentztein. Cada puerta lleva a un benchmark: cada cuarto explica con un ejemplo qué se mide y por qué importa."),
+    items: {
+      coils: { title: E("The coils", "Las bobinas"), text: E("They give it the jolt that switches it on. Interact to bring it back to life.", "Le dan la descarga que lo enciende. Interactúa para revivirlo.") },
+      brain: { title: E("The brain: Muse Spark", "El cerebro: Muse Spark"), text: E("Meta's model does the thinking. It can think with more or less effort, from minimal to xhigh: more effort, more time and cost.", "El modelo de Meta es quien piensa. Puede pensar con más o menos esfuerzo, de minimal a xhigh: más esfuerzo, más tiempo y costo.") },
+      map: { title: E("Map of the lab", "Mapa del laboratorio"), text: E("Six rooms, six abilities: code, terminal, reasoning, web, research and autonomy. Walk through any door.", "Seis cuartos, seis capacidades: código, terminal, razonamiento, web, investigación y autonomía. Entra por cualquier puerta.") },
+    },
+  },
+  swe: {
+    name: E("Software repair shop", "Taller de reparación de software"), bench: "SWE-bench Pro", color: 0x5b9bff, kind: E("Code", "Código"),
+    intro: E("Like a garage: a real program arrives with a reported fault, and it has to be fixed without breaking anything else.",
+      "Como un taller mecánico: llega un programa real con una falla reportada y hay que arreglarlo sin descomponer nada más."),
+    items: {
+      ticket: { title: E("The report", "El reporte"), text: E("A person describes the problem in their own words, like a customer saying “the car makes a weird noise”.", "Una persona describe el problema con sus palabras, como un cliente que dice «el coche hace un ruido raro».") },
+      toolbox: { title: E("The fix", "El arreglo"), text: E("The agent finds the file where the fault lives and fixes it. Sometimes several files must change.", "El agente encuentra el archivo donde está la falla y la corrige. A veces hay que tocar varios archivos.") },
+      tests: { title: E("The hidden tests", "Las pruebas ocultas"), text: E("Lights the agent never sees in advance: red ones must turn green, and green ones must stay on.", "Luces que el agente no ve antes: las rojas deben ponerse verdes y las verdes no deben apagarse.") },
+    },
+  },
+  terminal: {
+    name: E("Machine room", "Sala de máquinas"), bench: "Terminal-Bench", color: 0x2ec4b6, kind: E("Terminal", "Terminal"),
+    intro: E("No buttons, no mouse: only a terminal where you type orders. Like running a computer by chat.",
+      "Aquí no hay botones ni mouse: solo una terminal donde se escriben órdenes. Como manejar una computadora por chat."),
+    items: {
+      term: { title: E("The terminal", "La terminal"), text: E("The agent types a command, reads what the machine answers and decides the next step.", "El agente escribe un comando, lee lo que responde la máquina y decide el siguiente paso.") },
+      rack: { title: E("The sealed box", "La caja sellada"), text: E("Each task runs inside an isolated container: if something breaks, nothing outside is touched.", "Cada tarea corre en un contenedor aislado: si algo se rompe, nada de afuera se toca.") },
+      clock: { title: E("The clock", "El reloj"), text: E("Every task has a time limit. At the end, a script checks the machine ended up as asked.", "Cada tarea tiene límite de tiempo. Al final, un script revisa que la máquina quedó como se pidió.") },
+    },
+  },
+  arc: {
+    name: E("Game room with no instructions", "Sala de juegos sin instrucciones"), bench: "ARC-AGI-3", color: 0xff8f70, kind: E("Reasoning", "Razonamiento"),
+    intro: E("Like playing a brand-new video game that nobody explains: you try, watch and work out the rules. People manage; AIs still struggle.",
+      "Como jugar un videojuego nuevo que nadie te explica: pruebas, observas y deduces las reglas. Las personas lo logran; las IA aún batallan."),
+    items: {
+      board: { title: E("The board (play it!)", "El tablero (¡juégalo!)"), text: E("Walk on the tiles: find the key, then the exit. Every step counts. Interact to start over.", "Camina sobre las casillas: encuentra la llave y luego la salida. Cada paso cuenta. Interactúa para empezar de nuevo.") },
+      score: { title: E("The scoreboard", "El marcador"), text: E("Fewer actions win. Take twice as many steps as a person and your score drops to a quarter.", "Gana quien usa menos acciones. Si das el doble de pasos que una persona, tu puntaje baja a una cuarta parte.") },
+      rules: { title: E("The hidden rules", "Las reglas ocultas"), text: E("Nobody says them: the agent must discover what it controls, what changes and what winning means.", "Nadie las dice: el agente debe descubrir qué controla, qué cambia y qué significa ganar.") },
+    },
+  },
+  web: {
+    name: E("Detective's library", "Biblioteca del detective"), bench: "BrowseComp", color: 0x3ccf6e, kind: E("Web", "Web"),
+    intro: E("Questions with a short answer hidden deep in the internet. Like finding a needle in a haystack… of web pages.",
+      "Preguntas con una respuesta corta escondida en lo profundo de internet. Como buscar una aguja en un pajar… de páginas web."),
+    items: {
+      clues: { title: E("The clue board", "El tablero de pistas"), text: E("Each question stacks several clues. They are linked with strings until they point to one answer.", "Cada pregunta junta varias pistas. Se unen con hilos hasta señalar una sola respuesta.") },
+      shelves: { title: E("The shelves", "Las estanterías"), text: E("Each book is a web page. Most are useless; the skill is knowing when to change the search.", "Cada libro es una página web. Casi todas no sirven; el truco es saber cuándo cambiar de búsqueda.") },
+      answer: { title: E("The answer", "La respuesta"), text: E("Hard to find, easy to check: a single word or number, like “1987”.", "Difícil de encontrar, fácil de comprobar: una sola palabra o número, como «1987».") },
+    },
+  },
+  research: {
+    name: E("Science lab", "Laboratorio científico"), bench: "MLE-bench · PaperBench", color: 0xffb53d, kind: E("AI research", "Investigación de IA"),
+    intro: E("Here the agent does AI research itself: it competes in machine-learning contests and repeats scientific papers to see if they come out the same.",
+      "Aquí el agente hace investigación de IA: compite en concursos de machine learning y repite artículos científicos para ver si salen igual."),
+    items: {
+      podium: { title: E("The contest", "El concurso"), text: E("75 real Kaggle contests. If its result would win a medal among real people, it counts.", "75 concursos reales de Kaggle. Si su resultado ganaría medalla entre personas reales, cuenta.") },
+      paper: { title: E("The paper", "El artículo"), text: E("It reads a paper and rebuilds its code from scratch, like cooking a recipe only from the book.", "Lee un artículo y reconstruye su código desde cero, como cocinar una receta solo leyendo el libro.") },
+      rubric: { title: E("The rubric", "La rúbrica"), text: E("A tree of checkpoints: did it write the code? did it run? did it give the same result?", "Un árbol de puntos a revisar: ¿escribió el código?, ¿corrió?, ¿dio el mismo resultado?") },
+    },
+  },
+  horizon: {
+    name: E("Time observatory", "Observatorio del tiempo"), bench: E("METR time horizon", "Horizonte de METR"), color: 0x8a7dff, kind: E("Autonomy", "Autonomía"),
+    intro: E("How long can a task be before the AI can't finish it alone? Like an intern: first you trust them with minutes, then with hours.",
+      "¿Qué tan larga puede ser una tarea que la IA termina sola? Como con un practicante: primero le confías minutos, luego horas."),
+    items: {
+      sand: { title: E("The hourglasses", "Los relojes de arena"), text: E("Each one is a longer task, timed on skilled people: one minute, fifteen minutes, an hour, a day.", "Cada uno es una tarea más larga, cronometrada con personas expertas: un minuto, quince minutos, una hora, un día.") },
+      line: { title: E("The 50% line", "La línea del 50%"), text: E("The horizon is the task length the AI completes half of the time.", "El horizonte es la duración de tarea que la IA completa la mitad de las veces.") },
+      trend: { title: E("The trend", "La tendencia"), text: E("That horizon has doubled every few months. Measuring it tells us how much we can trust it alone.", "Ese horizonte se ha duplicado cada pocos meses. Medirlo dice cuánto podemos confiarle trabajo solo.") },
+    },
+  },
+};
+
+export const UI = {
+  interact: E("Interact", "Interactuar"),
+  keyHint: E("E or click", "E o clic"),
+  openLab: E("Open its interactive lab", "Abrir su laboratorio interactivo"),
+  fp: E("First person", "Primera persona"),
+  tp: E("Third person", "Tercera persona"),
+  fpHint: E("Drag to look · W A S D or arrows to walk · E to interact", "Arrastra para mirar · W A S D o flechas para caminar · E para interactuar"),
+  tpHint: E("Tap the floor or a door · arrows to walk · V for first person", "Toca el piso o una puerta · flechas para caminar · V para primera persona"),
+};

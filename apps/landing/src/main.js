@@ -5,7 +5,8 @@
 // "room:move" (the visitor moved it, so a running exercise stops).
 import { createHero } from "./hero.js";
 import { createRoom } from "./room.js";
-import { setLanguage } from "./agent.js";
+import { setLanguage, tr } from "./agent.js";
+import { ROOMS, UI } from "./museum.js";
 import "./details.js";
 import "./cycle.js";
 
@@ -17,7 +18,7 @@ let hero3d = null;
 document.addEventListener("lang:change", (e) => {
   setLanguage(e.detail);
   if (hero3d) hero3d.relabel();
-  if (room) room.relabel();
+  if (room) { room.relabel(); renderGuide(lastGuide); viewLabel(); }
 });
 const hasWebGL = () => {
   try {
@@ -47,6 +48,30 @@ const STATION_OF = { codigo: "swe", terminal: "terminal", razonamiento: "arc", w
 let room = null;
 let roomQueue = null;
 
+/* The card under the lab doubles as the guide: it explains the room or the exhibit in front of Agentztein. */
+let lastGuide = null;
+const hexColor = (n) => "#" + n.toString(16).padStart(6, "0");
+function renderGuide(g) {
+  if (!g) return;
+  lastGuide = g;
+  const r = ROOMS[g.room];
+  const it = g.item ? r.items[g.item] : null;
+  const card = $("#card");
+  $("#cDot").style.setProperty("--c", hexColor(r.color));
+  $("#cName").textContent = it ? tr(it.title) : tr(r.name);
+  $("#cL1").textContent = it ? tr(r.name) : r.bench ? `${tr(r.kind)} · ${tr(r.bench)}` : tr(r.kind);
+  $("#cA").textContent = it ? tr(it.text) : tr(r.intro);
+  $("#cL2").parentElement.hidden = true;
+  $("#actBtn").hidden = !it;
+  card.classList.remove("swap"); void card.offsetWidth; card.classList.add("swap");
+}
+function viewLabel() {
+  const fp = Boolean(room?.fp);
+  $("#viewTxt").textContent = tr(fp ? UI.tp : UI.fp);
+  $("#viewBtn").setAttribute("aria-pressed", String(fp));
+  $("#roomHint").textContent = tr(fp ? UI.fpHint : UI.tpHint);
+}
+
 function startRoom() {
   if (room) return;
   const canvas = $("#room3d");
@@ -54,13 +79,21 @@ function startRoom() {
   try {
     room = createRoom(canvas, {
       reduced,
+      minimap: $("#miniMap"),
       onArrive: (id) => document.dispatchEvent(new CustomEvent("room:arrive", { detail: id })),
       onSay: (t) => b.say(t),
       onFrame: (p) => b.place(p),
       onFlash: () => pulse($("#roomFlash"), "go"),
       onMove: () => document.dispatchEvent(new CustomEvent("room:move")),
+      onGuide: renderGuide,
+      onView: (fp) => { $(".stage").classList.toggle("fp", fp); viewLabel(); },
     });
     root.classList.add("room-3d");
+    viewLabel();
+    renderGuide(lastGuide ?? { room: "cuna" });
+    $("#viewBtn").addEventListener("click", () => { room.setView(!room.fp); room.focusCanvas(); });
+    $("#actBtn").addEventListener("click", () => room.interact());
+    document.addEventListener("room:hint", viewLabel);
     document.addEventListener("room:goto", (e) => room.goTo(e.detail));
     document.addEventListener("room:react", (e) => room.react(e.detail));
     document.addEventListener("room:key", (e) => room.press(e.detail.k, e.detail.down));

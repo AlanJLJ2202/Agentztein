@@ -260,3 +260,18 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
     cada una con su imagen 3D de Agentztein y su animación; el feed en vivo de Hacker News vive en el detalle
     de "Investiga". Cada benchmark abre un laboratorio 3D interactivo (three.js) con sus tres pasos; en
     ARC-AGI-3 se puede jugar el nivel. Son ilustraciones, no resultados.
+
+## ADR-021 — El laboratorio como edificio, vista en primera persona y "el cerebro lo pone Meta"
+- **Contexto:** Alan pidió (2 nov 2026) ver el laboratorio en primera persona, un cuarto temático y educativo
+  por benchmark alrededor de la cuna, y presentar a Meta como "el cerebro" (no "solo modelos de Meta"),
+  mencionando los niveles de esfuerzo.
+- **Decisión:**
+  - `room.js` es ahora un edificio: la cuna al centro y seis cuartos (dos por lado) con puertas de color.
+    Cada cuarto tiene un mural y tres exhibiciones numeradas con texto en lenguaje cotidiano y analogías
+    (`museum.js`); en la sala de ARC-AGI-3 el tablero del piso se juega caminando. Rutas por las puertas,
+    colisiones con muros y exhibiciones, minimapa, y la tarjeta bajo el laboratorio funciona como guía.
+  - Tercera persona con muros recortados (vista de casa de muñecas); primera persona (V) con muros completos:
+    arrastrar para mirar, WASD/flechas para caminar, E para interactuar con lo que apunta la mira.
+  - Sección de Meta: "El cerebro lo pone Meta", con los niveles de esfuerzo de Muse Spark
+    (minimal, low, medium, high, xhigh). El radar pide `reasoning_effort: "low"` y reintenta sin él si el
+    modelo no lo acepta.

@@ -70,19 +70,23 @@ export async function verifyKey(provider, key, fetchImpl = fetch) {
 
 /**
  * One request to the user's Meta model. Returns the text of the reply.
- * @param {{ provider: string, key: string, model: string, system: string, user: string, fetchImpl?: typeof fetch }} req
+ * @param {{ provider: string, key: string, model: string, system: string, user: string, effort?: string | null, fetchImpl?: typeof fetch }} req
  */
-export async function complete({ provider, key, model, system, user, fetchImpl = fetch }) {
+export async function complete({ provider, key, model, system, user, effort = "low", fetchImpl = fetch }) {
   const p = PROVIDERS[provider];
   if (!p) throw new HttpError(400, "Unknown provider");
+  // Sorting headlines is light work: ask Muse Spark for a low reasoning effort (minimal … xhigh). If a model
+  // doesn't take the parameter, retry once without it.
+  const send = (effort) => fetchImpl(`${p.base}/chat/completions`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+    body: JSON.stringify({ model, messages: [{ role: "system", content: system }, { role: "user", content: user }], ...(effort ? { reasoning_effort: effort } : {}) }),
+    signal: AbortSignal.timeout(55_000),
+  });
   let res;
   try {
-    res = await fetchImpl(`${p.base}/chat/completions`, {
-      method: "POST",
-      headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-      body: JSON.stringify({ model, messages: [{ role: "system", content: system }, { role: "user", content: user }] }),
-      signal: AbortSignal.timeout(55_000),
-    });
+    res = await send(effort);
+    if (res.status === 400 && effort) res = await send(null);
   } catch {
     throw new HttpError(502, "Could not reach Meta");
   }

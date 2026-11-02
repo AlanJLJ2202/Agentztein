@@ -76,12 +76,12 @@ export const T = {
   phase2: { en: "Phase 2", es: "Fase 2" },
   brainTitle: { en: "Its brain is Meta's; the key is yours", es: "El cerebro es de Meta; la llave, tuya" },
   brainLead: {
-    en: "Agentztein works only with Meta's models. Paste your Meta Model API key: we check it with Meta, encrypt it (AES-256-GCM) and only use it for the runs you start. We never show it again.",
-    es: "Agentztein trabaja solo con modelos de Meta. Pega tu llave de la Meta Model API: la verificamos con Meta, la ciframos (AES-256-GCM) y solo la usamos en las corridas que tú inicies. Nunca la volvemos a mostrar.",
+    en: "Agentztein's brain is Muse Spark, Meta's model. Paste your Meta Model API key: we check it with Meta, encrypt it (AES-256-GCM) and only use it for the runs you start. We never show it again.",
+    es: "El cerebro de Agentztein es Muse Spark, el modelo de Meta. Pega tu llave de la Meta Model API: la verificamos con Meta, la ciframos (AES-256-GCM) y solo la usamos en las corridas que tú inicies. Nunca la volvemos a mostrar.",
   },
   metaNote: {
-    en: "Meta Model API is in public preview, open to developers in the US. Prefer the standard models: Meta may train on what you send to “-contributor” ones.",
-    es: "La Meta Model API está en vista previa pública, abierta a desarrolladores en EE. UU. Prefiere los modelos estándar: Meta puede entrenar con lo que mandes a los «-contributor».",
+    en: "The radar asks Muse Spark for a low effort level (it goes from minimal to xhigh): sorting headlines is light work. Meta Model API is in public preview for developers in the US. Prefer the standard models: Meta may train on what you send to “-contributor” ones.",
+    es: "El radar le pide a Muse Spark un nivel de esfuerzo bajo (va de minimal a xhigh): ordenar titulares es trabajo ligero. La Meta Model API está en vista previa para desarrolladores en EE. UU. Prefiere los modelos estándar: Meta puede entrenar con lo que mandes a los «-contributor».",
   },
   pasteKey: { en: "Paste your API key", es: "Pega tu API key" },
   saveKey: { en: "Save and verify", es: "Guardar y verificar" },

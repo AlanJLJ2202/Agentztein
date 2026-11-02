@@ -186,7 +186,7 @@ describe.skipIf(!hasDatabase)("endpoints (Postgres)", () => {
     expect(out).toMatchObject({ read: 2, provider: "meta", model: "muse-spark-1.3" });
     expect(out.notes.map((n: { id: string; verdict: string }) => [n.id, n.verdict])).toEqual([["501", "experiment"], ["502", "watch"]]);
     const chat = calls.find((c) => c.url.endsWith("/chat/completions"));
-    expect(chat?.body).toMatchObject({ model: "muse-spark-1.3" });
+    expect(chat?.body).toMatchObject({ model: "muse-spark-1.3", reasoning_effort: "low" });
     expect(JSON.stringify(chat?.body)).toContain("Spanish");
 
     const again = await radar.POST(req("/api/radar", "POST", {}));
