@@ -3,5 +3,28 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm build:site",
   "outputDirectory": "site",
-  "framework": null
+  "framework": null,
+  "functions": {
+    "api/radar.js": {
+      "maxDuration": 60
+    },
+    "api/keys.js": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/app/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ]
 }

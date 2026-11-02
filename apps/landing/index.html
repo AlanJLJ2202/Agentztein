@@ -192,7 +192,6 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 .pick[aria-pressed="true"] { background: var(--ink); color: #fff; }
 .pick:focus-visible { outline: 3px solid var(--meta); outline-offset: 3px; }
 .note { margin-top: 14px; color: var(--muted); font-size: .9375rem; }
-.room-3d .bench-list { display: none; }
 
 /* On-screen pad, the run button and the exercise console */
 .pad { position: absolute; right: 20px; bottom: 20px; z-index: 2; display: none; grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(2, 48px); gap: 6px; }
@@ -373,11 +372,11 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .more:focus-visible::after { box-shadow: inset 0 0 0 3px var(--meta); }
 
 /* Step detail sheet */
-.sheet { width: min(980px, calc(100% - 32px)); max-height: calc(100svh - 48px); padding: 0; border: 0; border-radius: 28px; background: #fff; color: var(--ink); overflow: auto; }
+.sheet { width: min(1180px, calc(100% - 32px)); max-height: calc(100svh - 48px); padding: 0; border: 0; border-radius: 28px; background: #fff; color: var(--ink); overflow: auto; }
 .sheet::backdrop { background: rgba(10, 22, 32, .45); backdrop-filter: blur(4px); }
 .sheet[open] { animation: rise .45s var(--ease); }
 @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
-.sheet-in { position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
+.sheet-in { position: relative; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
 .sheet-ph { background: var(--sky); }
 .sheet-ph img { width: 100%; height: 100%; object-fit: cover; }
 .sheet-tx { padding: clamp(24px, 3vw, 40px); display: grid; gap: 12px; align-content: start; }
@@ -386,19 +385,177 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .sheet h3 { font-size: clamp(1.8rem, 1.3rem + 1.4vw, 2.5rem); letter-spacing: -.035em; }
 .sheet h4 { margin: 10px 0 0; font-size: 1rem; }
 .sheet p { color: var(--muted); font-size: 1.0625rem; line-height: 1.5; }
-.sheet ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
-.sheet li { position: relative; padding: 10px 14px 10px 36px; border-radius: 14px; background: var(--soft); line-height: 1.4; }
-.sheet li::before { content: "✓"; position: absolute; left: 13px; top: 10px; font-weight: 800; color: var(--ok); }
+.sheet:not(.bsheet) ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.sheet:not(.bsheet) li { position: relative; padding: 10px 14px 10px 36px; border-radius: 14px; background: var(--soft); line-height: 1.4; }
+.sheet:not(.bsheet) li::before { content: "✓"; position: absolute; left: 13px; top: 10px; font-weight: 800; color: var(--ok); }
 .sheet-nav { display: flex; gap: 10px; margin-top: 12px; }
 .sheet-nav .btn[disabled] { opacity: .4; pointer-events: none; }
 .sheet .x { all: unset; position: absolute; right: 14px; top: 14px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .9); font-size: 1.5rem; cursor: pointer; }
 .sheet .x:focus-visible { outline: 3px solid var(--meta); }
-@media (max-width: 760px) { .sheet-in { grid-template-columns: minmax(0, 1fr); } .sheet-ph { max-height: 280px; overflow: hidden; } }
+@media (max-width: 1000px) { .sheet-in { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Hero: Google sign-in and the Hacker News badge ---------- */
+.gbtn .g { width: 18px; height: 18px; transition: none; }
+.btn.gbtn:hover svg.g { transform: none; }
+.alive .hero-copy > :nth-child(5) { transition-delay: .74s; }
+.hn-pill { display: inline-flex; align-items: center; gap: 12px; margin-top: 22px; padding: 10px 16px 10px 10px; border-radius: 18px; background: rgba(255, 255, 255, .86); box-shadow: 0 6px 24px rgba(28, 43, 51, .08); text-decoration: none; color: var(--ink); max-width: 100%; transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
+.hn-pill:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(28, 43, 51, .12); }
+.hn-y { width: 34px; height: 34px; flex: none; border-radius: 7px; }
+.hn-pill b { display: block; font-size: 1rem; letter-spacing: -.01em; }
+.hn-pill small { display: block; color: var(--muted); font-size: .875rem; line-height: 1.3; }
+.live-dot { width: 9px; height: 9px; flex: none; border-radius: 50%; background: #ff6600; animation: ping 1.8s ease-out infinite; }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(255, 102, 0, .45); } 100% { box-shadow: 0 0 0 10px rgba(255, 102, 0, 0); } }
+@media (max-width: 900px) { .hn-pill { text-align: left; } }
+
+/* ---------- Research ---------- */
+.research { background: linear-gradient(#fff, #fff8f2 30%, #fff); }
+.hn-lock { font-size: 1.125rem; margin-bottom: 20px; }
+.hn-lock .hn-y { width: 28px; height: 28px; border-radius: 6px; }
+.research .head h2 { font-size: var(--t-head); }
+.rgrid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(16px, 2vw, 28px); align-items: start; }
+.rleft { display: grid; gap: clamp(16px, 2vw, 24px); }
+.rloop { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; counter-reset: r; }
+.rloop li { position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 14px; padding: 20px; border-radius: 22px; background: #fff; box-shadow: 0 1px 0 rgba(28, 43, 51, .04), 0 8px 30px rgba(28, 43, 51, .05); counter-increment: r; }
+.rloop li::after { content: counter(r); position: absolute; right: 18px; top: 14px; font-weight: 800; color: var(--soft-2); font-size: 1.6rem; }
+.ri { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 14%, #fff); color: var(--c); }
+.ri svg { width: 24px; height: 24px; }
+.rloop h3 { font-size: 1.25rem; letter-spacing: -.02em; }
+.rloop p { color: var(--muted); margin-top: 6px; font-size: .9875rem; line-height: 1.45; }
+.tradeoff { padding: 22px 24px; border-radius: 22px; background: var(--ink); color: #fff; display: grid; gap: 12px; }
+.tradeoff header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ex-tag { padding: 3px 10px; border-radius: 999px; background: var(--amber-bg); color: var(--amber); font-size: .8125rem; font-weight: 800; }
+.vd { padding: 3px 10px; border-radius: 999px; background: #6d5ce8; font-size: .8125rem; font-weight: 800; }
+.cap { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--soft); color: var(--ink); font-size: .8125rem; font-weight: 600; }
+.cap i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.tq { font-size: 1.375rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.25; }
+.tradeoff dl { margin: 0; display: grid; gap: 8px; }
+.tradeoff dl div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; }
+.tradeoff dt { color: #9fb3c2; font-weight: 700; font-size: .9375rem; }
+.tradeoff dd { margin: 0; color: #e6edf3; }
+.hnbox { position: sticky; top: 84px; padding: 22px; border-radius: 24px; background: #fff; border: 1px solid #ffe0c7; box-shadow: 0 16px 50px rgba(255, 102, 0, .08); display: grid; gap: 14px; }
+.hnbox header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.hnbox h3 { display: flex; align-items: center; gap: 10px; font-size: 1.1875rem; letter-spacing: -.015em; }
+.stamp { font-size: .8125rem; font-weight: 700; color: #b34700; background: #fff1e6; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.hnlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; min-height: 200px; }
+.hnlist li { display: grid; gap: 4px; padding-bottom: 12px; border-bottom: 1px solid #fff0e4; animation: soft .45s var(--ease) both; animation-delay: calc(var(--i, 0) * 60ms); }
+.hnlist li:last-child { border-bottom: 0; }
+.hn-t { font-weight: 650; line-height: 1.35; text-decoration: none; overflow-wrap: anywhere; }
+.hn-t:hover { text-decoration: underline; }
+.hn-m { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--muted); font-size: .8125rem; }
+.hn-m a { text-decoration: none; } .hn-m a:hover { text-decoration: underline; }
+.hn-msg { color: var(--muted); }
+.hn-msg a { color: var(--blue); font-weight: 600; }
+.hnlist .sk { height: 46px; border-radius: 12px; border: 0; background: linear-gradient(90deg, #fff3ea, #fffaf6, #fff3ea); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+.fine { color: var(--muted); font-size: .8125rem; line-height: 1.45; }
+.btn.wide { width: 100%; }
+.hnbox .gbtn { background: var(--ink); }
+.hnbox .gbtn:hover { background: #0e1a21; }
+@media (max-width: 1000px) { .rgrid { grid-template-columns: minmax(0, 1fr); } .hnbox { position: static; } }
+@media (max-width: 620px) { .rloop { grid-template-columns: minmax(0, 1fr); } .tradeoff dl div { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+
+/* ---------- Lab scenes (SVG) ---------- */
+.lab-host { width: 100%; }
+.lab-svg { display: block; width: 100%; height: auto; font-family: var(--font); }
+.lab-svg .a-rise { animation: bub 2.4s ease-in infinite; }
+@keyframes bub { 0% { transform: translateY(0); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateY(-24px); opacity: 0; } }
+.lab-svg .a-smoke { transform-box: fill-box; transform-origin: center; animation: smoke 3s ease-out infinite; }
+@keyframes smoke { 0% { transform: translateY(8px) scale(.6); opacity: 0; } 30% { opacity: .9; } 100% { transform: translateY(-16px) scale(1.3); opacity: 0; } }
+.lab-svg .a-flow { animation: flow 1.1s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -22; } }
+.lab-svg .a-pop { transform-box: fill-box; transform-origin: center; animation: pop .55s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: none; opacity: 1; } }
+.lab-svg .a-glow { animation: glow 2.4s ease-in-out infinite; }
+.lab-svg .a-pop.a-glow { animation: pop .55s cubic-bezier(.3, 1.6, .5, 1) both, glow 2.4s ease-in-out 1.8s infinite; }
+@keyframes glow { 50% { filter: drop-shadow(0 0 7px rgba(109, 92, 232, .55)); } }
+.lab-svg .a-type, .lab-svg .a-fadein { animation: fadein .45s ease both; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+.lab-svg .a-blink, .lab-svg .a-zap { animation: blink 1.3s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+.lab-svg .a-pulse { animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .65; } }
+.lab-svg .a-stamp { transform-box: fill-box; transform-origin: center; animation: stamp .5s cubic-bezier(.3, 1.6, .5, 1) 1.8s both; }
+@keyframes stamp { from { transform: scale(2.2); opacity: 0; } to { transform: none; opacity: 1; } }
+.lab-svg .a-grow { transform-box: fill-box; transform-origin: left center; animation: grow 1s var(--ease) both; }
+@keyframes grow { from { transform: scaleX(0); } }
+.lab-svg .a-timer { animation: timer 6s linear infinite; }
+@keyframes timer { to { stroke-dashoffset: 0; } }
+.lab-svg .a-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.6s var(--ease) .2s forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* Step sheet: the lab never gets cropped */
+.sheet-ph { background: #f7fafc; display: grid; align-content: center; }
+.sheet-ph .lab-host { position: sticky; top: 0; }
+@media (max-width: 1000px) { .sheet-ph .lab-host { position: static; max-width: 720px; margin: 0 auto; } }
+
+/* Station card actions */
+.card-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.card-acts .run { margin-top: 0; }
+
+/* Benchmarks list: always visible, each card opens its lab */
+.room-3d .bench-list { display: grid; }
+.bl-head { margin-top: clamp(48px, 6vw, 80px); display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 12px 40px; align-items: end; }
+.bl-head h3 { font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.2rem); letter-spacing: -.03em; }
+.bl-head p { color: var(--muted); font-size: 1.0625rem; }
+@media (max-width: 900px) { .bl-head { grid-template-columns: minmax(0, 1fr); } }
+.bench-list { margin-top: 24px; }
+.bench-list .b { position: relative; cursor: pointer; }
+.bench-list .b:hover .more svg { transform: translateX(4px); }
+
+/* Benchmark sheet */
+.bsheet { width: min(1080px, calc(100% - 24px)); }
+.bsheet-in { position: relative; max-height: calc(100svh - 48px); overflow: auto; }
+.bhead { padding: clamp(22px, 3vw, 36px) clamp(22px, 3vw, 40px) 18px; display: grid; gap: 10px; padding-right: 72px; }
+.bhead h3 { font-size: clamp(1.9rem, 1.3rem + 1.8vw, 2.8rem); letter-spacing: -.04em; }
+.btag { color: var(--muted); font-size: 1.125rem; line-height: 1.45; max-width: 46em; }
+.nores { justify-self: start; padding: 5px 12px; border-radius: 999px; background: var(--soft); color: var(--muted); font-size: .8125rem; font-weight: 700; }
+.blab { background: #f7fafc; border-block: 1px solid var(--soft-2); }
+.blab .lab-svg { max-width: 920px; margin: 0 auto; }
+.bbody { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: clamp(18px, 3vw, 32px) clamp(18px, 3vw, 40px); }
+.bsec { padding: 20px; border-radius: 20px; background: var(--soft); display: grid; gap: 12px; align-content: start; }
+.bsec.wide { grid-column: 1 / -1; background: #fff; border: 1px solid var(--soft-2); }
+.bsec h4 { margin: 0; font-size: 1.125rem; letter-spacing: -.01em; }
+.bsec p { color: var(--ink); line-height: 1.5; }
+.bsec .muted { color: var(--muted); font-size: .9375rem; }
+.bnote { color: var(--amber) !important; background: var(--amber-bg); padding: 8px 12px; border-radius: 12px; font-size: .9375rem; }
+.howl { margin: 0; padding: 0; list-style: none; counter-reset: h; display: grid; gap: 10px; }
+.howl li { counter-increment: h; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; line-height: 1.45; }
+.howl li::before { content: counter(h); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--c); color: #fff; font-weight: 800; font-size: .875rem; }
+.part { display: grid; gap: 8px; }
+.part + .part { margin-top: 6px; }
+.part h5 { margin: 0; font-size: .9375rem; color: var(--muted); font-weight: 700; }
+.chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.chips li { padding: 6px 12px; border-radius: 999px; background: #fff; font-size: .875rem; font-weight: 600; }
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.bars li { display: grid; grid-template-columns: minmax(0, 9fr) minmax(0, 7fr) auto; gap: 10px; align-items: center; }
+.bl { font-size: .9375rem; font-weight: 600; line-height: 1.2; }
+.bl small { display: block; color: var(--muted); font-weight: 500; font-size: .8125rem; }
+.bt { height: 10px; border-radius: 999px; background: #fff; overflow: hidden; }
+.bt i { display: block; height: 100%; width: var(--w); border-radius: inherit; background: var(--c); animation: grow 1s var(--ease) both; transform-origin: left; }
+.bars b { font-variant-numeric: tabular-nums; font-size: .9375rem; white-space: nowrap; }
+.bars b small { color: var(--muted); font-weight: 600; }
+.cands { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.cands li { display: grid; gap: 8px; align-content: start; padding: 16px; border-radius: 16px; background: var(--soft); }
+.cands b { line-height: 1.3; }
+.cands span { display: grid; gap: 2px; font-size: .9375rem; line-height: 1.4; }
+.cands em { font-style: normal; font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.cands .g em { color: var(--ok); }
+.cands .c em { color: var(--amber); }
+.uses li { background: color-mix(in srgb, var(--c) 16%, #fff); }
+.srcs { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.srcs a { color: var(--blue); font-weight: 600; text-decoration: none; }
+.srcs a:hover { text-decoration: underline; }
+.bnav { padding: 0 clamp(18px, 3vw, 40px) clamp(18px, 3vw, 32px); justify-content: space-between; flex-wrap: wrap; }
+.bsheet .x { position: absolute; right: 14px; top: 14px; background: var(--soft); }
+@media (max-width: 860px) { .bbody { grid-template-columns: minmax(0, 1fr); } .cands { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) { .bars li { grid-template-columns: minmax(0, 1fr) auto; } .bars .bt { grid-column: 1 / -1; grid-row: 2; } .bnav .btn { width: 100%; } }
 </style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="meta" viewBox="0 0 24 24"><path fill="currentColor" d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a6.624 6.624 0 0 0 .265.86 5.297 5.297 0 0 0 .371.761c.696 1.159 1.818 1.927 3.593 1.927 1.497 0 2.633-.671 3.965-2.444.76-1.012 1.144-1.626 2.663-4.32l.756-1.339.186-.325c.061.1.121.196.183.3l2.152 3.595c.724 1.21 1.665 2.556 2.47 3.314 1.046.987 1.992 1.22 3.06 1.22 1.075 0 1.876-.355 2.455-.843a3.743 3.743 0 0 0 .81-.973c.542-.939.861-2.127.861-3.745 0-2.72-.681-5.357-2.084-7.45-1.282-1.912-2.957-2.93-4.716-2.93-1.047 0-2.088.467-3.053 1.308-.652.57-1.257 1.29-1.82 2.05-.69-.875-1.335-1.547-1.958-2.056-1.182-.966-2.315-1.303-3.454-1.303zm10.16 2.053c1.147 0 2.188.758 2.992 1.999 1.132 1.748 1.647 4.195 1.647 6.4 0 1.548-.368 2.9-1.839 2.9-.58 0-1.027-.23-1.664-1.004-.496-.601-1.343-1.878-2.832-4.358l-.617-1.028a44.908 44.908 0 0 0-1.255-1.98c.07-.109.141-.224.211-.327 1.12-1.667 2.118-2.602 3.358-2.602zm-10.201.553c1.265 0 2.058.791 2.675 1.446.307.327.737.871 1.234 1.579l-1.02 1.566c-.757 1.163-1.882 3.017-2.837 4.338-1.191 1.649-1.81 1.817-2.486 1.817-.524 0-1.038-.237-1.383-.794-.263-.426-.464-1.13-.464-2.046 0-2.221.63-4.535 1.66-6.088.454-.687.964-1.226 1.533-1.533a2.264 2.264 0 0 1 1.088-.285z"/></symbol>
+  <symbol id="hn" viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#ff6600"/><path d="M7.2 5.5h2.3l2.5 5.3 2.5-5.3h2.3l-3.7 7.3v5.7h-2.2v-5.7z" fill="#fff"/></symbol>
+  <symbol id="gg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></symbol>
 </svg>
 
 <header class="bar">
@@ -406,16 +563,17 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     <a class="word" href="#inicio" aria-label="Agentztein, home" data-es-aria-label="Agentztein, inicio"><i aria-hidden="true"></i>Agentztein</a>
     <nav class="links" id="menu" aria-label="Sections" data-es-aria-label="Secciones">
       <a href="#como-funciona" data-es="Cómo funciona">How it works</a>
+      <a href="#investigacion" data-es="Investigación">Research</a>
       <a href="#laboratorio" data-es="Laboratorio">The lab</a>
       <a href="#meta" data-es="Con Meta">Muse by Meta</a>
       <a href="#avance" data-es="Avance">Progress</a>
-      <a class="btn menu-cta" href="/panel/" data-es="Ver los datos">See the data</a>
+      <a class="btn menu-cta" href="/app/" data-es="Entrar">Sign in</a>
     </nav>
     <div class="lang" role="group" aria-label="Language" data-es-aria-label="Idioma">
       <button type="button" data-lang="en" aria-pressed="true">EN</button>
       <button type="button" data-lang="es" aria-pressed="false">ES</button>
     </div>
-    <a class="btn bar-cta" href="/panel/"><span data-es="Ver los datos">See the data</span>
+    <a class="btn bar-cta" href="/app/"><span data-es="Entrar">Sign in</span>
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5 4h7v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </a>
     <button class="burger" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu" data-es-aria-label="Abrir menú"><span></span><span></span></button>
@@ -442,8 +600,13 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         <a class="btn" href="#laboratorio"><span data-es="Entra a su laboratorio">Enter its lab</span>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </a>
-        <a class="btn ghost" href="#como-funciona" data-es="Cómo funciona">How it works</a>
+        <a class="btn ghost gbtn" href="/app/"><svg class="g" viewBox="0 0 48 48" aria-hidden="true"><use href="#gg"/></svg><span data-es="Entra con Google">Sign in with Google</span></a>
       </div>
+      <a class="hn-pill" href="#investigacion">
+        <svg class="hn-y" viewBox="0 0 24 24" role="img" aria-label="Hacker News"><use href="#hn"/></svg>
+        <span><b data-es="Vigila Hacker News a diario">Watches Hacker News every day</b><small data-es="Investiga lo nuevo en IA y decide qué probar">Researches what's new in AI and decides what to try</small></span>
+        <span class="live-dot" aria-hidden="true"></span>
+      </a>
     </div>
   </div>
   <a class="scroll-cue" href="#como-funciona" aria-label="Keep scrolling" data-es-aria-label="Seguir bajando"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></a>
@@ -482,7 +645,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 
 <dialog class="sheet" id="stepDlg" aria-labelledby="dlgTitle">
   <div class="sheet-in">
-    <div class="sheet-ph"><img id="dlgImg" src="img/step1.webp" width="900" height="900" alt="" /></div>
+    <div class="sheet-ph"><div class="lab-host" id="dlgLab"></div></div>
     <div class="sheet-tx">
       <p class="kicker" id="dlgKicker"></p>
       <h3 id="dlgTitle"></h3>
@@ -499,6 +662,63 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     <button class="x" type="button" id="dlgClose" aria-label="Close" data-es-aria-label="Cerrar">×</button>
   </div>
 </dialog>
+
+<dialog class="sheet bsheet" id="benchDlg" aria-labelledby="bTitle">
+  <div class="bsheet-in">
+    <header class="bhead">
+      <p class="kicker" id="bKicker"></p>
+      <h3 id="bTitle"></h3>
+      <p class="btag" id="bTag"></p>
+      <span class="nores" id="bNores"></span>
+    </header>
+    <div class="blab lab-host" id="bLab"></div>
+    <div class="bbody" id="bBody"></div>
+    <div class="sheet-nav bnav">
+      <button class="btn ghost" type="button" id="bPrev"></button>
+      <button class="btn" type="button" id="bNext"></button>
+    </div>
+    <button class="x" type="button" id="bClose" aria-label="Close" data-es-aria-label="Cerrar">×</button>
+  </div>
+</dialog>
+
+<section class="research" id="investigacion">
+  <div class="wrap">
+    <div class="head ent">
+      <div>
+        <span class="lockup hn-lock"><svg class="hn-y" viewBox="0 0 24 24" role="img" aria-label="Hacker News"><use href="#hn"/></svg>Hacker News<span class="sep" aria-hidden="true"></span><span class="ev" data-es="Radar de investigación">Research radar</span></span>
+        <h2 data-es="También investiga">It researches, too</h2>
+      </div>
+      <p class="lead" data-es="Aprender de sus errores no basta: también aprende de lo nuevo. Cada día lee lo que la comunidad de IA discute en Hacker News (modelos, técnicas, benchmarks), decide qué vale la pena probar, anota el trade-off y lleva lo prometedor a su laboratorio.">Learning from its mistakes isn't enough: it also learns from what's new. Every day it reads what the AI community is discussing on Hacker News (models, techniques, benchmarks), decides what's worth trying, writes down the trade-off and takes the promising ideas to its lab.</p>
+    </div>
+    <div class="rgrid">
+      <div class="rleft">
+        <ol class="rloop ent">
+          <li style="--c:#ff6600"><span class="ri" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><div><h3 data-es="Lee">Reads</h3><p data-es="Las historias de IA más comentadas de la semana: modelos nuevos, agentes, benchmarks e investigación.">The most discussed AI stories of the week: new models, agents, benchmarks and research.</p></div></li>
+          <li style="--c:#0081fb"><span class="ri" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><div><h3 data-es="Juzga">Judges</h3><p data-es="¿Qué capacidad podría mejorar? ¿Es concreto o es ruido? Por el titular y la fuente, sin inventar lo que no leyó.">Which capability could it improve? Is it concrete or just noise? From the headline and source, without inventing what it didn't read.</p></div></li>
+          <li style="--c:#ffa928"><span class="ri" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v16M5 8h14M5 8l-3 6a3 3 0 0 0 6 0zM19 8l-3 6a3 3 0 0 0 6 0z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><div><h3 data-es="Pesa el trade-off">Weighs the trade-off</h3><p data-es="Lo que podría ganar contra lo que cuesta: tokens, tiempo, dinero y el riesgo de estorbar en otro benchmark.">What it could gain against what it costs: tokens, time, money and the risk of getting in the way on another benchmark.</p></div></li>
+          <li style="--c:#6d5ce8"><span class="ri" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><div><h3 data-es="Lo prueba en el laboratorio">Tests it in the lab</h3><p data-es="Experimentar, vigilar o descartar. Lo que merece un experimento se vuelve una habilidad candidata, y pasa por el mismo laboratorio que todas.">Experiment, watch or skip. What deserves an experiment becomes a candidate skill and goes through the same lab as every other.</p></div></li>
+        </ol>
+        <article class="tradeoff ent" aria-label="Example decision" data-es-aria-label="Ejemplo de decisión">
+          <header><span class="ex-tag" data-es="Ejemplo">Example</span><span class="vd" data-es="Experimentar">Experiment</span><span class="cap" style="--c:#ff8f70"><i></i><span data-es="Razonamiento · ARC-AGI-3">Reasoning · ARC-AGI-3</span></span></header>
+          <p class="tq" data-es="«Búsqueda en árbol para agentes que juegan»">“Tree search for game-playing agents”</p>
+          <dl>
+            <div><dt data-es="Gana">Gain</dt><dd data-es="Podría descubrir las reglas de un juego en menos intentos.">Could work out a game's rules in fewer tries.</dd></div>
+            <div><dt data-es="A cambio">Trade-off</dt><dd data-es="Varias veces más tokens por tarea, y en BrowseComp no ayuda: hay que limitarla a juegos nuevos.">Several times more tokens per task, and it doesn't help on BrowseComp: it must be scoped to new games.</dd></div>
+            <div><dt data-es="Siguiente">Next</dt><dd data-es="Habilidad candidata «planea con un árbol corto», a la cámara de pruebas.">Candidate skill “plan with a short tree”, off to the test chamber.</dd></div>
+          </dl>
+        </article>
+      </div>
+      <aside class="hnbox ent" aria-labelledby="hnTitle">
+        <header><h3 id="hnTitle"><span class="live-dot" aria-hidden="true"></span><span data-es="En Hacker News esta semana">On Hacker News this week</span></h3><span class="stamp" id="hnStamp" data-es="En vivo">Live</span></header>
+        <ol class="hnlist" id="hnLive" aria-live="polite" aria-busy="true">
+          <li class="sk"></li><li class="sk"></li><li class="sk"></li><li class="sk"></li>
+        </ol>
+        <p class="fine" data-es="Las etiquetas son una suposición por palabras del titular; el veredicto lo da el agente con tu modelo.">Tags are a keyword guess from the headline; the verdict comes from the agent with your model.</p>
+        <a class="btn gbtn wide" href="/app/#radar"><svg class="g" viewBox="0 0 48 48" aria-hidden="true"><use href="#gg"/></svg><span data-es="Ve qué decide, con tu llave">See what it decides, with your key</span></a>
+      </aside>
+    </div>
+  </div>
+</section>
 
 <section id="laboratorio" style="padding-top:0">
   <div class="wrap">
@@ -531,9 +751,12 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
           <div><dt id="cL1" data-es="Qué es">What it is</dt><dd id="cA" data-es="Siete estaciones: la cuna donde despierta y una por cada benchmark de frontera que quiere superar.">Seven stations: the cradle where it wakes up and one for each frontier benchmark it wants to beat.</dd></div>
           <div><dt id="cL2" data-es="Cómo se usa">How to use it</dt><dd id="cB" data-es="Elige una estación y Agentztein va hacia ella para mostrarte qué mide.">Pick a station and Agentztein goes there to show you what it measures.</dd></div>
         </dl>
-        <button class="btn run" id="runBtn" hidden><span id="runTxt">Run an exercise</span>
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor"/></svg>
-        </button>
+        <div class="card-acts">
+          <button class="btn run" id="runBtn" hidden><span id="runTxt">Run an exercise</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor"/></svg>
+          </button>
+          <button class="btn ghost run" id="benchBtn" type="button" hidden><span data-es="Ver el benchmark">See the benchmark</span></button>
+        </div>
       </div>
     </div>
     <div class="picker" role="group" aria-label="Send Agentztein to a station" data-es-aria-label="Enviar a Agentztein a una estación">
@@ -546,13 +769,17 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
       <button class="pick" aria-pressed="false" data-id="horizon" style="--c:#8a7dff"><i></i><span data-es="Horizonte de METR">METR time horizon</span></button>
     </div>
     <p class="note" data-es="Aún no hay resultados de Agentztein en estos benchmarks: son la meta. Cuando los haya, se publicarán todos, también los malos.">There are no Agentztein results on these benchmarks yet: they are the goal. When there are, all of them will be published, including the bad ones.</p>
+    <div class="bl-head">
+      <h3 data-es="Cada benchmark, en detalle">Each benchmark, in detail</h3>
+      <p data-es="Ábrelo para ver su laboratorio: cómo funciona, de qué partes está hecho, cómo se califica y cómo podría mejorar Agentztein.">Open one to see its lab: how it works, what it's made of, how it's scored and how Agentztein could improve on it.</p>
+    </div>
     <div class="biz bench-list">
-      <article class="b"><div class="ph"><img src="img/bench-swe.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>SWE-bench Pro</h3><p data-es="Arreglar errores reales en proyectos de software de código abierto.">Fixing real bugs in open-source software projects.</p></div></article>
-      <article class="b"><div class="ph"><img src="img/bench-terminal.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>Terminal-Bench</h3><p data-es="Tareas largas en la terminal: compilar, configurar servidores y depurar, sin ayuda.">Long terminal tasks: building, configuring servers and debugging, without help.</p></div></article>
-      <article class="b"><div class="ph"><img src="img/bench-arc.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>ARC-AGI-3</h3><p data-es="Juegos interactivos nuevos donde hay que descubrir las reglas sin instrucciones.">New interactive games where the rules must be figured out without instructions.</p></div></article>
-      <article class="b"><div class="ph"><img src="img/bench-web.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>BrowseComp</h3><p data-es="Encontrar información muy difícil de hallar, navegando la web.">Finding very hard-to-find information by browsing the web.</p></div></article>
-      <article class="b"><div class="ph"><img src="img/bench-research.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>MLE-bench &amp; PaperBench</h3><p data-es="Investigación de IA: competencias de machine learning y replicar artículos.">AI research: machine learning competitions and replicating papers.</p></div></article>
-      <article class="b"><div class="ph"><img src="img/bench-horizon.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3 data-es="Horizonte de METR">METR time horizon</h3><p data-es="Cuántas horas de trabajo experto completa solo.">How many hours of expert work it completes on its own.</p></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-swe.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>SWE-bench Pro</h3><p data-es="Arreglar errores reales en proyectos de software de código abierto.">Fixing real bugs in open-source software projects.</p><button class="more" type="button" data-bench="swe"><span data-es="Explora el laboratorio">Explore the lab</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-terminal.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>Terminal-Bench</h3><p data-es="Tareas largas en la terminal: compilar, configurar servidores y depurar, sin ayuda.">Long terminal tasks: building, configuring servers and debugging, without help.</p><button class="more" type="button" data-bench="terminal"><span data-es="Explora el laboratorio">Explore the lab</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-arc.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>ARC-AGI-3</h3><p data-es="Juegos interactivos nuevos donde hay que descubrir las reglas sin instrucciones.">New interactive games where the rules must be figured out without instructions.</p><button class="more" type="button" data-bench="arc"><span data-es="Explora el laboratorio">Explore the lab</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-web.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>BrowseComp</h3><p data-es="Encontrar información muy difícil de hallar, navegando la web.">Finding very hard-to-find information by browsing the web.</p><button class="more" type="button" data-bench="web"><span data-es="Explora el laboratorio">Explore the lab</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-research.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3>MLE-bench &amp; PaperBench</h3><p data-es="Investigación de IA: competencias de machine learning y replicar artículos.">AI research: machine learning competitions and replicating papers.</p><button class="more" type="button" data-bench="research"><span data-es="Explora el laboratorio">Explore the lab</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div></article>
+      <article class="b"><div class="ph"><img src="img/bench-horizon.webp" width="700" height="700" alt="" loading="lazy" /></div><div class="tx"><h3 data-es="Horizonte de METR">METR time horizon</h3><p data-es="Cuántas horas de trabajo experto completa solo.">How many hours of expert work it completes on its own.</p><button class="more" type="button" data-bench="horizon"><span data-es="Explora el laboratorio">Explore the lab</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div></article>
     </div>
   </div>
 </section>
@@ -612,6 +839,8 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     <span data-es="Proyecto participante en el Meta Global AI Developer Hackathon 2026, organizado con Cerebral Valley">Participating project in the Meta Global AI Developer Hackathon 2026, organized with Cerebral Valley</span>
     <span data-es="Sin resultados inventados">No made-up results</span>
     <span data-es="Agentztein es un homenaje a Muse; no es un producto oficial de Meta">Agentztein is a tribute to Muse; not an official Meta product</span>
+    <span data-es="Hacker News y su logo «Y» son de Y Combinator; Agentztein solo lee su API pública y no está afiliado a Y Combinator">Hacker News and its “Y” logo belong to Y Combinator; Agentztein only reads its public API and is not affiliated with Y Combinator</span>
+    <a href="/panel/" data-es="Ver los datos del laboratorio">See the lab's data</a>
   </div></div>
 </footer>
 
@@ -710,8 +939,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     stepIx = i;
     const s = STEPS[i];
     dlg.style.setProperty("--c", s.c);
-    $("#dlgImg").src = s.img;
-    $("#dlgImg").alt = document.querySelectorAll(".step .ph img")[i].alt;
+    document.dispatchEvent(new CustomEvent("step:open", { detail: i }));
     $("#dlgKicker").textContent = L(T.stepOf)(i + 1);
     $("#dlgTitle").textContent = L(s.title);
     $("#dlgBody").textContent = L(s.body);
@@ -721,7 +949,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     $("#dlgPrev").disabled = i === 0;
     $("#dlgNext").disabled = i === STEPS.length - 1;
   };
-  document.querySelectorAll(".more").forEach((b) => b.addEventListener("click", () => { fillStep(Number(b.dataset.step)); dlg.showModal(); }));
+  document.querySelectorAll(".more[data-step]").forEach((b) => b.addEventListener("click", () => { fillStep(Number(b.dataset.step)); dlg.showModal(); }));
   $("#dlgPrev").addEventListener("click", () => { if (stepIx > 0) { fillStep(stepIx - 1); replay($(".sheet-in"), "swap"); } });
   $("#dlgNext").addEventListener("click", () => { if (stepIx < STEPS.length - 1) { fillStep(stepIx + 1); replay($(".sheet-in"), "swap"); } });
   $("#dlgClose").addEventListener("click", () => dlg.close());
@@ -740,7 +968,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   };
   const MEASURES = { en: "What it measures", es: "Qué mide" }, TRAINS = { en: "Skill it trains", es: "Habilidad que entrena" };
   const picks = [...document.querySelectorAll(".pick")];
-  const card = $("#card"), runBtn = $("#runBtn"), runTxt = $("#runTxt");
+  const card = $("#card"), runBtn = $("#runBtn"), runTxt = $("#runTxt"), benchBtn = $("#benchBtn");
   let current = "";
   function show(id) {
     const j = INFO[id];
@@ -752,6 +980,8 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     $("#cL1").textContent = L(j.l1 || MEASURES); $("#cA").textContent = L(j.a);
     $("#cL2").textContent = L(j.l2 || TRAINS); $("#cB").textContent = L(j.b);
     runBtn.hidden = !(EX[id] && root.classList.contains("room-3d"));
+    benchBtn.hidden = !EX[id];
+    benchBtn.dataset.bench = id;
     replay(card, "swap");
   }
   $("#cDot").style.setProperty("--c", "#0081fb");
@@ -863,7 +1093,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   document.querySelectorAll(".ent").forEach((el) => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add("in"); else io.observe(el); });
   const links = [...document.querySelectorAll(".links a[href^='#']")];
   const nio = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) links.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id)); }), { rootMargin: "-50% 0px -50% 0px" });
-  ["como-funciona", "laboratorio", "meta", "avance"].forEach((id) => nio.observe(document.getElementById(id)));
+  ["como-funciona", "investigacion", "laboratorio", "meta", "avance"].forEach((id) => nio.observe(document.getElementById(id)));
 
   applyLang(lang, false);
 })();

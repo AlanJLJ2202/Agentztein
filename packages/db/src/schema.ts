@@ -13,6 +13,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 // Append-only tables (ADR-009) are protected by triggers in migration 0001_immutability.sql:
@@ -257,5 +258,57 @@ export const evidence = pgTable(
   (t) => [
     foreignKey({ columns: [t.skillId, t.version], foreignColumns: [skillVersions.skillId, skillVersions.version] }),
     check("evidence_counts_chk", sql`${t.successes} >= 0 and ${t.successes} <= ${t.trials}`),
+  ],
+);
+
+/* ---------- App (signed-in users) ----------
+   Mutable product state, kept apart from the append-only research tables. Lives in its own schema `app`,
+   which the Supabase Data API does not expose: only the server functions in /api read or write it. */
+export const app = pgSchema("app");
+
+/** One model-provider API key per user and provider, encrypted by the server (AES-256-GCM). */
+export const providerKeys = app.table(
+  "provider_keys",
+  {
+    userId: uuid("user_id").notNull(),
+    provider: text("provider").notNull(),
+    /** `v1:<iv>:<tag>:<ciphertext>`, base64; bound to user and provider as additional data. */
+    secret: text("secret").notNull(),
+    /** Last characters of the key, to recognise it without decrypting. */
+    hint: text("hint").notNull(),
+    model: text("model"),
+    models: jsonb("models").notNull().default(sql`'[]'::jsonb`),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.provider] })],
+);
+
+/** What the research triage decided about each story it read, per user. */
+export const researchNotes = app.table(
+  "research_notes",
+  {
+    userId: uuid("user_id").notNull(),
+    source: text("source").notNull(),
+    externalId: text("external_id").notNull(),
+    title: text("title").notNull(),
+    url: text("url"),
+    discussionUrl: text("discussion_url"),
+    points: integer("points"),
+    postedAt: timestamp("posted_at", { withTimezone: true }),
+    capability: text("capability"),
+    verdict: text("verdict").notNull(),
+    gain: text("gain").notNull(),
+    cost: text("cost").notNull(),
+    why: text("why").notNull(),
+    provider: text("provider").notNull(),
+    model: text("model").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.source, t.externalId] }),
+    index("research_notes_user_created").on(t.userId, t.createdAt),
+    check("research_notes_verdict_chk", sql`${t.verdict} in ('experiment', 'watch', 'skip')`),
   ],
 );

@@ -223,3 +223,24 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
   determinista del mecanismo; el panel aún los muestra. No hay resultados en ningún benchmark.
 - **Pendiente:** elegir el primer benchmark para E2 (terminal o código), el subconjunto y el presupuesto, y
   el par de dominios en tensión para la corrida confirmatoria.
+
+## ADR-019 — Cuentas con Google, API key propia y radar de investigación
+- **Contexto:** Alan pidió (2 nov 2026) pasar de la landing a un producto con login de Google donde cada
+  usuario conecte su propia API key (los pagos y créditos de IA quedan para una fase 2), y que el agente
+  también investigue lo nuevo (monitoreando Hacker News), no solo aprenda de sus errores.
+- **Decisión:**
+  - Login con **Supabase Auth (Google, PKCE)**: el proyecto ya usa Supabase. La app (`apps/app`, en `/app/`)
+    lee la URL y la llave pública de `/api/config`, así que solo hay que configurar variables en Vercel.
+  - **Funciones de Vercel en `/api`** (JavaScript ESM sin compilación para evitar sorpresas de empaquetado):
+    verifican el token con `GET /auth/v1/user` de Supabase y guardan en el esquema `app` (no expuesto por la
+    Data API). Tablas mutables a propósito, separadas de las de investigación (append-only, ADR-009).
+  - **Llaves cifradas** con AES-256-GCM (llave derivada de `KEYS_ENCRYPTION_SECRET`, datos adicionales =
+    usuario + proveedor). El navegador solo ve los últimos 4 caracteres. Claude va por el SDK oficial con
+    `baseURL` fijo; los demás por sus endpoints compatibles con OpenAI.
+  - **Radar:** lee las historias de IA más comentadas de la semana (API pública de Algolia para HN), el modelo
+    del usuario decide `experiment` / `watch` / `skip` con ganancia, costo y por qué, juzgando solo titular y
+    fuente. Las historias van como datos no confiables; la respuesta se valida (ids y enums) antes de guardar.
+    "Experimentar" no adopta nada: produce una candidata que debe pasar el mismo laboratorio.
+- **Marca:** el logo "Y" de Hacker News se usa para indicar la fuente, con aviso de no afiliación a
+  Y Combinator; no se dice ni sugiere respaldo de YC.
+- **Pendiente:** fase 2 (créditos), que el radar corra solo a diario (cron) y conectar sus candidatas al ciclo E2–E5.

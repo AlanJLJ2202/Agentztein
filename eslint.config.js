@@ -12,6 +12,11 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
   {
+    // Vercel functions (Web Request/Response on Node) and the shared research package (browser and Node).
+    files: ["api/**/*.js", "packages/research/**/*.js"],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     rules: {
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", ignoreRestSiblings: true }],
       "@typescript-eslint/consistent-type-imports": "error",

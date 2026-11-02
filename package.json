@@ -10,7 +10,7 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "pnpm -r --parallel typecheck",
     "test": "vitest run",
-    "check": "pnpm lint && pnpm typecheck && pnpm datasets:verify && pnpm test && pnpm build:panel",
+    "check": "pnpm lint && pnpm typecheck && pnpm datasets:verify && pnpm test && pnpm build:panel && pnpm build:app",
     "db:generate": "pnpm --filter @skillab/db generate",
     "db:migrate": "pnpm --filter @skillab/db migrate",
     "datasets:generate": "tsx packages/scenarios/src/cli/generate.ts",
@@ -18,7 +18,8 @@
     "env:conflict": "tsx packages/env-recon/src/cli/conflict.ts",
     "datasets:review": "tsx packages/scenarios/src/cli/review.ts",
     "build:panel": "pnpm --filter @skillab/panel build",
-    "build:site": "pnpm build:panel && pnpm --filter @skillab/landing build && rm -rf site && mkdir -p site/panel && cp -r apps/landing/dist/. site/ && cp -r apps/panel/dist/. site/panel/"
+    "build:site": "pnpm build:panel && pnpm build:app && pnpm --filter @skillab/landing build && rm -rf site && mkdir -p site/panel site/app && cp -r apps/landing/dist/. site/ && cp -r apps/panel/dist/. site/panel/ && cp -r apps/app/dist/. site/app/",
+    "build:app": "pnpm --filter @skillab/app build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
@@ -30,5 +31,10 @@
     "typescript": "5.9.3",
     "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
+    "@skillab/research": "workspace:*",
+    "pg": "^8.23.1"
   }
 }

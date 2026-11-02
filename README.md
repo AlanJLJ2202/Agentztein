@@ -44,6 +44,9 @@ packages/env-recon   entorno sintético de conciliación: generador, reglas R1/R
 packages/scenarios   marco común + 5 escenarios de negocio (conciliación, manufactura, devoluciones, mensajes, envíos)
 packages/db          esquema Drizzle + migraciones (tablas append-only, esquema `sealed`)
 apps/panel           panel estático de solo lectura (Vite + React): validación del entorno, sin agentes aún
+apps/app             app con sesión (Vite + React) en /app/: login con Google, API key propia por usuario y radar de investigación
+api/                 funciones de Vercel: /api/config, /api/keys (llaves cifradas), /api/radar (Hacker News + triage con el modelo del usuario)
+packages/research    lógica compartida del radar: búsqueda en Hacker News, capacidades y triage (prompt + validación)
 apps/landing         landing de presentación: Agentztein en 3D (three.js) al estilo Meta; `pnpm --filter @skillab/landing stills` regenera sus imágenes
 datasets/manifest.json  hashes de todos los splits (los datos se regeneran desde semillas)
 ```
@@ -60,6 +63,22 @@ Todo se opera desde el navegador (ADR-015):
 4. **Vercel:** importa el repo; `vercel.json` ya indica cómo construir el sitio (`pnpm build:site`): la landing
    (`apps/landing`) en `/` y el panel (`apps/panel`) en `/panel/`. Producción sale de `main`; cada rama tiene su URL de *preview*.
 5. Cada push corre `ci` (lint, typecheck, verificación de datasets y tests con Postgres efímero).
+
+### Login con Google y API key propia (`/app/`, ADR-019)
+
+1. **Google Cloud → APIs & Services → Credentials:** crear un *OAuth client ID* (Web). En *Authorized redirect URIs*
+   poner `https://<proyecto>.supabase.co/auth/v1/callback`.
+2. **Supabase → Authentication → Sign In / Providers → Google:** activarlo con el Client ID y el Client Secret.
+   En *Authentication → URL Configuration*: *Site URL* = el dominio de producción y en *Redirect URLs* agregar
+   `https://<dominio>/app/` y `https://*-<equipo>.vercel.app/app/` (previews).
+3. **Vercel → Settings → Environment Variables:** `SUPABASE_URL`, `SUPABASE_ANON_KEY` (públicas),
+   `DATABASE_URL` (Transaction pooler, puerto 6543), `DATABASE_SSL_CA` y `KEYS_ENCRYPTION_SECRET`
+   (32+ caracteres aleatorios, p. ej. `openssl rand -base64 48`). Si falta alguna, `/app/` dice cuál.
+4. Correr `db-migrate` para crear el esquema `app` (migración `0005`). No se expone por la Data API de Supabase.
+
+Las llaves se verifican con el proveedor, se cifran con AES-256-GCM (atadas a usuario y proveedor) y nunca
+regresan al navegador. Proveedores: Anthropic (SDK oficial), Meta Llama API, OpenAI, Google Gemini y OpenRouter.
+Comprar créditos de IA queda para la fase 2.
 
 ## Cómo correr (local, opcional)
 
