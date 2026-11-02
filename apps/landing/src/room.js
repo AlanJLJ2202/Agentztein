@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { C, makeAgent, pose, setArms, makeCoil, makeBolt, makeBench, setupRenderer, addLights, paintScreen, makeMetaLogo } from "./agent.js";
+import { C, makeAgent, pose, setArms, makeCoil, makeBolt, makeBench, makeChip, setupRenderer, addLights, paintScreen, makeMetaLogo } from "./agent.js";
 
 export const STATIONS = [
   { id: "cuna", name: "La cuna", color: C.meta, pos: [0, -3.5], screen: "pulse", say: "¡Estoy vivo!" },
@@ -174,9 +174,9 @@ export function buildRoom(scene) {
 /**
  * @param {HTMLCanvasElement} canvas
  * @param {{ reduced?: boolean, onArrive?: (id: string) => void, onSay?: (text: string) => void,
- *           onFrame?: (head: { x: number, y: number }) => void, onFlash?: () => void }} o
+ *           onFrame?: (head: { x: number, y: number }) => void, onFlash?: () => void, onMove?: () => void }} o
  */
-export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay = () => {}, onFrame = () => {}, onFlash = () => {} } = {}) {
+export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay = () => {}, onFrame = () => {}, onFlash = () => {}, onMove = () => {} } = {}) {
   const renderer = setupRenderer(canvas);
   const scene = new THREE.Scene();
   addLights(scene, renderer, { extent: 9 });
@@ -215,7 +215,7 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
 
   // ---- moving -------------------------------------------------------------------------------------
   const target = agent.position.clone();
-  let pending = null, active = null, t = 0, zap = 0, armsUp = 0, thinkUntil = 0, happyUntil = 0;
+  let pending = null, active = null, t = 0, zap = 0, armsUp = 0, thinkUntil = 0, happyUntil = 0, alertUntil = 0, screenMode = null;
   const keys = new Set();
   const clampToRoom = (v) => {
     v.x = THREE.MathUtils.clamp(v.x, -BOUNDS.x, BOUNDS.x);
@@ -230,13 +230,15 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
   function goTo(id) {
     const s = stations.find((x) => x.id === id);
     if (!s) return;
+    if (s !== active) { onMove(); clearExercise(); }
     pending = s;
     target.set(s.stand.x, HOVER_Y, s.stand.z);
     if (active && active !== s) deactivate();
   }
   function moveTo(point) {
     pending = null;
-    if (active) deactivate();
+    if (active) { deactivate(); onMove(); }
+    clearExercise();
     target.copy(clampToRoom(point.clone())).setY(HOVER_Y);
   }
   function deactivate() { active = null; }
@@ -253,38 +255,89 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
     }
   }
 
-  // ---- input --------------------------------------------------------------------------------------
+  // ---- input: drag it, tap the floor or a station, arrows / WASD, or the on-screen pad ----------------
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-  let down = null;
-  canvas.addEventListener("pointerdown", (ev) => { down = [ev.clientX, ev.clientY]; });
-  canvas.addEventListener("pointerup", (ev) => {
-    if (!down || Math.hypot(ev.clientX - down[0], ev.clientY - down[1]) > 6) return;
+  const stationHits = stations.map((s) => s.hit);
+  const aim = (ev) => {
     const r = canvas.getBoundingClientRect();
     ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    const sHit = ray.intersectObjects(stations.map((s) => s.hit), false)[0];
+  };
+  let down = null, dragging = false, engaged = false;
+  canvas.addEventListener("pointerdown", (ev) => {
+    engaged = true;
+    down = [ev.clientX, ev.clientY];
+    aim(ev);
+    if (ev.pointerType === "mouse" && ray.intersectObject(u.hit, false).length) {
+      dragging = true; controls.enabled = false;
+      canvas.setPointerCapture(ev.pointerId);
+      canvas.style.cursor = "grabbing";
+    }
+  });
+  canvas.addEventListener("pointermove", (ev) => {
+    if (ev.pointerType !== "mouse") return;
+    aim(ev);
+    if (dragging) { const f = ray.intersectObject(floorHit, false)[0]; if (f) moveTo(f.point); return; }
+    canvas.style.cursor = ray.intersectObject(u.hit, false).length ? "grab" : ray.intersectObjects(stationHits, false).length ? "pointer" : "crosshair";
+  });
+  canvas.addEventListener("pointerup", (ev) => {
+    if (dragging) { dragging = false; controls.enabled = !coarse; down = null; canvas.style.cursor = "grab"; return; }
+    if (!down || Math.hypot(ev.clientX - down[0], ev.clientY - down[1]) > 6) return;
+    aim(ev);
+    const sHit = ray.intersectObjects(stationHits, false)[0];
     if (sHit) { goTo(stations.find((s) => s.hit === sHit.object).id); return; }
     const fHit = ray.intersectObject(floorHit, false)[0];
     if (fHit) moveTo(fHit.point);
   });
-  canvas.addEventListener("pointermove", (ev) => {
-    if (ev.pointerType !== "mouse") return;
-    const r = canvas.getBoundingClientRect();
-    ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
-    ray.setFromCamera(ndc, camera);
-    canvas.style.cursor = ray.intersectObjects(stations.map((s) => s.hit), false).length ? "pointer" : "crosshair";
-  });
   const KEYMAP = { ArrowUp: "f", KeyW: "f", ArrowDown: "b", KeyS: "b", ArrowLeft: "l", KeyA: "l", ArrowRight: "r", KeyD: "r" };
-  canvas.addEventListener("keydown", (ev) => {
+  // once you have touched the lab, the keys drive it while it is on screen
+  const onKey = (isDown) => (ev) => {
     const k = KEYMAP[ev.code];
-    if (!k) return;
-    keys.add(k); ev.preventDefault();
-  });
-  canvas.addEventListener("keyup", (ev) => { const k = KEYMAP[ev.code]; if (k) keys.delete(k); });
-  canvas.addEventListener("blur", () => keys.clear());
+    if (!k || ev.altKey || ev.ctrlKey || ev.metaKey) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target?.tagName || "")) return;
+    if (document.activeElement !== canvas && !(engaged && visible)) return;
+    if (isDown) keys.add(k); else keys.delete(k);
+    ev.preventDefault();
+  };
+  window.addEventListener("keydown", onKey(true));
+  window.addEventListener("keyup", onKey(false));
+  window.addEventListener("blur", () => keys.clear());
 
+  // ---- exercise reactions (the page runs the script, the lab acts it out) ---------------------------------
+  const SLOTS = [[-0.52, 1.02], [0.52, 1.02], [-0.42, 0.42], [0.42, 0.42], [0, 0.42], [0, 1.3]];
+  const installed = new Map();
+  let fresh = null, flight = null, ringFlash = null;
+  function clearExercise() {
+    if (fresh && !flight) { fresh.removeFromParent(); }
+    if (!flight) fresh = null;
+    screenMode = null; alertUntil = 0;
+  }
+  function react(kind) {
+    const s = active;
+    if (!s || s.id === "cuna") return;
+    engaged = true;
+    if (kind === "run") { screenMode = "pulse"; thinkUntil = 0; happyUntil = 0; }
+    if (kind === "fail") { screenMode = "alert"; alertUntil = t + 1.3; ringFlash = { s, color: 0xf0533c, until: t + 1.1 }; }
+    if (kind === "think") { screenMode = "sync"; thinkUntil = t + 1.5; }
+    if (kind === "new") {
+      screenMode = "test";
+      if (fresh) fresh.removeFromParent();
+      fresh = makeChip({ id: s.id, name: "Nueva", color: s.color });
+      fresh.position.set(s.center.x, 2.2, s.center.z);
+      fresh.scale.setScalar(0.001);
+      fresh.userData.grow = 0;
+      scene.add(fresh);
+    }
+    if (kind === "ok") { screenMode = "ok"; happyUntil = t + 1.3; ringFlash = { s, color: 0x22b864, until: t + 1.1 }; }
+    if (kind === "install" && fresh) {
+      const slot = installed.has(s.id) ? null : SLOTS[installed.size % SLOTS.length];
+      flight = { chip: fresh, from: fresh.position.clone(), t0: t, slot, id: s.id };
+      fresh = null;
+      screenMode = "ok";
+    }
+  }
   let visible = true;
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(canvas);
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (!visible) { engaged = false; keys.clear(); } }).observe(canvas);
   let last = performance.now(), screenTick = 0, boltTick = 0;
   const tmp = new THREE.Vector3(), fwd = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
 
@@ -326,7 +379,11 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
     } else if (pending) {
       arrive(pending);
     } else if (active && active.id !== "cuna") {
-      const yaw = Math.atan2(active.center.x - agent.position.x, active.center.z - agent.position.z);
+      // three quarters: half toward the station, half toward the visitor
+      const toTable = Math.atan2(active.center.x - agent.position.x, active.center.z - agent.position.z);
+      const toCam = Math.atan2(camera.position.x - agent.position.x, camera.position.z - agent.position.z);
+      const mix = Math.atan2(Math.sin(toTable) * 0.45 + Math.sin(toCam) * 0.55, Math.cos(toTable) * 0.45 + Math.cos(toCam) * 0.55);
+      const yaw = mix;
       let d = yaw - agent.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
       agent.rotation.y += d * Math.min(1, dt * 6);
     } else if (active && active.id === "cuna") {
@@ -361,7 +418,45 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
       }
     }
 
-    const mood = u.power < 0.5 ? "sleep" : t < thinkUntil ? "think" : t < happyUntil ? "happy" : "idle";
+    // a new skill appears over the station, then flies to its body and is sewn on
+    if (fresh && fresh.userData.grow < 1) {
+      fresh.userData.grow = Math.min(1, fresh.userData.grow + dt * 2.2);
+      fresh.scale.setScalar(0.001 + fresh.userData.grow * 1.1);
+    }
+    if (fresh) { fresh.rotation.y += dt * 2; fresh.position.y = 2.2 + Math.sin(tt * 3) * 0.06; }
+    if (flight) {
+      const k = Math.min(1, (t - flight.t0) / 0.9);
+      const e = k * k * (3 - 2 * k);
+      const slot = flight.slot || SLOTS[0];
+      const to = agent.localToWorld(new THREE.Vector3(slot[0], slot[1], 0.5));
+      flight.chip.position.lerpVectors(flight.from, to, e);
+      flight.chip.position.y += Math.sin(e * Math.PI) * 0.8;
+      flight.chip.scale.setScalar(1.1 - e * 0.75);
+      flight.chip.rotation.y += dt * 8;
+      if (k >= 1) {
+        if (flight.slot) {
+          agent.add(flight.chip);
+          flight.chip.position.set(flight.slot[0], flight.slot[1], 0.47);
+          flight.chip.rotation.set(0, 0, 0);
+          flight.chip.scale.setScalar(0.42);
+          if (flight.chip.userData.tag) flight.chip.userData.tag.visible = false;
+          installed.set(flight.id, flight.chip);
+        } else {
+          flight.chip.removeFromParent();
+          const old = installed.get(flight.id);
+          if (old) old.userData.body.material.emissiveIntensity = 1.2;
+        }
+        flight = null;
+        armsUp = t + 1.6; happyUntil = t + 2.2;
+        onFlash();
+        onSay(installed.size > 1 ? `¡Pieza nueva! Ya van ${installed.size}.` : "¡Pieza nueva!");
+      }
+    }
+    installed.forEach((c) => { c.userData.body.material.emissiveIntensity += (0.35 - c.userData.body.material.emissiveIntensity) * Math.min(1, dt * 2); });
+    if (ringFlash && t > ringFlash.until) { ringFlash.s.ring.material.color.setHex(ringFlash.s.color); ringFlash.s.ring.material.emissive.setHex(ringFlash.s.color); ringFlash = null; }
+    if (ringFlash) { ringFlash.s.ring.material.color.setHex(ringFlash.color); ringFlash.s.ring.material.emissive.setHex(ringFlash.color); ringFlash.s.ring.material.emissiveIntensity = 1.4; }
+
+    const mood = u.power < 0.5 ? "sleep" : t < alertUntil ? "alert" : t < thinkUntil ? "think" : t < happyUntil ? "happy" : "idle";
     // look at the station it is working on, otherwise ahead
     if (active && active.id !== "cuna") u.look.set(0, -0.25);
     else u.look.set(0, 0);
@@ -370,11 +465,11 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
     const raised = t < armsUp;
     setArms(agent, raised ? -2.5 : -0.16 - Math.abs(swing) * 0.2, raised ? 2.5 : 0.16 + Math.abs(swing) * 0.2, swing, -swing);
 
-    if ((screenTick += dt) > 0.06) { screenTick = 0; paintScreen(u.screenTex, active ? active.screen : "pulse", tt); }
+    if ((screenTick += dt) > 0.06) { screenTick = 0; paintScreen(u.screenTex, screenMode || (active ? active.screen : "pulse"), tt); }
 
     stations.forEach((s) => {
       const on = s === active;
-      s.ring.material.emissiveIntensity += ((on ? 1.1 : s === pending ? 0.6 : 0.15) - s.ring.material.emissiveIntensity) * Math.min(1, dt * 6);
+      if (!ringFlash || ringFlash.s !== s) s.ring.material.emissiveIntensity += ((on ? 1.1 : s === pending ? 0.6 : 0.15) - s.ring.material.emissiveIntensity) * Math.min(1, dt * 6);
       if (s.id !== "cuna") {
         s.prop.position.y = s.baseY + (on ? 0.12 + Math.sin(tt * 2) * 0.04 : 0);
         s.prop.rotation.y += ((on ? Math.sin(tt * 0.9) * 0.4 : 0) - s.prop.rotation.y) * Math.min(1, dt * 4);
@@ -385,12 +480,12 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
     });
 
     // the camera follows it, keeping whatever angle the visitor chose
-    tmp.set(agent.position.x * 0.55, 0.8, agent.position.z * 0.45 + 0.2);
+    tmp.set(agent.position.x * 0.55, active && !moving ? 1.3 : 0.8, agent.position.z * 0.45 + 0.2);
     const delta = tmp.sub(follow).multiplyScalar(Math.min(1, dt * 2.5));
     follow.add(delta); controls.target.add(delta); camera.position.add(delta);
     // dolly in while it works at a station, back out when it walks
     const off = camera.position.clone().sub(controls.target);
-    const want = active && !moving ? 9.5 : 15.6;
+    const want = active && !moving ? 11.8 : 15.6;
     off.setLength(off.length() + (want - off.length()) * Math.min(1, dt * 1.6));
     camera.position.copy(controls.target).add(off);
     controls.update();
@@ -403,7 +498,11 @@ export function createRoom(canvas, { reduced = false, onArrive = () => {}, onSay
   };
   tick();
 
-  return { goTo };
+  return {
+    goTo,
+    react,
+    press: (k, isDown) => { engaged = true; if (isDown) keys.add(k); else keys.delete(k); },
+  };
 }
 
 /** A still picture of the room (fallback without WebGL). */

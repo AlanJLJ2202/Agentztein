@@ -189,8 +189,45 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 .pick:focus-visible { outline: 3px solid var(--meta); outline-offset: 3px; }
 .note { margin-top: 14px; color: var(--muted); font-size: .9375rem; }
 .room-3d .bench-list { display: none; }
+
+/* On-screen pad, the run button and the exercise console */
+.pad { position: absolute; right: 20px; bottom: 20px; z-index: 2; display: none; grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(2, 48px); gap: 6px; }
+.room-3d .pad { display: grid; }
+.pk { all: unset; box-sizing: border-box; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: rgba(255, 255, 255, .92); color: var(--ink); cursor: pointer; box-shadow: 0 4px 14px rgba(28, 43, 51, .1); touch-action: none; transition: background-color .15s var(--ease), transform .12s var(--ease); }
+.pk svg { width: 16px; height: 16px; fill: currentColor; }
+.pk:hover { background: #fff; }
+.pk.on, .pk:active { background: var(--ink); color: #fff; transform: scale(.94); }
+.pk:focus-visible { outline: 3px solid var(--meta); outline-offset: 2px; }
+.pk.up { grid-column: 2; grid-row: 1; } .pk.left { grid-column: 1; grid-row: 2; } .pk.down { grid-column: 2; grid-row: 2; } .pk.right { grid-column: 3; grid-row: 2; }
+.run { margin-top: 16px; min-height: 44px; }
+.run[disabled] { opacity: .6; cursor: progress; }
+.run svg { width: 14px; height: 14px; }
+.run:hover svg { transform: translateX(2px); }
+.console { position: absolute; right: 20px; top: 64px; z-index: 3; width: min(400px, calc(100% - 40px)); max-height: calc(100% - 160px); overflow: auto; padding: 18px 18px 16px; border-radius: 22px; background: rgba(255, 255, 255, .97); box-shadow: 0 16px 50px rgba(28, 43, 51, .16); animation: soft .45s var(--ease); }
+.console[hidden] { display: none; }
+.console header { display: flex; align-items: center; gap: 10px; }
+.console header b { font-size: 1.0625rem; letter-spacing: -.01em; }
+.console .sim { padding: 3px 10px; border-radius: 999px; background: var(--amber-bg); color: var(--amber); font-size: .8125rem; font-weight: 700; }
+.console .x { all: unset; margin-left: auto; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; cursor: pointer; font-size: 1.4rem; line-height: 1; color: var(--muted); }
+.console .x:hover { background: var(--soft); }
+.console ol { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.console li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; align-items: start; padding: 9px 10px; border-radius: 12px; background: var(--soft); font-size: .9375rem; line-height: 1.35; animation: soft .4s var(--ease); }
+.console li i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: .8125rem; color: #fff; background: var(--meta); }
+.console li.fail { background: var(--bad-bg); } .console li.fail i { background: var(--bad); }
+.console li.ok { background: var(--ok-bg); } .console li.ok i { background: var(--ok); }
+.console li.new { background: #efeaff; } .console li.new i { background: #6d5ce8; }
+.console li.think i { background: #c98a00; }
+.console li.install { background: var(--ink); color: #fff; } .console li.install i { background: var(--ok); }
+.console li.now i { animation: beat .9s ease-in-out infinite; }
+@keyframes beat { 50% { transform: scale(.82); } }
+.ex-end { margin-top: 10px; font-size: .875rem; color: var(--muted); }
+.ex-end:empty { display: none; }
 .bench-list { margin-top: 32px; }
 @media (max-width: 760px) {
+  .console { position: static; width: auto; max-height: none; margin-top: 12px; box-shadow: none; background: var(--soft); }
+  .console li { background: #fff; }
+  .pad { right: 12px; bottom: 12px; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(2, 44px); }
+  .pk { width: 44px; height: 44px; }
   .stage { height: 460px; }
   .card { position: static; width: auto; margin-top: 12px; box-shadow: none; background: var(--soft); }
   .hint { left: 50%; right: auto; transform: translateX(-50%); white-space: nowrap; }
@@ -203,39 +240,6 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 .bar.scrolled { box-shadow: 0 6px 24px rgba(28, 43, 51, .08); }
 .tilt { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--ty, 0px)); transition: transform .35s var(--ease); }
 .tilt:hover { --ty: -4px; }
-
-/* ---------- Problem: two bank statements ---------- */
-.problem { background: var(--soft); }
-.choose { display: grid; gap: 14px; }
-.choose p { font-size: var(--t-lead); line-height: 1.4; }
-.choose q { font-weight: 700; }
-.opts { display: flex; flex-wrap: wrap; gap: 8px; }
-.opt { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; background: #fff; font-weight: 600; transition: background-color .2s var(--ease), color .2s var(--ease), transform .15s var(--ease); }
-.opt:hover { background: var(--soft-2); }
-.opt:active { transform: scale(.97); }
-.opt[aria-checked="true"] { background: var(--blue); color: #fff; }
-.opt:focus-visible { outline: 3px solid var(--meta); outline-offset: 3px; }
-.receipts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(14px, 2vw, 28px); }
-@media (max-width: 760px) { .receipts { grid-template-columns: minmax(0, 1fr); } }
-.receipt { background: #fff; border-radius: var(--r); padding: clamp(22px, 3vw, 36px); }
-.receipt h3 { font-size: clamp(1.6rem, 1.2rem + 1vw, 2.2rem); }
-.receipt .rule { margin-top: 6px; color: var(--muted); }
-.receipt ul { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 8px; font-variant-numeric: tabular-nums; }
-.receipt li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; padding: 14px 16px; border-radius: 16px; background: var(--soft); transition: background-color .4s var(--ease); }
-.receipt li .what { font-weight: 600; }
-.receipt li .when { color: var(--muted); font-size: .9375rem; grid-column: 1; }
-.receipt li .amt { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-weight: 700; }
-.receipt li .why { grid-column: 1 / -1; font-size: .9375rem; font-weight: 600; display: none; margin-top: 4px; }
-.receipt li.cut .why { display: block; }
-.receipt li.good { background: var(--ok-bg); }
-.receipt li.good .why { color: var(--ok); }
-.receipt li.harm { background: var(--bad-bg); }
-.receipt li.harm .why { color: var(--bad); }
-.verdict { margin-top: 20px; display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px; font-weight: 700; }
-.verdict.good { background: var(--ok-bg); color: var(--ok); }
-.verdict.bad { background: var(--bad-bg); color: var(--bad); }
-.verdict.pop { animation: soft .45s var(--ease); }
-.fine { margin-top: 20px; color: var(--muted); font-size: .9375rem; max-width: 52em; }
 
 /* ---------- How it develops itself: one 3D scene per step ---------- */
 .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 1.6vw, 20px); }
@@ -377,46 +381,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
       </div>
     </div>
   </div>
-  <a class="scroll-cue" href="#problema" aria-label="Seguir bajando"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></a>
-</section>
-
-<section class="problem" id="problema">
-  <div class="wrap">
-    <div class="head ent">
-      <h2>Mejorar sin olvidar</h2>
-      <div class="choose">
-        <p>Agentztein aprendió: <q>antes de responder, busca en internet</q>. ¿Dónde usa esa habilidad?</p>
-        <div class="opts" role="radiogroup" aria-label="Dónde usar la habilidad">
-          <button class="opt" role="radio" aria-checked="true" data-where="both">En todo</button>
-          <button class="opt" role="radio" aria-checked="false" data-where="a">Solo en investigación web</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="receipts ent">
-      <article class="receipt">
-        <h3>Investigación web</h3>
-        <p class="rule">Preguntas difíciles cuya respuesta sí está en internet.</p>
-        <ul>
-          <li><span class="what">Fecha de un artículo científico</span><span class="when">pregunta 1</span><span class="amt">Resuelta</span></li>
-          <li><span class="what">Autor de un dataset poco conocido</span><span class="when">pregunta 2</span><span class="amt">Resuelta</span></li>
-          <li class="cut good"><span class="what">Dato enterrado en un foro de 2019</span><span class="when">pregunta 3</span><span class="amt">Resuelta</span><span class="why">Bien: buscar en internet era justo lo que hacía falta.</span></li>
-        </ul>
-        <p class="verdict good">Aquí la habilidad ayuda</p>
-      </article>
-      <article class="receipt">
-        <h3>Acertijos nuevos</h3>
-        <p class="rule">Juegos que nunca ha visto. La respuesta no está en ningún lado: hay que descubrir las reglas.</p>
-        <ul>
-          <li><span class="what">Nivel 1</span><span class="when">acertijo tipo ARC-AGI-3</span><span class="amt">Resuelto</span></li>
-          <li><span class="what">Nivel 2</span><span class="when">acertijo tipo ARC-AGI-3</span><span class="amt">Resuelto</span></li>
-          <li id="b-real" class="cut harm"><span class="what">Nivel 3</span><span class="when">acertijo tipo ARC-AGI-3</span><span class="amt">Sin tiempo</span><span class="why">Mal: gastó su tiempo buscando en internet algo que no existe, y antes lo resolvía.</span></li>
-        </ul>
-        <p class="verdict bad" id="b-verdict">Rompió algo que ya sabía hacer</p>
-      </article>
-    </div>
-    <p class="fine">Ejemplo ilustrativo, pero el problema es real: estudios de octubre de 2026 encontraron que los agentes que se mejoran solos <a href="https://arxiv.org/abs/2610.22984">arreglan sus fallas pero les cuesta generalizar</a> y <a href="https://arxiv.org/abs/2610.25858">no siempre aprenden de forma continua</a>. Por eso cada habilidad de Agentztein lleva escrito dónde sí sirve.</p>
-  </div>
+  <a class="scroll-cue" href="#como-funciona" aria-label="Seguir bajando"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></a>
 </section>
 
 <section id="como-funciona">
@@ -450,7 +415,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   <div class="wrap">
     <div class="head ent">
       <h2>Recorre su laboratorio</h2>
-      <p class="lead">Cada estación es un benchmark de frontera. Toca el piso o una estación para mover a Agentztein, o usa las flechas. Si lo llevas a la cuna, vuelve a la vida.</p>
+      <p class="lead">Cada estación es un benchmark de frontera. Mueve a Agentztein, llévalo a una estación y córrele un ejercicio: verás cómo falla, crea una habilidad, la prueba y se la queda.</p>
     </div>
     <div class="stage-wrap">
       <div class="stage">
@@ -458,7 +423,18 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         <canvas id="room3d" tabindex="0" aria-label="Laboratorio en 3D. Toca el piso para mover a Agentztein o toca una estación para enviarlo. Con el laboratorio seleccionado, muévelo con las flechas o con W, A, S y D. También puedes usar los botones de abajo."></canvas>
         <div class="bubble" id="roomBubble" aria-live="polite"><span></span></div>
         <div class="flash" id="roomFlash" aria-hidden="true"></div>
-        <span class="hint" id="roomHint">Toca el piso o una estación · flechas o WASD</span>
+        <span class="hint" id="roomHint">Arrástralo, toca el piso o usa las flechas</span>
+        <div class="pad" role="group" aria-label="Mover a Agentztein">
+          <button class="pk up" data-k="f" aria-label="Adelante"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3 3 9h10z"/></svg></button>
+          <button class="pk left" data-k="l" aria-label="Izquierda"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8l6-5v10z"/></svg></button>
+          <button class="pk right" data-k="r" aria-label="Derecha"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8 7 3v10z"/></svg></button>
+          <button class="pk down" data-k="b" aria-label="Atrás"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13 3 7h10z"/></svg></button>
+        </div>
+        <section class="console" id="console" aria-label="Ejercicio de ejemplo" hidden>
+          <header><b id="exTitle">Ejercicio de ejemplo</b><span class="sim">Simulación</span><button class="x" id="exClose" aria-label="Cerrar ejercicio">×</button></header>
+          <ol id="exLog" aria-live="polite"></ol>
+          <p class="ex-end" id="exEnd"></p>
+        </section>
       </div>
       <div class="card" id="card" aria-live="polite">
         <p class="who-name"><span class="dot" id="cDot"></span><span id="cName">Su laboratorio</span></p>
@@ -466,6 +442,9 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
           <div><dt id="cL1">Qué es</dt><dd id="cA">Siete estaciones: la cuna donde despierta y una por cada benchmark de frontera que quiere superar.</dd></div>
           <div><dt id="cL2">Cómo se usa</dt><dd id="cB">Elige una estación y Agentztein va hacia ella para mostrarte qué mide.</dd></div>
         </dl>
+        <button class="btn run" id="runBtn" hidden>Correr un ejercicio
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor"/></svg>
+        </button>
       </div>
     </div>
     <div class="picker" role="group" aria-label="Enviar a Agentztein a una estación">
@@ -571,6 +550,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     $("#cName").textContent = j.name;
     $("#cL1").textContent = j.l1; $("#cA").textContent = j.a;
     $("#cL2").textContent = j.l2; $("#cB").textContent = j.b;
+    runBtn.hidden = !(EX[id] && document.documentElement.classList.contains("room-3d"));
     replay(card, "swap");
   };
   $("#cDot").style.setProperty("--c", "#0081fb");
@@ -579,25 +559,84 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     if (!document.documentElement.classList.contains("room-3d")) show(p.dataset.id);
   }));
   document.addEventListener("room:arrive", (e) => show(e.detail));
-  if (matchMedia("(pointer: coarse)").matches) $("#roomHint").textContent = "Toca el piso o una estación";
+  if (matchMedia("(pointer: coarse)").matches) $("#roomHint").textContent = "Toca el piso o usa los botones";
+  if (matchMedia("(max-width: 760px)").matches) $(".stage-wrap").append($("#console"));
 
-  /* The problem: where do we use the trick? */
-  const bReal = $("#b-real"), bVerdict = $("#b-verdict"), opts = [...document.querySelectorAll(".opt")];
-  const use = (where) => {
-    opts.forEach((o) => o.setAttribute("aria-checked", String(o.dataset.where === where)));
-    const harm = where === "both";
-    bReal.classList.toggle("cut", harm); bReal.classList.toggle("harm", harm);
-    bReal.querySelector(".amt").textContent = harm ? "Sin tiempo" : "Resuelto";
-    bVerdict.className = "verdict " + (harm ? "bad" : "good");
-    bVerdict.textContent = harm ? "Rompió algo que ya sabía hacer" : "Aquí no la usó: resolvió los tres niveles";
-    replay(bVerdict, "pop");
-  };
-  opts.forEach((o) => o.addEventListener("click", () => use(o.dataset.where)));
-  $(".opts").addEventListener("keydown", (e) => {
-    if (!["ArrowLeft", "ArrowRight"].includes(e.key)) return;
-    const i = opts.findIndex((o) => o.getAttribute("aria-checked") === "true"), n = opts[(i + 1) % opts.length];
-    use(n.dataset.where); n.focus(); e.preventDefault();
+  /* The pad: hold a button to move */
+  document.querySelectorAll(".pk").forEach((b) => {
+    const send = (down) => { b.classList.toggle("on", down); document.dispatchEvent(new CustomEvent("room:key", { detail: { k: b.dataset.k, down } })); };
+    b.addEventListener("pointerdown", (e) => { e.preventDefault(); b.setPointerCapture(e.pointerId); send(true); });
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach((ev) => b.addEventListener(ev, () => send(false)));
+    b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); send(true); setTimeout(() => send(false), 260); } });
   });
+
+  /* An example exercise per station: the whole cycle, acted out in the lab. A simulation, not a result. */
+  const EX = {
+    swe: ["Arreglar un error en una librería de fechas", [
+      ["run", "Lee el reporte del error y el código"], ["fail", "Intento 1: cambia la función, pero 3 pruebas fallan"],
+      ["think", "Revisa sus fallas: entrega sin correr las pruebas"], ["new", "Crea una habilidad: «corre las pruebas antes de entregar»"],
+      ["ok", "Intento 2 con la habilidad: todas las pruebas pasan"], ["ok", "Revisa tareas viejas de código: siguen bien"],
+      ["install", "Se la queda, solo para tareas de código"]]],
+    terminal: ["Compilar un proyecto y levantar su servidor", [
+      ["run", "Instala dependencias y compila"], ["fail", "Intento 1: falta una librería y se atora"],
+      ["think", "Patrón: no lee el mensaje de error completo"], ["new", "Crea una habilidad: «lee el error completo antes de reintentar»"],
+      ["ok", "Intento 2: compila y el servidor responde"], ["ok", "Revisa tareas viejas de terminal: siguen bien"],
+      ["install", "Se la queda, solo para la terminal"]]],
+    arc: ["Un juego nuevo, sin instrucciones", [
+      ["run", "Mira el tablero: bloques de colores"], ["fail", "Intento 1: busca la respuesta en internet… no existe"],
+      ["think", "Patrón: en juegos nuevos, buscar en la web solo gasta tiempo"], ["new", "Crea una habilidad: «primero explora: mueve una pieza y observa»"],
+      ["ok", "Intento 2: descubre la regla y pasa el nivel"], ["ok", "Revisa BrowseComp: ahí buscar en la web sigue funcionando"],
+      ["install", "Se la queda, solo para juegos nuevos"]]],
+    web: ["¿En qué año se publicó un dataset poco conocido?", [
+      ["run", "Busca en la web"], ["fail", "Intento 1: confía en el primer resultado… era otro dataset"],
+      ["think", "Patrón: no confirma con una segunda fuente"], ["new", "Crea una habilidad: «confirma cada dato en dos fuentes»"],
+      ["ok", "Intento 2: encuentra el año correcto"], ["ok", "Revisa preguntas viejas: siguen bien"],
+      ["install", "Se la queda, solo para investigación web"]]],
+    research: ["Replicar el resultado de un artículo", [
+      ["run", "Lee el artículo y prepara el experimento"], ["fail", "Intento 1: el número no coincide"],
+      ["think", "Patrón: cambió la semilla aleatoria sin anotarla"], ["new", "Crea una habilidad: «fija y anota la semilla en cada corrida»"],
+      ["ok", "Intento 2: el resultado coincide con el artículo"], ["ok", "Revisa competencias de ML viejas: siguen bien"],
+      ["install", "Se la queda, solo para investigación"]]],
+    horizon: ["Una tarea de varias horas seguidas", [
+      ["run", "Empieza la tarea larga"], ["fail", "Intento 1: a la mitad pierde el hilo y repite pasos"],
+      ["think", "Patrón: no lleva registro de lo que ya hizo"], ["new", "Crea una habilidad: «lleva una bitácora y revísala cada hora»"],
+      ["ok", "Intento 2: termina la tarea completa"], ["ok", "Revisa tareas cortas: siguen igual de bien"],
+      ["install", "Se la queda, para tareas largas"]]],
+  };
+  const ICON = { run: "▸", fail: "✕", think: "…", new: "✦", ok: "✓", install: "✓" };
+  const runBtn = $("#runBtn"), con = $("#console"), log = $("#exLog"), end = $("#exEnd");
+  let timers = [], running = "";
+  const stop = () => { timers.forEach(clearTimeout); timers = []; running = ""; runBtn.disabled = false; runBtn.firstChild.textContent = "Correr un ejercicio "; };
+  const closeConsole = () => { stop(); con.hidden = true; };
+  const run = () => {
+    const id = current, ex = EX[id];
+    if (!ex) return;
+    stop();
+    running = id;
+    runBtn.disabled = true; runBtn.firstChild.textContent = "Corriendo… ";
+    $("#exTitle").textContent = ex[0];
+    log.innerHTML = ""; end.textContent = ""; con.hidden = false;
+    const gap = reduce ? 500 : 1500;
+    ex[1].forEach(([kind, text], i) => {
+      timers.push(setTimeout(() => {
+        log.querySelectorAll("li.now").forEach((li) => li.classList.remove("now"));
+        const li = document.createElement("li");
+        li.className = kind + (i < ex[1].length - 1 ? " now" : "");
+        li.innerHTML = `<i aria-hidden="true">${ICON[kind]}</i><span></span>`;
+        li.lastChild.textContent = text;
+        log.append(li);
+        li.scrollIntoView({ block: "nearest" });
+        document.dispatchEvent(new CustomEvent("room:react", { detail: kind }));
+        if (i === ex[1].length - 1) {
+          end.textContent = "Así funcionará el ciclo. Es una simulación ilustrativa: todavía no son resultados reales.";
+          stop();
+        }
+      }, 300 + i * gap));
+    });
+  };
+  runBtn.addEventListener("click", run);
+  $("#exClose").addEventListener("click", closeConsole);
+  document.addEventListener("room:move", () => { if (running || !con.hidden) closeConsole(); });
 
   /* Nav lifts once the page scrolls */
   const bar = $(".bar");

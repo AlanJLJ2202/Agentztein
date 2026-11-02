@@ -1,7 +1,8 @@
 // Mounts the two 3D scenes and glues them to the page.
 // Hero: the "it's alive" intro drives the dim/flash overlays, the headline and the speech bubble.
-// Room: loads when it gets close to the screen; the page asks it to move with "room:goto" and hears
-// back with "room:arrive".
+// Room: loads when it gets close to the screen. The page sends "room:goto" (a station), "room:key"
+// (the on-screen pad) and "room:react" (a step of the example exercise); it hears back "room:arrive" and
+// "room:move" (the visitor moved it, so a running exercise stops).
 import { createHero } from "./hero.js";
 import { createRoom } from "./room.js";
 
@@ -47,9 +48,12 @@ function startRoom() {
       onSay: (t) => b.say(t),
       onFrame: (p) => b.place(p),
       onFlash: () => pulse($("#roomFlash"), "go"),
+      onMove: () => document.dispatchEvent(new CustomEvent("room:move")),
     });
     root.classList.add("room-3d");
     document.addEventListener("room:goto", (e) => room.goTo(e.detail));
+    document.addEventListener("room:react", (e) => room.react(e.detail));
+    document.addEventListener("room:key", (e) => room.press(e.detail.k, e.detail.down));
     if (roomQueue) { room.goTo(roomQueue); roomQueue = null; }
   } catch (err) {
     console.warn("3D room unavailable", err);
