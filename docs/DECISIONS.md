@@ -210,3 +210,16 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
 - **Alternativas:** un esquema por escenario (más tipado, pero el selector y el evaluador tendrían que conocer
   cada dominio).
 - **Consecuencias:** `env-recon` conserva sus tipos propios y se expone como escenario mediante un adaptador.
+
+## ADR-018 — Dirección: agente de investigación de frontera medido en benchmarks públicos **[propuesta; pendiente de plan técnico]**
+- **Contexto:** Alan pidió (2 nov 2026) que el proyecto no se centre en problemas de negocio, sino en ser un
+  agente de investigación de IA de frontera que se mejora solo y se mide en benchmarks públicos.
+  Investigación y fuentes en [`FRONTERA.md`](FRONTERA.md).
+- **Decisión:** la pregunta de investigación no cambia (alcance + vigencia contra acumular habilidades o
+  reescribir instrucciones globales). Cambia dónde se mide: capacidades de código, terminal, razonamiento,
+  web e investigación de IA, con benchmarks como SWE-bench Pro, Terminal-Bench, ARC-AGI-3, BrowseComp,
+  MLE-bench/PaperBench y el horizonte de tiempo de METR. La landing ya presenta esta dirección.
+- **Lo que NO cambia todavía:** los 5 escenarios sintéticos (ADR-016) siguen como banco de pruebas rápido y
+  determinista del mecanismo; el panel aún los muestra. No hay resultados en ningún benchmark.
+- **Pendiente:** elegir el primer benchmark para E2 (terminal o código), el subconjunto y el presupuesto, y
+  el par de dominios en tensión para la corrida confirmatoria.

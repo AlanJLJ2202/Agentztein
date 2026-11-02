@@ -32,7 +32,10 @@ await page.goto(`http://localhost:${port}/`);
 await page.waitForFunction(() => window.renderStill && document.fonts.ready);
 await page.evaluate(() => document.fonts.load("700 40px Figtree"));
 
-const shots = { lab: 1000, muse: 900, banco: 800, fabrica: 800, tienda: 800, mensajes: 800, paqueteria: 800 };
+const shots = {
+  lab: 1000, muse: 900, step1: 900, step2: 900, step3: 900, step4: 900,
+  "bench-swe": 700, "bench-terminal": 700, "bench-arc": 700, "bench-web": 700, "bench-research": 700, "bench-horizon": 700,
+};
 for (const [name, size] of Object.entries(shots)) {
   const url = await page.evaluate(([n, s]) => window.renderStill(n, s), [name, size]);
   writeFileSync(here + `img/${name}.webp`, Buffer.from(url.split(",")[1], "base64"));

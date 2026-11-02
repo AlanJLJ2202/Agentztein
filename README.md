@@ -2,10 +2,12 @@
 
 > Nombre de código provisional (no es el nombre final del proyecto).
 
-**En pocas palabras:** un laboratorio para comprobar, con evidencia, si un asistente de IA puede mejorar por
-sí mismo sin descomponer lo que ya hacía bien, y si sabe qué conservar cuando cambian las reglas del negocio.
-Lo probamos en cinco problemas de negocio recreados con datos ficticios: conciliación bancaria, inspección de
-calidad, devoluciones, mensajes de clientes y tarifas de paquetería.
+**En pocas palabras:** Agentztein es un agente de investigación de IA que se mejora a sí mismo, pieza por
+pieza, como Frankenstein: crea sus propias habilidades y solo se queda con las que mejoran sin romper lo que
+ya sabía. La meta es medirlo en benchmarks públicos de frontera (código, terminal, razonamiento, web e
+investigación de IA); ver [`docs/FRONTERA.md`](docs/FRONTERA.md) y ADR-018. Hoy el mecanismo se prueba en
+cinco escenarios sintéticos (conciliación bancaria, inspección de calidad, devoluciones, mensajes de
+clientes y tarifas de paquetería); aún no hay resultados en ningún benchmark.
 
 Laboratorio para estudiar la **evolución verificable de habilidades de agentes LLM**: ante un patrón de
 fallos el sistema formula una hipótesis, genera **una** habilidad candidata, la compara contra la versión
@@ -42,7 +44,7 @@ packages/env-recon   entorno sintético de conciliación: generador, reglas R1/R
 packages/scenarios   marco común + 5 escenarios de negocio (conciliación, manufactura, devoluciones, mensajes, envíos)
 packages/db          esquema Drizzle + migraciones (tablas append-only, esquema `sealed`)
 apps/panel           panel estático de solo lectura (Vite + React): validación del entorno, sin agentes aún
-apps/landing         landing de presentación: laboratorio 3D (three.js) al estilo Meta; `pnpm --filter @skillab/landing stills` regenera sus imágenes
+apps/landing         landing de presentación: Agentztein en 3D (three.js) al estilo Meta; `pnpm --filter @skillab/landing stills` regenera sus imágenes
 datasets/manifest.json  hashes de todos los splits (los datos se regeneran desde semillas)
 ```
 
