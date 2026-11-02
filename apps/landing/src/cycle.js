@@ -1,4 +1,4 @@
-/* The self-development cycle: five phases with equal weight. It advances on its own while it is on
+/* The self-development cycle: five phases on a ring around Agentztein, with equal weight. It advances on its own while it is on
    screen (each phase replays its animation), and pauses on hover, focus, when hidden or when asked.
    Tabs, arrows, swipe and the arrow keys move between phases. No auto-advance with reduced motion. */
 const cyc = document.getElementById("cycle");
@@ -8,6 +8,7 @@ if (cyc) {
   const tabs = [...cyc.querySelectorAll(".ctab")];
   const vis = [...cyc.querySelectorAll(".pv")];
   const txt = [...cyc.querySelectorAll(".pt")];
+  const says = [...cyc.querySelectorAll(".say")];
   const playBtn = cyc.querySelector("#cPlay");
   const DUR = 7000;
   let i = 0, timer = 0, playing = !reduce, inView = false, hover = false;
@@ -37,6 +38,7 @@ if (cyc) {
     tabs[i].classList.add("on");
     vis.forEach((v, k) => v.classList.toggle("on", k === i));
     txt.forEach((v, k) => v.classList.toggle("on", k === i));
+    says.forEach((v, k) => v.classList.toggle("on", k === i));
     cyc.style.setProperty("--c", tabs[i].style.getPropertyValue("--c"));
     if (focus) tabs[i].focus();
     schedule();
@@ -57,7 +59,7 @@ if (cyc) {
 
   // swipe on the picture
   let x0 = null;
-  const stage = cyc.querySelector(".cvis");
+  const stage = cyc.querySelector(".core");
   stage.addEventListener("pointerdown", (e) => { x0 = e.clientX; });
   stage.addEventListener("pointerup", (e) => {
     if (x0 == null) return;

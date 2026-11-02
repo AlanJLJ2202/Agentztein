@@ -275,3 +275,5 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
   - Sección de Meta: "El cerebro lo pone Meta", con los niveles de esfuerzo de Muse Spark
     (minimal, low, medium, high, xhigh). El radar pide `reasoning_effort: "low"` y reintenta sin él si el
     modelo no lo acepta.
+  - "Así se desarrolla sola" pasa a ser un diagrama circular: Agentztein al centro (su imagen cambia por fase)
+    y las cinco fases alrededor como un ciclo; una sola línea por fase y "Ver detalle" para lo demás.

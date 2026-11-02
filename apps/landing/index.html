@@ -415,30 +415,38 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .sheet .dlg-live li { padding: 0 0 10px; background: none; border-radius: 0; }
 .sheet .dlg-live li::before { content: none; }
 
-/* ---------- The cycle: five phases, one stage ---------- */
-.cycle { --c: var(--meta); display: grid; gap: 16px; }
-.ctabs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
-.ctab { all: unset; box-sizing: border-box; position: relative; width: 100%; display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 10px 14px 14px; border-radius: 16px; background: var(--soft); cursor: pointer; font-weight: 700; color: var(--muted); overflow: hidden; transition: background-color .25s var(--ease), color .25s var(--ease); }
-.ctab b { width: 28px; height: 28px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--c); font-size: .875rem; transition: background-color .25s var(--ease), color .25s var(--ease); }
-.ctab span { line-height: 1.15; }
-.ctab:hover { background: var(--soft-2); color: var(--ink); }
-.ctab[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: 0 6px 24px rgba(28, 43, 51, .1), inset 0 0 0 2px var(--c); }
+/* ---------- The cycle: a ring of five phases around Agentztein ---------- */
+.loop { --c: var(--meta); display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(24px, 4vw, 64px); align-items: center; }
+.ring { position: relative; width: min(100%, 580px); aspect-ratio: 1; margin: 0 auto; }
+.ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ring-svg .track { fill: none; stroke: var(--soft-2); stroke-width: 3; stroke-dasharray: 2 10; stroke-linecap: round; }
+.ring-svg .chev { fill: none; stroke: #b7c2ce; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.ring-svg .runner { transform-origin: 200px 200px; animation: orbit 10s linear infinite; }
+.ring-svg .runner circle { fill: var(--c); transition: fill .4s var(--ease); }
+@keyframes orbit { to { transform: rotate(360deg); } }
+.core { position: absolute; left: 50%; top: 50%; width: 62%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 55%, #ffffff 0%, #eef4fa 60%, #e1eaf3 100%); box-shadow: inset 0 0 0 6px #fff, 0 20px 50px rgba(28, 43, 51, .12), 0 0 0 3px var(--c); transition: box-shadow .4s var(--ease); touch-action: pan-y; }
+.pv { position: absolute; inset: 0; margin: 0; opacity: 0; visibility: hidden; transition: opacity .5s var(--ease), visibility 0s .5s; }
+.pv.on { opacity: 1; visibility: visible; transition: opacity .5s var(--ease); }
+.pv img { position: absolute; left: 50%; top: 50%; width: 100%; max-width: none; transform: translate(-50%, -48%) scale(.9); transition: transform 1.2s var(--ease); }
+.pv.on img { transform: translate(-50%, -48%) scale(1); }
+.ring .say { position: absolute; left: 50%; top: 13%; z-index: 2; transform: translateX(-50%); padding: 8px 14px; border-radius: 16px; background: #fff; color: var(--ink); font-weight: 700; font-size: .9375rem; white-space: nowrap; box-shadow: 0 8px 24px rgba(10, 22, 32, .14); opacity: 0; pointer-events: none; }
+.ring .say::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; margin-left: -6px; background: #fff; transform: rotate(45deg); border-radius: 2px; }
+.ring .say.on { animation: sayin .6s cubic-bezier(.3, 1.6, .5, 1) .4s forwards; }
+@keyframes sayin { from { opacity: 0; transform: translate(-50%, 10px) scale(.8); } to { opacity: 1; transform: translateX(-50%); } }
+.nodes { list-style: none; margin: 0; padding: 0; }
+.nodes li { position: absolute; transform: translate(-50%, -50%); z-index: 3; }
+.ctab { all: unset; box-sizing: border-box; position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 6px 16px 10px 6px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 700; white-space: nowrap; cursor: pointer; overflow: hidden; box-shadow: 0 6px 20px rgba(28, 43, 51, .1); transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
+.ctab b { width: 32px; height: 32px; flex: none; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 16%, #fff); color: var(--c); font-size: .9375rem; transition: background-color .25s var(--ease), color .25s var(--ease); }
+.ctab:hover { transform: scale(1.05); }
+.ctab[aria-selected="true"] { transform: scale(1.1); box-shadow: 0 10px 28px rgba(28, 43, 51, .16), inset 0 0 0 2px var(--c); }
 .ctab[aria-selected="true"] b { background: var(--c); color: #fff; }
-.ctab:focus-visible { outline: 3px solid var(--meta); outline-offset: 2px; }
-.cbar { position: absolute; left: 14px; right: 14px; bottom: 6px; height: 3px; border-radius: 3px; background: transparent; overflow: hidden; }
+.ctab:focus-visible { outline: 3px solid var(--meta); outline-offset: 3px; }
+.cbar { position: absolute; left: 44px; right: 16px; bottom: 5px; height: 3px; border-radius: 3px; overflow: hidden; }
 .cbar i { display: block; height: 100%; width: 0; background: var(--c); border-radius: inherit; }
 .ctab.on .cbar i { width: 100%; }
 .running .ctab.on .cbar i { width: 0; animation: cfill 7s linear forwards; }
 @keyframes cfill { to { width: 100%; } }
-.cstage { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); border-radius: var(--r); background: var(--soft); overflow: hidden; }
-.cvis { position: relative; aspect-ratio: 1 / .72; container-type: inline-size; background: radial-gradient(ellipse 60% 60% at 50% 60%, #fff 0%, #eef4fa 60%, #e3ebf3 100%); touch-action: pan-y; }
-.pv { position: absolute; inset: 0; margin: 0; opacity: 0; visibility: hidden; transition: opacity .5s var(--ease), visibility 0s .5s; }
-.pv.on { opacity: 1; visibility: visible; transition: opacity .5s var(--ease); }
-.pv img { position: absolute; left: 50%; top: 54%; height: 92%; width: auto; max-width: none; transform: translate(-50%, -50%) scale(.96); transition: transform 1.2s var(--ease); }
-.pv.on img { transform: translate(-50%, -50%) scale(1); }
-.loop { position: absolute; right: 16px; top: 14px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .85); color: var(--c); font-weight: 800; font-size: 1.1rem; animation: spin 6s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.ctext { position: relative; display: grid; align-content: center; padding: clamp(24px, 3.4vw, 48px); }
+.ctext { position: relative; display: grid; }
 .pt { grid-area: 1 / 1; display: grid; gap: 12px; align-content: center; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .4s var(--ease), transform .4s var(--ease), visibility 0s .4s; }
 .pt.on { opacity: 1; visibility: visible; transform: none; transition: opacity .45s var(--ease) .1s, transform .45s var(--ease) .1s; }
 .pt .kick { display: inline-flex; align-items: center; gap: 8px; font-size: .875rem; font-weight: 700; color: var(--muted); }
@@ -448,70 +456,22 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .pt .more::after { content: none; }
 .pt .more { margin-top: 8px; }
 .cctl { grid-area: 2 / 1; display: flex; gap: 8px; margin-top: 28px; }
-.cbtn { all: unset; box-sizing: border-box; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--ink); cursor: pointer; box-shadow: 0 2px 8px rgba(28, 43, 51, .08); transition: transform .15s var(--ease); }
-.cbtn:hover { transform: translateY(-1px); }
+.cbtn { all: unset; box-sizing: border-box; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--soft); color: var(--ink); cursor: pointer; transition: transform .15s var(--ease), background-color .2s var(--ease); }
+.cbtn:hover { background: var(--soft-2); }
 .cbtn:active { transform: scale(.94); }
 .cbtn:focus-visible { outline: 3px solid var(--meta); outline-offset: 2px; }
 .cbtn svg { width: 16px; height: 16px; }
 #cPlay .i-play, #cPlay[aria-pressed="true"] .i-pause { display: none; }
 #cPlay[aria-pressed="true"] .i-play { display: block; }
-@media (max-width: 1000px) {
-  .ctabs { display: flex; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gut-l) * -1) calc(var(--gut-r) * -1); padding: 4px var(--gut-r) 4px var(--gut-l); }
-  .ctabs li { flex: none; }
-  .ctab { width: auto; }
-  .cstage { grid-template-columns: minmax(0, 1fr); }
-  .cvis { aspect-ratio: 1 / .92; }
-  .ctext { padding: 22px 22px 26px; }
-  .cctl { margin-top: 18px; }
+@media (max-width: 1000px) { .loop { grid-template-columns: minmax(0, 1fr); } .ctext { text-align: center; justify-items: center; } .pt { justify-items: center; } .pt .more { justify-self: center; } .cctl { justify-content: center; } }
+@media (max-width: 560px) {
+  .ring { width: calc(100% - 40px); }
+  .ctab { min-height: 38px; padding: 4px 10px 8px 4px; font-size: .8125rem; gap: 6px; }
+  .ctab b { width: 26px; height: 26px; font-size: .8125rem; }
+  .cbar { left: 34px; right: 10px; bottom: 4px; }
+  .ring .say { font-size: .8125rem; top: 14%; }
 }
-
-/* Phase animations: they play each time a phase comes on screen. Sizes follow the picture (cqw). */
-.pv .say, .pv .tagx, .pv .fly, .pv .xp, .pv .race, .pv .label-card, .pv .stamp-ok, .pv .diff { position: absolute; font-size: 2.1cqw; font-weight: 700; opacity: 0; }
-.pv .say { left: 50%; top: 4%; transform: translateX(-50%); padding: 1.1cqw 2cqw; border-radius: 3cqw; background: #fff; color: var(--ink); white-space: nowrap; box-shadow: 0 8px 24px rgba(10, 22, 32, .14); font-size: 2.4cqw; }
-.pv .say::after { content: ""; position: absolute; left: 50%; bottom: -.8cqw; width: 1.8cqw; height: 1.8cqw; margin-left: -.9cqw; background: #fff; transform: rotate(45deg); border-radius: 2px; }
-.pv.on .say { animation: sayin .6s cubic-bezier(.3, 1.6, .5, 1) .5s forwards; }
-@keyframes sayin { from { opacity: 0; transform: translate(-50%, 10px) scale(.8); } to { opacity: 1; transform: translateX(-50%); } }
-.pv .tagx { padding: .9cqw 1.8cqw; border-radius: 2cqw; color: #fff; box-shadow: 0 8px 20px rgba(10, 22, 32, .16); }
-.pv.on .tagx { animation: popin2 .55s cubic-bezier(.3, 1.6, .5, 1) 2.6s forwards; }
-@keyframes popin2 { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
-.t-exp { right: 6%; bottom: 10%; background: #6d5ce8; }
-.t-new { right: 4%; bottom: 10%; background: #6d5ce8; }
-.t-rev { right: 4%; top: 22%; background: #c98a00; }
-.pv .fly { left: 20%; top: 66%; padding: .6cqw 1.4cqw; border-radius: 2cqw; background: #ff6600; color: #fff; font-size: 1.8cqw; }
-.pv.on .fly { animation: fly 2.2s var(--ease) 1.1s infinite; }
-.pv.on .fly.f2 { animation-delay: 2.2s; }
-@keyframes fly { 0% { opacity: 0; transform: translate(0, 0) scale(.7); } 15% { opacity: 1; } 80% { opacity: 1; transform: translate(46cqw, -14cqw) scale(1); } 100% { opacity: 0; transform: translate(48cqw, -15cqw) scale(.6); } }
-.pv .xp { left: 4%; padding: .7cqw 1.4cqw; border-radius: 2cqw; background: var(--bad-bg); color: var(--bad); }
-.x1 { top: 20%; } .x2 { top: 28%; } .x3 { top: 36%; }
-.pv.on .xp { animation: drop .5s cubic-bezier(.3, 1.6, .5, 1) forwards; }
-.pv.on .x1 { animation-delay: .9s; } .pv.on .x2 { animation-delay: 1.3s; } .pv.on .x3 { animation-delay: 1.7s; }
-@keyframes drop { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: none; } }
-.pv .race { left: 50%; bottom: 4%; width: 64%; transform: translateX(-50%); padding: 1.6cqw 2cqw; border-radius: 2.4cqw; background: rgba(255, 255, 255, .95); box-shadow: 0 8px 24px rgba(10, 22, 32, .12); display: grid; gap: .8cqw; font-size: 1.9cqw; }
-.pv.on .race { animation: fadeup .5s var(--ease) 1s forwards; }
-@keyframes fadeup { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translateX(-50%); } }
-.race p { display: grid; grid-template-columns: 11cqw minmax(0, 1fr) 7cqw; gap: 1.2cqw; align-items: center; margin: 0; }
-.race em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; }
-.race .bar { height: 1.4cqw; border-radius: 1cqw; background: var(--soft-2); overflow: hidden; }
-.race .bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: #9aa8b5; }
-.race p:nth-child(2) .bar i { background: #6d5ce8; }
-.race .keep .bar i { background: var(--ok); }
-.race .keep em { color: var(--ok); }
-.pv.on .race .bar i { animation: race 1.4s var(--ease) 1.6s forwards; }
-.pv.on .race .keep .bar i { animation-delay: 2.6s; }
-@keyframes race { to { width: var(--to); } }
-.pv .label-card { right: 4%; bottom: 8%; display: grid; gap: .3cqw; padding: 1.6cqw 2cqw; border-radius: 1.8cqw; background: #fff; box-shadow: 0 10px 26px rgba(10, 22, 32, .14); transform-origin: 0 0; font-size: 2cqw; }
-.label-card small { font-size: 1.4cqw; color: var(--muted); font-weight: 800; letter-spacing: .04em; margin-top: .4cqw; }
-.pv.on .label-card { animation: swing 1.1s cubic-bezier(.3, 1.5, .5, 1) .9s forwards; }
-@keyframes swing { 0% { opacity: 0; transform: rotate(-24deg) translateY(-10px); } 60% { opacity: 1; transform: rotate(6deg); } 100% { opacity: 1; transform: rotate(-3deg); } }
-.pv .stamp-ok { left: 5%; top: 24%; padding: .9cqw 1.8cqw; border: .35cqw solid var(--ok); border-radius: 1.4cqw; color: var(--ok); background: rgba(255, 255, 255, .9); text-transform: uppercase; font-size: 1.7cqw; font-weight: 800; letter-spacing: .03em; }
-.pv.on .stamp-ok { animation: stampin .45s cubic-bezier(.3, 1.6, .5, 1) 2.2s forwards; }
-@keyframes stampin { from { opacity: 0; transform: rotate(-8deg) scale(2); } to { opacity: 1; transform: rotate(-8deg); } }
-.pv .diff { left: 4%; bottom: 8%; display: grid; gap: .5cqw; padding: 1.4cqw 2cqw; border-radius: 1.8cqw; background: #fff; box-shadow: 0 10px 26px rgba(10, 22, 32, .14); font-size: 2cqw; }
-.diff s { color: var(--muted); } .diff ins { text-decoration: none; color: #c98a00; background: var(--amber-bg); padding: 0 .6cqw; border-radius: .6cqw; }
-.pv.on .diff { animation: drop .5s cubic-bezier(.3, 1.6, .5, 1) 1s forwards; }
-.pv.on .diff ins { animation: blink 1.2s ease-in-out 1.6s 3; }
-@media (max-width: 1000px) { .pv .say { font-size: 3.2cqw; } .pv .tagx, .pv .xp, .pv .diff, .pv .label-card { font-size: 2.8cqw; } .pv .race { width: 84%; font-size: 2.6cqw; } .race p { grid-template-columns: 16cqw minmax(0, 1fr) 9cqw; } }
-@media (prefers-reduced-motion: reduce) { .pv .say, .pv .tagx, .pv .xp, .pv .race, .pv .label-card, .pv .stamp-ok, .pv .diff { opacity: 1; } .pv .fly { display: none; } .race .bar i { width: var(--to); } .loop { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ring-svg .runner { animation: none; } .ring .say.on { opacity: 1; } }
 
 /* ---------- Lab scenes (SVG) ---------- */
 .lab-host { width: 100%; }
@@ -739,54 +699,46 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   <div class="wrap">
     <div class="head ent">
       <h2 data-es="Así se desarrolla sola">How it builds itself</h2>
-      <p class="lead" data-es="Un ciclo de cinco fases que no se detiene. Investiga lo nuevo, aprende de lo que falla y nada se usa sin pasar por el laboratorio.">A five-phase cycle that never stops. It researches what's new, learns from what fails, and nothing is used without going through the lab.</p>
+      <p class="lead" data-es="Un ciclo de cinco fases que nunca termina: cuando acaba la quinta, vuelve a investigar.">A five-phase cycle that never ends: after the fifth, it goes back to researching.</p>
     </div>
-    <div class="cycle ent" id="cycle" style="--c:#ff6600">
-      <ol class="ctabs" role="tablist" aria-label="Phases" data-es-aria-label="Fases">
-        <li role="presentation"><button class="ctab" role="tab" type="button" id="ct0" aria-controls="cp0" aria-selected="true" data-phase="0" style="--c:#ff6600"><b>1</b><span data-es="Investiga">Researches</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-        <li role="presentation"><button class="ctab" role="tab" type="button" id="ct1" aria-controls="cp1" aria-selected="false" data-phase="1" style="--c:#f0533c"><b>2</b><span data-es="Aprende de sus errores">Learns from its mistakes</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-        <li role="presentation"><button class="ctab" role="tab" type="button" id="ct2" aria-controls="cp2" aria-selected="false" data-phase="2" style="--c:#0081fb"><b>3</b><span data-es="La pone a prueba">Tests it</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-        <li role="presentation"><button class="ctab" role="tab" type="button" id="ct3" aria-controls="cp3" aria-selected="false" data-phase="3" style="--c:#22b864"><b>4</b><span data-es="Se la queda">Keeps it</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-        <li role="presentation"><button class="ctab" role="tab" type="button" id="ct4" aria-controls="cp4" aria-selected="false" data-phase="4" style="--c:#ffa928"><b>5</b><span data-es="Se mantiene al día">Keeps up to date</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-      </ol>
-      <div class="cstage">
-        <div class="cvis" aria-hidden="false">
-        <figure class="pv ov0 on" data-phase="0">
-          <img src="img/step0.webp" width="900" height="900" alt="Agentztein reads a Hacker News page with four AI headlines; next to it float three tags: Try it, Watch and Skip." data-es-alt="Agentztein lee una página de Hacker News con cuatro titulares de IA; a su lado flotan tres etiquetas: Probar, Vigilar y Descartar." />
-          <span class="say" data-es="¿«Búsqueda en árbol»? Vale un experimento.">“Tree search”? Worth an experiment.</span>
-          <span class="fly f1" data-es="+ idea">+ idea</span><span class="fly f2" data-es="+ idea">+ idea</span>
-          <span class="tagx t-exp" data-es="Experimentar">Experiment</span>
-        </figure>
-        <figure class="pv ov1" data-phase="1">
-          <img src="img/step1.webp" width="900" height="900" alt="Agentztein checks its test sheet with a magnifying glass: one puzzle failed, marked with a red X." data-es-alt="Agentztein revisa con una lupa la hoja de sus pruebas: falló un acertijo, marcado con una X roja." loading="lazy" />
-          <span class="say" data-es="3 de 3 fallas: busqué en la web en un juego nuevo.">3 of 3 failures: I searched the web in a new game.</span>
-          <span class="xp x1">✕ run 14</span><span class="xp x2">✕ run 15</span><span class="xp x3">✕ run 21</span>
-          <span class="tagx t-new" data-es="✦ Nueva: primero explora">✦ New: explore first</span>
-        </figure>
-        <figure class="pv ov2" data-phase="2">
-          <img src="img/step2.webp" width="900" height="900" alt="Agentztein holds out a new skill chip while a Tesla coil fires lightning through it to test it." data-es-alt="Agentztein sostiene una ficha nueva mientras una bobina de Tesla le lanza rayos para probarla." loading="lazy" />
-          <span class="say" data-es="¿Mejora sin romper nada?">Does it help without breaking anything?</span>
-          <div class="race">
-            <p><span data-es="Actual">Current</span><b class="bar"><i style="--to:25%"></i></b><em>1/4</em></p>
-            <p><span data-es="Candidata">Candidate</span><b class="bar"><i style="--to:75%"></i></b><em>3/4</em></p>
-            <p class="keep"><span data-es="Viejas">Old tasks</span><b class="bar"><i style="--to:100%"></i></b><em>4/4 ✓</em></p>
-          </div>
-        </figure>
-        <figure class="pv ov3" data-phase="3">
-          <img src="img/step3.webp" width="900" height="900" alt="Agentztein celebrates with its arms up: the new chip is already sewn onto its body and there is confetti." data-es-alt="Agentztein celebra con los brazos arriba: la ficha nueva ya está cosida en su cuerpo y hay confeti." loading="lazy" />
-          <span class="say" data-es="¡Me la quedo! Solo para juegos nuevos.">I'm keeping it! Only for new games.</span>
-          <div class="label-card"><small data-es="ALCANCE">SCOPE</small><b data-es="juegos nuevos">new games</b><small data-es="VIGENCIA">VALIDITY</small><b data-es="reglas v1">rules v1</b></div>
-          <span class="stamp-ok" data-es="Aprobada por una persona">Approved by a person</span>
-        </figure>
-        <figure class="pv ov4" data-phase="4">
-          <img src="img/step4.webp" width="900" height="900" alt="Agentztein reads the sheet of a new benchmark version; one of its chips comes off in amber, labeled Review." data-es-alt="Agentztein lee la hoja de un benchmark en versión nueva; una de sus fichas se separa en ámbar con la etiqueta Review." loading="lazy" />
-          <span class="say" data-es="Cambió el benchmark: reviso solo lo que toca.">The benchmark changed: I only review what it touches.</span>
-          <div class="diff"><b>v1 → v2</b><span>Internet: <s data-es="sí">on</s> → <ins data-es="no">off</ins></span></div>
-          <span class="tagx t-rev" data-es="Buscar en web · revisión">Search the web · review</span>
-        </figure>
-          <span class="loop" aria-hidden="true">↻</span>
+    <div class="loop ent" id="cycle" style="--c:#ff6600">
+      <div class="ring">
+        <svg class="ring-svg" viewBox="0 0 400 400" aria-hidden="true">
+          <circle class="track" cx="200" cy="200" r="176"/>
+          <path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(-54 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(18 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(90 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(162 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(234 200 200) translate(376 200) rotate(90)"/>
+          <g class="runner"><circle cx="200" cy="24" r="7"/></g>
+        </svg>
+        <div class="core">
+          <figure class="pv on" data-phase="0">
+            <img src="img/step0.webp" width="900" height="900" alt="Agentztein reads a Hacker News page with four AI headlines; next to it float three tags: Try it, Watch and Skip." data-es-alt="Agentztein lee una página de Hacker News con cuatro titulares de IA; a su lado flotan tres etiquetas: Probar, Vigilar y Descartar." />
+          </figure>
+          <figure class="pv" data-phase="1">
+            <img src="img/step1.webp" width="900" height="900" alt="Agentztein checks its test sheet with a magnifying glass: one puzzle failed, marked with a red X." data-es-alt="Agentztein revisa con una lupa la hoja de sus pruebas: falló un acertijo, marcado con una X roja." loading="lazy" />
+          </figure>
+          <figure class="pv" data-phase="2">
+            <img src="img/step2.webp" width="900" height="900" alt="Agentztein holds out a new skill chip while a Tesla coil fires lightning through it to test it." data-es-alt="Agentztein sostiene una ficha nueva mientras una bobina de Tesla le lanza rayos para probarla." loading="lazy" />
+          </figure>
+          <figure class="pv" data-phase="3">
+            <img src="img/step3.webp" width="900" height="900" alt="Agentztein celebrates with its arms up: the new chip is already sewn onto its body and there is confetti." data-es-alt="Agentztein celebra con los brazos arriba: la ficha nueva ya está cosida en su cuerpo y hay confeti." loading="lazy" />
+          </figure>
+          <figure class="pv" data-phase="4">
+            <img src="img/step4.webp" width="900" height="900" alt="Agentztein reads the sheet of a new benchmark version; one of its chips comes off in amber, labeled Review." data-es-alt="Agentztein lee la hoja de un benchmark en versión nueva; una de sus fichas se separa en ámbar con la etiqueta Review." loading="lazy" />
+          </figure>
         </div>
-        <div class="ctext">
+          <span class="say on" data-phase="0" data-es="¿«Búsqueda en árbol»? Vale un experimento.">“Tree search”? Worth an experiment.</span>
+          <span class="say" data-phase="1" data-es="3 de 3 fallas: el mismo patrón.">3 of 3 failures: same pattern.</span>
+          <span class="say" data-phase="2" data-es="¿Mejora sin romper nada?">Does it help without breaking anything?</span>
+          <span class="say" data-phase="3" data-es="¡Me la quedo!">I'm keeping it!</span>
+          <span class="say" data-phase="4" data-es="Cambiaron las reglas: reviso.">The rules changed: I'll review.</span>
+        <ol class="nodes" role="tablist" aria-label="Phases" data-es-aria-label="Fases">
+          <li role="presentation" style="left:50.00%;top:6.00%"><button class="ctab" role="tab" type="button" id="ct0" aria-controls="cp0" aria-selected="true" data-phase="0" style="--c:#ff6600"><b>1</b><span data-es="Investiga">Research</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:91.85%;top:36.40%"><button class="ctab" role="tab" type="button" id="ct1" aria-controls="cp1" aria-selected="false" data-phase="1" style="--c:#f0533c"><b>2</b><span data-es="Errores">Mistakes</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:75.86%;top:85.60%"><button class="ctab" role="tab" type="button" id="ct2" aria-controls="cp2" aria-selected="false" data-phase="2" style="--c:#0081fb"><b>3</b><span data-es="Prueba">Test</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:24.14%;top:85.60%"><button class="ctab" role="tab" type="button" id="ct3" aria-controls="cp3" aria-selected="false" data-phase="3" style="--c:#22b864"><b>4</b><span data-es="Se la queda">Keep</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:8.15%;top:36.40%"><button class="ctab" role="tab" type="button" id="ct4" aria-controls="cp4" aria-selected="false" data-phase="4" style="--c:#ffa928"><b>5</b><span data-es="Al día">Update</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+        </ol>
+      </div>
+      <div class="ctext">
         <article class="pt on" role="tabpanel" id="cp0" aria-labelledby="ct0" data-phase="0">
           <p class="kick" data-es="Fase 1 de 5">Phase 1 of 5</p>
           <h3 data-es="Investiga">Researches</h3>
@@ -817,11 +769,10 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
           <p data-es="Si un benchmark cambia, solo las habilidades afectadas vuelven a revisión.">If a benchmark changes, only the affected skills go back to review.</p>
           <button class="more" type="button" data-step="4"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
-          <div class="cctl">
-            <button class="cbtn" type="button" id="cPrev" aria-label="Previous phase" data-es-aria-label="Fase anterior"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-            <button class="cbtn" type="button" id="cPlay" aria-label="Pause" data-es-aria-label="Pausar" aria-pressed="false"><svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10M11 3v10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10l8-5z" fill="currentColor"/></svg></button>
-            <button class="cbtn" type="button" id="cNext" aria-label="Next phase" data-es-aria-label="Fase siguiente"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-          </div>
+        <div class="cctl">
+          <button class="cbtn" type="button" id="cPrev" aria-label="Previous phase" data-es-aria-label="Fase anterior"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+          <button class="cbtn" type="button" id="cPlay" aria-label="Pause" data-es-aria-label="Pausar" aria-pressed="false"><svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10M11 3v10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10l8-5z" fill="currentColor"/></svg></button>
+          <button class="cbtn" type="button" id="cNext" aria-label="Next phase" data-es-aria-label="Fase siguiente"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
         </div>
       </div>
     </div>
