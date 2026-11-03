@@ -20,7 +20,8 @@
     "build:panel": "pnpm --filter @skillab/panel build",
     "build:site": "pnpm build:panel && pnpm build:app && pnpm --filter @skillab/landing build && rm -rf site && mkdir -p site/panel site/app && cp -r apps/landing/dist/. site/ && cp -r apps/panel/dist/. site/panel/ && cp -r apps/app/dist/. site/app/",
     "build:app": "pnpm --filter @skillab/app build",
-    "evalset": "tsx scripts/evalset.ts"
+    "evalset": "tsx scripts/evalset.ts",
+    "auth:check": "node scripts/auth-check.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

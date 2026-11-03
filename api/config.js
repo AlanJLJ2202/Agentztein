@@ -1,9 +1,26 @@
 // GET /api/config: the public sign-in settings the app needs, and which server variables are still missing.
+//   ?check=google  re-checks the Google sign-in setup now instead of using the 5-minute cache
 import { missingConfig, supabaseConfig } from "./_lib/env.js";
+import { googleClientId, googleSetup } from "./_lib/google.js";
 import { handle, json } from "./_lib/http.js";
 
-export const GET = handle(async () => {
+export const GET = handle(async (request) => {
   const { url, anonKey } = supabaseConfig();
   const missing = missingConfig();
-  return json({ supabaseUrl: url || null, supabaseAnonKey: anonKey || null, ready: missing.length === 0, missing });
+  const fresh = new URL(request.url).searchParams.get("check") === "google";
+  const google = await googleSetup(fetch, { fresh });
+  return json({
+    supabaseUrl: url || null,
+    supabaseAnonKey: anonKey || null,
+    ready: missing.length === 0,
+    missing,
+    google: {
+      clientId: googleClientId() || null,
+      status: google.status,
+      enabled: google.enabled,
+      // previews live on changing *.vercel.app hosts that can't all be listed in Google Cloud as
+      // JavaScript origins, so there the app uses Supabase's redirect flow instead of the Google button
+      button: Boolean(googleClientId()) && process.env.VERCEL_ENV !== "preview",
+    },
+  });
 });

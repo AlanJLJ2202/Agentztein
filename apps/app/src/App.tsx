@@ -97,7 +97,7 @@ function Authed({ supabase, config, lang, setLang }: { supabase: SupabaseClient;
   }, [supabase]);
 
   if (session === undefined) return <Splash />;
-  if (!session) return <SignIn supabase={supabase} lang={lang} setLang={setLang} />;
+  if (!session) return <SignIn supabase={supabase} google={config.google} lang={lang} setLang={setLang} />;
   return <Shell supabase={supabase} session={session} config={config} lang={lang} setLang={setLang} />;
 }
 

@@ -44,7 +44,7 @@ packages/env-recon   entorno sintético de conciliación: generador, reglas R1/R
 packages/scenarios   marco común + 5 escenarios de negocio (conciliación, manufactura, devoluciones, mensajes, envíos)
 packages/db          esquema Drizzle + migraciones (tablas append-only, esquema `sealed`)
 apps/panel           panel estático de solo lectura (Vite + React): validación del entorno, sin agentes aún
-apps/app             app con sesión (Vite + React) en /app/: login con Google o correo + código, llave de Meta por usuario y radar de investigación
+apps/app             app con sesión (Vite + React) en /app/: acceso y registro con Google o correo + código, llave de Meta por usuario y radar de investigación
 api/                 funciones de Vercel: /api/config, /api/keys (llaves cifradas), /api/radar (Hacker News + triage con el modelo del usuario)
 packages/research    lógica compartida del radar: búsqueda en Hacker News, capacidades y triage (prompt + validación)
 apps/landing         landing de presentación: Agentztein en 3D (three.js); un edificio recorrible (cuna + un cuarto por benchmark, 1.ª/3.ª persona) y un laboratorio 3D por benchmark; `pnpm --filter @skillab/landing stills` regenera sus imágenes
@@ -66,10 +66,19 @@ Todo se opera desde el navegador (ADR-015):
 
 ### Login (Google o correo con código) y llave de Meta (`/app/`, ADR-019 y ADR-020)
 
-1. **Google Cloud → APIs & Services → Credentials:** crear un *OAuth client ID* (Web). En *Authorized redirect URIs*
-   poner `https://<proyecto>.supabase.co/auth/v1/callback`.
+1. **Google Cloud Console** (console.cloud.google.com), en un proyecto nuevo o existente:
+   - *Google Auth Platform → Branding:* nombre de la app (Agentztein), correo de soporte, logo opcional y en
+     *Authorized domains* tu dominio de producción y `<proyecto>.supabase.co`.
+   - *Audience:* tipo **External** y **Publish app** (en modo *Testing* solo entran los correos de prueba).
+   - *Data Access:* solo los scopes básicos `openid`, `email` y `profile` (no requieren verificación de Google).
+   - *Clients → Create client → Web application:*
+     - *Authorized JavaScript origins* (para el botón de Google): `https://<dominio>` y `http://localhost:5173`.
+     - *Authorized redirect URIs* (flujo con redirección, que usan los previews): `https://<proyecto>.supabase.co/auth/v1/callback`.
+     - Copia el **Client ID** y el **Client Secret**.
 2. **Supabase → Authentication → Sign In / Providers:**
-   - **Google:** activarlo con el Client ID y el Client Secret.
+   - **Google:** activarlo con el Client ID y el Client Secret del paso 1 (deja *Skip nonce checks* apagado).
+     Con *Allow new users to sign up* encendido (Authentication → Sign In / Providers → User Signups), el
+     mismo botón registra a quien entra por primera vez: la cuenta se crea con su nombre, correo y foto de Google.
    - **Email:** activado, con *Confirm email* encendido y *Email OTP length* = 6.
 3. **Supabase → Authentication → Emails:** pegar las plantillas de `supabase/templates/` en *Confirm signup* y
    *Reset password*. Usan `{{ .Token }}`, así que el usuario recibe un código de 6 dígitos en vez de un enlace.
@@ -77,10 +86,14 @@ Todo se opera desde el navegador (ADR-015):
    SMTP propio (*Authentication → Emails → SMTP Settings*, p. ej. Resend o SES).
 4. **Supabase → Authentication → URL Configuration:** *Site URL* = el dominio de producción; en *Redirect URLs*
    agregar `https://<dominio>/app/` y `https://*-<equipo>.vercel.app/app/` (previews).
-5. **Vercel → Settings → Environment Variables:** `SUPABASE_URL`, `SUPABASE_ANON_KEY` (públicas),
+5. **Vercel → Settings → Environment Variables:** `GOOGLE_CLIENT_ID` (público: el mismo Client ID del paso 1),
+   `SUPABASE_URL`, `SUPABASE_ANON_KEY` (públicas),
    `DATABASE_URL` (Transaction pooler, puerto 6543), `DATABASE_SSL_CA` y `KEYS_ENCRYPTION_SECRET`
    (32+ caracteres aleatorios, p. ej. `openssl rand -base64 48`). Si falta alguna, `/app/` dice cuál.
-6. Correr `db-migrate` para crear el esquema `app` (migraciones `0005`, `0006` y `0007`: llaves, notas, presupuesto, skills del agente y
+6. **Comprobar Google:** `SUPABASE_URL=… SUPABASE_ANON_KEY=… GOOGLE_CLIENT_ID=… pnpm auth:check` (o abrir
+   `/api/config?check=google`). Confirma que Google está activado en Supabase y que Supabase y el botón usan
+   el mismo Client ID; si no, dice qué corregir.
+7. Correr `db-migrate` para crear el esquema `app` (migraciones `0005`, `0006` y `0007`: llaves, notas, presupuesto, skills del agente y
    registro del arnés). No se expone por la Data API de Supabase.
 
 **Solo modelos de Meta.** Cada usuario pega su llave de la **Meta Model API** (`https://api.meta.ai/v1`,

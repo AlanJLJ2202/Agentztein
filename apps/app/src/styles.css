@@ -107,6 +107,10 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 .google:hover { background: #f8faff; box-shadow: 0 2px 8px rgba(60, 64, 67, .18); }
 .google:focus-visible { outline: 3px solid var(--meta); outline-offset: 3px; }
 .google[disabled] { opacity: .6; cursor: progress; }
+.gis { position: relative; min-height: 44px; display: grid; }
+.gis-slot { width: 100%; min-height: 44px; display: flex; justify-content: center; }
+.gis .ghosted { position: absolute; inset: 0; pointer-events: none; opacity: .7; }
+.error.small { font-size: .875rem; }
 @media (max-width: 900px) {
   .signin { grid-template-columns: minmax(0, 1fr); }
   .signin-art { height: 34svh; min-height: 220px; order: 2; }

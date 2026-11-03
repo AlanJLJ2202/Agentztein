@@ -333,3 +333,18 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
     skill (`/api/media`). Voz e imagen son experimentales: si la llave no tiene acceso, el error lo dice.
   - Todo pasa por el arnés existente: peor caso contra el presupuesto antes de llamar y registro append-only.
   - Costo estimado por ciclo con Spark + Wonder: unos centavos de dólar; los $150 alcanzan para miles.
+
+## ADR-025 — Acceso y registro con el botón oficial de Google, verificado por Supabase
+- **Contexto (3 nov 2026):** Alan pidió dejar listo el login (y el registro) con Google, validado por
+  Supabase Auth y la API de Google.
+- **Decisión:**
+  - La app carga Google Identity Services y dibuja el botón oficial de Google ("Continuar con Google" o
+    "Registrarse con Google"). Google devuelve un ID token firmado; la app lo entrega a Supabase con
+    `signInWithIdToken` y un nonce (Google recibe su SHA-256). Supabase verifica la firma con las llaves de
+    Google, que la audiencia sea nuestro Client ID y el nonce, y crea la cuenta la primera vez.
+  - En los previews de Vercel (hosts que cambian y no se pueden registrar como orígenes en Google Cloud) y si
+    falta `GOOGLE_CLIENT_ID` o el script de Google no carga, se usa el flujo con redirección de Supabase.
+  - `/api/config` y `pnpm auth:check` comprueban contra los servicios reales, sin secretos, que Google esté
+    activado en Supabase y que su Client ID sea el mismo que usa el botón (si no, Supabase rechazaría el
+    token con "Unacceptable audience").
+  - El servidor sigue validando cada petición con Supabase (`/auth/v1/user`); nada cambia en la API.

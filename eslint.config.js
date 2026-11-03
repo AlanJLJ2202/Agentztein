@@ -13,7 +13,7 @@ export default tseslint.config(
   },
   {
     // Vercel functions (Web Request/Response on Node) and the shared research package (browser and Node).
-    files: ["api/**/*.js", "packages/research/**/*.js"],
+    files: ["api/**/*.js", "packages/research/**/*.js", "scripts/**/*.mjs"],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {

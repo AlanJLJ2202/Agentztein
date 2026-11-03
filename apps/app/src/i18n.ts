@@ -164,6 +164,12 @@ export const T = {
     errCode: { en: "That code is wrong or expired. Ask for a new one.", es: "Ese código es incorrecto o caducó. Pide uno nuevo." },
     errRate: { en: "Too many attempts. Wait a minute and try again.", es: "Demasiados intentos. Espera un minuto e inténtalo de nuevo." },
     errWeak: { en: "That password is too weak.", es: "Esa contraseña es muy débil." },
+    googleSignup: { en: "Sign up with Google", es: "Registrarse con Google" },
+    googleSignupHint: { en: "With Google your account is created at once: no password and no code.", es: "Con Google tu cuenta se crea al momento: sin contraseña y sin código." },
+    errGoogleAudience: { en: "Google sign-in isn't set up right: Supabase and the Google button use different client IDs.", es: "El acceso con Google está mal configurado: Supabase y el botón de Google usan Client IDs distintos." },
+    errGoogleNonce: { en: "Google's answer couldn't be verified. Try again.", es: "No se pudo verificar la respuesta de Google. Inténtalo de nuevo." },
+    errGoogleOff: { en: "Google sign-in isn't turned on yet. Use email for now.", es: "El acceso con Google aún no está activado. Por ahora usa tu correo." },
+    errNoSignup: { en: "New accounts are closed right now.", es: "Por ahora no se aceptan cuentas nuevas." },
   },
   harness: {
     title: { en: "Harness: your limits", es: "Arnés: tus límites" },

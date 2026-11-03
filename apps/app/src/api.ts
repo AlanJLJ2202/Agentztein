@@ -1,7 +1,14 @@
 // Talks to the functions in /api with the user's Supabase session.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type Config = { supabaseUrl: string | null; supabaseAnonKey: string | null; ready: boolean; missing: string[] };
+export type GoogleStatus = "ok" | "not-configured" | "disabled" | "mismatch" | "no-client-id" | "unknown";
+export type Config = {
+  supabaseUrl: string | null;
+  supabaseAnonKey: string | null;
+  ready: boolean;
+  missing: string[];
+  google?: { clientId: string | null; status: GoogleStatus; enabled: boolean | null; button: boolean };
+};
 export type ProviderInfo = { id: string; label: string; keysUrl: string };
 export type SavedKey = { provider: string; hint: string; model: string | null; models: string[]; verifiedAt: string | null; updatedAt: string };
 export type Verdict = "experiment" | "watch" | "skip";

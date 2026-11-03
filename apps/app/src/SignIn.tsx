@@ -1,10 +1,12 @@
 // Sign in with Google, or with email and password confirmed by a 6-digit code sent by email.
 // The code comes from Supabase's email templates ({{ .Token }}); see README → "Login".
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { Config } from "./api.js";
 import { LangSwitch } from "./App.js";
+import { GoogleButton } from "./GoogleButton.js";
 import { T, useT, type Lang } from "./i18n.js";
-import { Check, GoogleG, HnMark } from "./Logos.js";
+import { Check, HnMark } from "./Logos.js";
 
 type Mode = "signin" | "signup" | "verify" | "forgot" | "reset";
 const A = T.auth;
@@ -17,10 +19,14 @@ function friendly(message: string, t: (x: { en: string; es: string }) => string)
   if (m.includes("expired") || (m.includes("invalid") && m.includes("otp"))) return t(A.errCode);
   if (m.includes("rate limit") || m.includes("security purposes")) return t(A.errRate);
   if (m.includes("password") && (m.includes("least") || m.includes("weak"))) return t(A.errWeak);
+  if (m.includes("audience")) return t(A.errGoogleAudience);
+  if (m.includes("nonce")) return t(A.errGoogleNonce);
+  if (m.includes("provider is not enabled") || m.includes("unsupported provider")) return t(A.errGoogleOff);
+  if (m.includes("signups not allowed") || m.includes("signup is disabled")) return t(A.errNoSignup);
   return message;
 }
 
-export function SignIn({ supabase, lang, setLang }: { supabase: SupabaseClient; lang: Lang; setLang: (l: Lang) => void }) {
+export function SignIn({ supabase, google: gconf, lang, setLang }: { supabase: SupabaseClient; google?: Config["google"]; lang: Lang; setLang: (l: Lang) => void }) {
   const t = useT();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
@@ -57,11 +63,8 @@ export function SignIn({ supabase, lang, setLang }: { supabase: SupabaseClient; 
   };
   const redirectTo = `${location.origin}/app/`;
 
-  const google = () =>
-    run(async () => {
-      const { error: e } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo, queryParams: { prompt: "select_account" } } });
-      if (e) throw e;
-    });
+  const onGoogleError = useCallback((message: string) => setError(friendly(message, t)), [t]);
+  const googleOff = gconf?.status === "disabled" || gconf?.status === "mismatch";
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,10 +149,19 @@ export function SignIn({ supabase, lang, setLang }: { supabase: SupabaseClient; 
                   <li key={b}>{i === 1 ? <HnMark size={18} /> : <span className="tick" aria-hidden="true"><Check size={11} /></span>}{b}</li>
                 ))}
               </ul>
-              <button type="button" className="google" onClick={() => void google()} disabled={busy}>
-                <GoogleG />
-                {t(T.google)}
-              </button>
+              <GoogleButton
+                supabase={supabase}
+                clientId={gconf?.clientId ?? null}
+                button={Boolean(gconf?.button)}
+                mode={mode === "signup" ? "signup" : "signin"}
+                lang={lang}
+                label={mode === "signup" ? t(A.googleSignup) : t(T.google)}
+                disabled={busy}
+                onError={onGoogleError}
+                onBusy={setBusy}
+              />
+              {mode === "signup" && <p className="fine">{t(A.googleSignupHint)}</p>}
+              {googleOff && <p className="error small">{gconf?.status === "mismatch" ? t(A.errGoogleAudience) : t(A.errGoogleOff)}</p>}
               <p className="or"><span>{t(A.or)}</span></p>
               <div className="seg" role="tablist" aria-label={t(A.or)}>
                 <button type="button" role="tab" aria-selected={mode === "signin"} onClick={() => go("signin")}>{t(A.signin)}</button>
