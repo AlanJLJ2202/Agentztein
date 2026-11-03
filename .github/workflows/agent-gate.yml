@@ -71,8 +71,15 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
+      - name: Does main have a gate yet?
+        id: boot
+        run: |
+          # the PR that introduces the gate can't be judged by it: main doesn't have it yet
+          if [ -f scripts/evolve/gate.ts ]; then echo "ready=true" >> "$GITHUB_OUTPUT"; else echo "::notice::main has no gate yet (bootstrap PR): a person reviews this one"; echo "ready=false" >> "$GITHUB_OUTPUT"; fi
+
       - name: What the PR touches
         id: paths
+        if: steps.boot.outputs.ready == 'true'
         run: |
           # fetch-depth: 0 already brought every branch of this repo, the PR's included (fork PRs get no secrets anyway)
           git cat-file -e "$HEAD_SHA^{commit}" || { echo "::error::The PR's commit is not in this repo (fork PRs are not judged)"; exit 1; }
@@ -103,6 +110,7 @@ jobs:
 
       - name: Decide
         id: decide
+        if: steps.boot.outputs.ready == 'true'
         env:
           # opened by the evolve workflow: its branches are evolve/<run id>, pushed from this same repo
           AGENT_PR: ${{ startsWith(github.event.pull_request.head.ref, 'evolve/') && github.event.pull_request.head.repo.full_name == github.repository }}
