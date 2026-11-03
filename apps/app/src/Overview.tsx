@@ -4,7 +4,8 @@
 // scored, the latest changes and the map of what it already knows. Everything comes from /api/agent and /api/radar;
 // the only illustrated parts say so.
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import type { AgentState, Api, BenchScenario, Job, Note, SavedKey, Scores, Skill } from "./api.js";
+import type { AgentState, Api, BenchScenario, HealthCheck, Job, Note, SavedKey, Scores, Skill } from "./api.js";
+import { SetupAlerts } from "./SetupAlerts.js";
 import type { Tab } from "./App.js";
 import { AgentStage, type StageChip, type StageMood, type StageScreen } from "./AgentStage.js";
 import { LangContext, T, useT, type Lang, type Text } from "./i18n.js";
@@ -170,6 +171,11 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
   const [agentFailed, setAgentFailed] = useState(false);
   const [notes, setNotes] = useState<Note[] | null>(null);
   const [tip, setTip] = useState(-1);
+  // what's missing for the agent to change its own code: the server checks it for real
+  const [health, setHealth] = useState<HealthCheck[]>([]);
+  useEffect(() => {
+    client.evolve().then((s) => setHealth(s.health?.checks ?? [])).catch(() => setHealth([]));
+  }, [client]);
 
   const loadAgent = useCallback(
     () => client.agent().then((a) => { setAgent(a); setAgentFailed(false); }).catch(() => setAgentFailed(true)),
@@ -252,6 +258,7 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
         </div>
       </div>
 
+      <SetupAlerts checks={health} go={go} />
       <FirstSteps lab={lab} go={go} />
       <Kpis lab={lab} lang={lang} loading={loading} />
       <CycleTrack lab={lab} lang={lang} go={go} />

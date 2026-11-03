@@ -137,7 +137,9 @@ export type EvolveRun = {
   createdAt: string;
   updatedAt: string;
 };
+export type HealthCheck = { id: string; ok: boolean | null; who: "admin" | "you"; title: { en: string; es: string }; fix: { en: string; es: string } };
 export type EvolveState = {
+  health: { ready: boolean; tables: boolean; checks: HealthCheck[] };
   platform: { version: string; strategy: string };
   active: { id: string; version: number; coreVersion: string; strategy: string } | null;
   cores: CoreVersion[];

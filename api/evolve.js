@@ -17,6 +17,7 @@ import { requireUser } from "./_lib/auth.js";
 import { activeCore, coreOut, newToken, runOut } from "./_lib/cores.js";
 import { db } from "./_lib/db.js";
 import { dispatchEvolve, githubConfig } from "./_lib/github.js";
+import { evolveHealth, MIN_LEFT_USD } from "./_lib/evolve-health.js";
 import { budgetOf } from "./_lib/harness.js";
 import { harnessed, keyOf } from "./_lib/harnessed.js";
 import { HttpError, handle, json, readJson } from "./_lib/http.js";
@@ -24,7 +25,6 @@ import { HttpError, handle, json, readJson } from "./_lib/http.js";
 export const BUILDERS = ["muse-code", "forja"];
 /** Most a run may spend of the user's budget (bench + Forja; Muse Code bills its own use to the same key). */
 export const RUN_MAX_USD = Number(process.env.EVOLVE_MAX_USD ?? 2);
-export const MIN_LEFT_USD = 0.5;
 /** Runs per user per day: GitHub Actions minutes are the platform's. */
 export const DAILY_RUNS = Number(process.env.EVOLVE_DAILY_RUNS ?? 3);
 const BUSY = ["queued", "building"];
@@ -85,8 +85,14 @@ export const GET = handle(async (request) => {
     if (!rows[0]) throw new HttpError(404, "That version doesn't exist");
     return json({ core: coreOut(rows[0]), files: rows[0].files });
   }
+  // what's missing, checked for real (and stale runs marked failed) before reading the user's state
+  const health = await evolveHealth({ pool, userId: user.id });
+  const limits = { maxUsd: RUN_MAX_USD, dailyRuns: DAILY_RUNS };
   const missing = missingForRuns();
-  return json({ ...(await stateOf(pool, user.id)), configured: missing.length === 0, missing, limits: { maxUsd: RUN_MAX_USD, dailyRuns: DAILY_RUNS } });
+  const state = health.tables
+    ? await stateOf(pool, user.id)
+    : { platform: { version: core.CORE_VERSION, strategy: core.STRATEGY }, active: null, cores: [], runs: [] };
+  return json({ ...state, configured: missing.length === 0 && health.tables, missing, health, limits });
 });
 
 /** The planner's prompt: who the agent is today, where it fails, what was approved and what was already tried. */
@@ -120,6 +126,10 @@ export function parseEvolveProposal(text) {
 async function admit(pool, userId) {
   const missing = missingForRuns();
   if (missing.length) throw new HttpError(503, `Code changes aren't set up on this server yet (${missing.join(", ")})`, { reason: "not-configured", missing });
+  // the same checks the dashboard shows: refuse a run that can't work (e.g. the workflow isn't on main yet)
+  const health = await evolveHealth({ pool, userId });
+  const blocking = health.checks.filter((c) => c.who === "admin" && c.ok === false);
+  if (blocking.length) throw new HttpError(503, `Code changes can't run yet: ${blocking.map((c) => c.title.en).join("; ")}`, { reason: "not-configured", checks: blocking });
   const [{ rows: busy }, { rows: today }, budget] = await Promise.all([
     pool.query("SELECT id FROM app.evolve_runs WHERE user_id = $1 AND status = ANY($2) AND updated_at > now() - interval '90 minutes' LIMIT 1", [userId, BUSY]),
     pool.query("SELECT count(*)::int AS n FROM app.evolve_runs WHERE user_id = $1 AND created_at > now() - interval '1 day'", [userId]),

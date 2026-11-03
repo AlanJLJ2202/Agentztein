@@ -4,6 +4,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import * as core from "@skillab/agent-core";
 import { closeDb } from "../../api/_lib/db.js";
+import { resetHealthCache } from "../../api/_lib/evolve-health.js";
 import { githubConfig } from "../../api/_lib/github.js";
 import { complete } from "../../api/_lib/providers.js";
 import { cleanRequest, runCore } from "../../api/_lib/solver.js";
@@ -77,6 +78,7 @@ describe.skipIf(!hasDatabase)("/api/evolve and /api/evolve-ci (Postgres)", () =>
   let keys: typeof KeysApi;
   let agent: typeof AgentApi;
   let who = USER;
+  let workflowSecret = false;
   const dispatches: Array<{ url: string; body: { ref: string; inputs: { run_id: string; token: string; app_url: string } } }> = [];
   const chats: Array<{ model: string; messages: { content: string }[] }> = [];
   const platform = readCore("packages/agent-core").files;
@@ -109,6 +111,9 @@ describe.skipIf(!hasDatabase)("/api/evolve and /api/evolve-ci (Postgres)", () =>
           : JSON.stringify({ answers: { 1: "aceptar" } });
         return Response.json({ choices: [{ message: { content } }], usage: { prompt_tokens: 3000, completion_tokens: 400 } });
       }
+      const repoApi = "https://api.github.com/repos/AlanJLJ2202/Agentztein";
+      if (url === repoApi || url === `${repoApi}/actions/workflows/evolve.yml`) return Response.json({ ok: true });
+      if (url === `${repoApi}/actions/secrets/EVOLVE_CI_SECRET`) return workflowSecret ? Response.json({ name: "EVOLVE_CI_SECRET" }) : new Response("{}", { status: 404 });
       if (url === "https://api.github.com/repos/AlanJLJ2202/Agentztein/actions/workflows/evolve.yml/dispatches") {
         dispatches.push({ url, body: JSON.parse(String(init?.body)) });
         return new Response(null, { status: 204 });
@@ -138,11 +143,20 @@ describe.skipIf(!hasDatabase)("/api/evolve and /api/evolve-ci (Postgres)", () =>
     expect(r.status).toBe(201);
   };
 
-  it("says what the server still needs, by name", async () => {
-    const s = await state();
+  it("tells the dashboard exactly what is missing, and who fixes it", async () => {
+    const failing = (s: { health: { checks: { id: string; ok: boolean | null; who: string }[] } }) => s.health.checks.filter((c) => c.ok === false).map((c) => `${c.who}:${c.id}`);
+    let s = await state();
     expect(s).toMatchObject({ configured: false, missing: ["AGENT_GH_TOKEN", "EVOLVE_CI_SECRET"], platform: { version: core.CORE_VERSION }, active: null, cores: [], runs: [] });
+    expect(failing(s)).toEqual(["admin:gh-token", "admin:ci-secret-vercel", "you:meta-key"]);
     vi.stubEnv("AGENT_GH_TOKEN", "ghp_test");
     vi.stubEnv("EVOLVE_CI_SECRET", CI_SECRET);
+    s = await state();
+    expect(failing(s)).toEqual(["admin:ci-secret-github", "you:meta-key"]);
+    expect(s.health.checks.find((c: { id: string }) => c.id === "ci-secret-github").fix.es).toContain("EVOLVE_CI_SECRET");
+    expect((await post({ op: "dispatch", title: "Votar entre dos pasadas" })).body.reason).toBe("no-key");
+    workflowSecret = true;
+    resetHealthCache(); // the GitHub checks are cached for 5 minutes
+    expect(failing(await state())).toEqual(["you:meta-key"]);
     expect((await state()).configured).toBe(true);
   });
 
@@ -235,6 +249,19 @@ describe.skipIf(!hasDatabase)("/api/evolve and /api/evolve-ci (Postgres)", () =>
     expect(s.active).toBeNull();
     s = (await post({ op: "activate", coreId: v1.id })).body;
     expect(s.active.version).toBe(1);
+  });
+
+  it("a run the workflow never picked up is marked failed, and the dashboard says why", async () => {
+    const db = new pg.Client({ connectionString: dbUrl });
+    await db.connect();
+    await db.query(
+      `INSERT INTO app.evolve_runs (user_id, builder, proposal, token_hash, max_usd, created_at, updated_at)
+       VALUES ($1, 'forja', '{"title":"Atorada"}', 'h', 1, now() - interval '20 minutes', now() - interval '20 minutes')`,
+      [USER.id],
+    );
+    await db.end();
+    const s = await state();
+    expect(s.runs.find((r: { proposal: { title: string } }) => r.proposal.title === "Atorada")).toMatchObject({ status: "failed", error: expect.stringContaining("evolve.yml is on main") });
   });
 
   it("logs what the runs spent in the user's harness", async () => {

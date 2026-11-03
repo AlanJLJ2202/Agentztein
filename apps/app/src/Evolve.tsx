@@ -6,6 +6,7 @@ import { ApiError, type Api, type CoreVersion, type EvolveRun, type EvolveState 
 import type { Tab } from "./App.js";
 import { useT, type Text } from "./i18n.js";
 import { MetaMark } from "./Logos.js";
+import { SetupAlerts } from "./SetupAlerts.js";
 
 const E = (en: string, es: string): Text => ({ en, es });
 const L = {
@@ -37,7 +38,7 @@ const L = {
   ownIdea: E("What it should try", "Qué debería intentar"),
   send: E("Send to the builder", "Mandar al constructor"),
   limits: E("Up to $X of your budget per run, N runs a day.", "Hasta $X de tu presupuesto por corrida, N corridas al día."),
-  notConfigured: E("Code changes aren't set up on this server yet. Missing:", "Los cambios de código aún no están configurados en este servidor. Falta:"),
+  notConfigured: E("You can start a run as soon as the server setup above is complete.", "Podrás iniciar una corrida en cuanto esté completa la configuración del servidor de arriba."),
   runs: E("Runs", "Corridas"),
   versions: E("Your versions", "Tus versiones"),
   none: E("No runs yet. The first one starts here.", "Todavía no hay corridas. La primera empieza aquí."),
@@ -116,8 +117,9 @@ export function Evolve({ client, go }: { client: Api; go: (t: Tab) => void }) {
       </ol>
       <p className="small"><b>{t(L.today)}:</b> <code>{today}</code> · {data.active?.strategy ?? data.platform.strategy}</p>
 
-      {!data.configured ? (
-        <p className="notice">{t(L.notConfigured)} {data.missing.map((m) => <code key={m}>{m}</code>)}</p>
+      <SetupAlerts checks={data.health.checks} go={go} all />
+      {!data.configured || data.health.checks.some((c) => c.who === "admin" && c.ok === false) ? (
+        <p className="notice">{t(L.notConfigured)}</p>
       ) : (
         <>
           <div className="agent-grid">
