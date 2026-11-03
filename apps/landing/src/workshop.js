@@ -3,6 +3,8 @@
    (exam runner, skill library, harness, voice, image). Each one has a small animation when you interact.
    room.js passes in its helpers so this file stays about the tools themselves. Local coordinates = the hall's. */
 
+import { buildEngine } from "./engine.js";
+
 export function buildWorkshop(g, H) {
   const { THREE, box, glossy, std, plane, sign, anim, canvasTex, rr, FONT, tr, makeChip, SKILLS, sound, relabels } = H;
   const exhibits = [], updates = [];
@@ -12,7 +14,7 @@ export function buildWorkshop(g, H) {
   function station(key, x, z, ry, color, label, build, { solid = 0.75, stand }) {
     const grp = new THREE.Group(); grp.position.set(x, 0, z); grp.rotation.y = ry; g.add(grp);
     const built = build(grp);
-    const lab = sign(() => label, color, 2.1); lab.position.set(0, 2.75, 0.1); grp.add(lab);
+    const lab = sign(() => label, color, 1.55, { billboard: true, room: "taller" }); lab.position.set(0, 2.3, 0.1); grp.add(lab);
     relabels.push(() => lab.material.map.userData.redraw());
     const sx = x + Math.sin(ry) * stand, sz = z + Math.cos(ry) * stand;
     exhibits.push({ key, at: [x, z], stand: [sx, sz], solid, hits: built.hits, act: built.act });
@@ -165,96 +167,11 @@ export function buildWorkshop(g, H) {
     }, { stand: 1.5, solid: 0.7 });
   }
 
-  // 10. The engine: the agent's anatomy, like a car's. It reads what the agent really has right now.
-  //     Brain (Muse model) on top, one cylinder per skill room (lit only when that skill is installed), the harness
-  //     as a ring around the block, tools as the accessories you just walked past.
+  // 10. The engine: the agent's anatomy on a circuit board (engine.js), one exhibit per part.
   {
-    const COLORS = [0x5b9bff, 0x2ec4b6, 0xff8f70, 0x3ccf6e, 0xff6600, 0x8a7dff];
-    const IDS = ["swe", "terminal", "arc", "web", "research", "horizon"];
-    const NAMES = [{ en: "Code", es: "Código" }, { en: "Terminal", es: "Terminal" }, { en: "Reasoning", es: "Razonamiento" }, { en: "Web", es: "Web" }, { en: "Research", es: "Investigación" }, { en: "Autonomy", es: "Autonomía" }];
-    let cyl = [], brainMesh, harnessRing, flywheel, fuelGlow, gauge, gaugeTex, signs = [], rpm = 0.25, lastN = -1, lastEffort = "";
-    const state = { rev: 0 };
-    const eng = new THREE.Group(); eng.position.set(0, 0, 0.4); eng.scale.setScalar(1.2); g.add(eng);
-    const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.35, 0.22, 56), glossy(0xffffff)); ped.position.y = 0.11; eng.add(ped);
-    const pring = new THREE.Mesh(new THREE.TorusGeometry(1.26, 0.035, 8, 80), new THREE.MeshStandardMaterial({ color: 0x0081fb, emissive: 0x0081fb, emissiveIntensity: 0.9 })); pring.rotation.x = Math.PI / 2; pring.position.y = 0.23; eng.add(pring);
-    // the block
-    const block = box(1.9, 0.5, 0.95, 0x2a3d4c, { metalness: 0.6, roughness: 0.3 }); block.position.y = 0.55; eng.add(block);
-    const oil = box(1.5, 0.22, 0.8, 0x1c2b33, { metalness: 0.5 }); oil.position.y = 0.3; eng.add(oil);
-    // six cylinders in a V: each is a glass sleeve with a piston inside
-    for (let i = 0; i < 6; i++) {
-      const bank = i < 3 ? -1 : 1, col = i % 3;
-      const grp = new THREE.Group(); grp.position.set(-0.6 + col * 0.6, 0.78, bank * 0.26); grp.rotation.x = bank * -0.32; eng.add(grp);
-      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.62, 20, 1, true), new THREE.MeshPhysicalMaterial({ color: 0xdfeaf5, transparent: true, opacity: 0.3, roughness: 0.05, side: THREE.DoubleSide, depthWrite: false }));
-      sleeve.position.y = 0.31; grp.add(sleeve);
-      const piston = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.14, 20), new THREE.MeshStandardMaterial({ color: 0xc9d2dc, metalness: 0.8, roughness: 0.25, emissive: COLORS[i], emissiveIntensity: 0 })); piston.position.y = 0.25; grp.add(piston);
-      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.4, 8), std(0x9aa8b5)); rod.position.y = 0.0; grp.add(rod);
-      const head = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.1, 20), new THREE.MeshStandardMaterial({ color: COLORS[i], emissive: COLORS[i], emissiveIntensity: 0 })); head.position.y = 0.67; grp.add(head);
-      const plug = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.14, 8), std(0x1c2b33)); plug.position.y = 0.79; grp.add(plug);
-      const glow = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), new THREE.MeshBasicMaterial({ color: COLORS[i], transparent: true, opacity: 0, toneMapped: false })); glow.position.y = 0.45; grp.add(glow);
-      cyl.push({ piston, head, glow, ph: i * 1.05 });
-    }
-    // brain under a glass dome, with wires down to every cylinder
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.55, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, roughness: 0.03, clearcoat: 1, depthWrite: false, side: THREE.DoubleSide }));
-    dome.position.y = 1.65; eng.add(dome);
-    const domeBase = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 0.1, 32), glossy(0xe3ebf3)); domeBase.position.y = 1.62; eng.add(domeBase);
-    brainMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 3), new THREE.MeshStandardMaterial({ color: 0x8cc4ff, emissive: 0x0081fb, emissiveIntensity: 0.4, roughness: 0.4 }));
-    brainMesh.position.y = 1.95; brainMesh.scale.set(1.1, 0.85, 1); eng.add(brainMesh);
-    const mount = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.45, 12), metalMat()); mount.position.y = 1.35; eng.add(mount);
-    function metalMat() { return new THREE.MeshStandardMaterial({ color: 0xc9d2dc, metalness: 0.8, roughness: 0.25 }); }
-    const wires = [];
-    for (let i = 0; i < 6; i++) {
-      const bank = i < 3 ? -1 : 1, col = i % 3;
-      const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 1.62, 0), new THREE.Vector3((-0.6 + col * 0.6) * 0.5, 1.5, bank * 0.12), new THREE.Vector3(-0.6 + col * 0.6, 1.2 - Math.abs(col - 1) * 0.05, bank * 0.34), new THREE.Vector3(-0.6 + col * 0.6, 1.0, bank * 0.4)]);
-      const m = new THREE.MeshStandardMaterial({ color: 0x4b5f6d, emissive: COLORS[i], emissiveIntensity: 0 });
-      const w = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.018, 6), m); eng.add(w); wires.push(m);
-    }
-    // the harness: a green ring around the whole block
-    harnessRing = new THREE.Mesh(new THREE.TorusGeometry(1.08, 0.045, 10, 64), new THREE.MeshStandardMaterial({ color: 0x3ccf6e, emissive: 0x3ccf6e, emissiveIntensity: 0.9 })); harnessRing.rotation.x = Math.PI / 2; harnessRing.position.y = 0.62; eng.add(harnessRing);
-    // flywheel at the side = the tools
-    flywheel = new THREE.Group(); flywheel.position.set(1.1, 0.62, 0); eng.add(flywheel);
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 9), metalMat()); disc.rotation.z = Math.PI / 2; flywheel.add(disc);
-    for (let i = 0; i < 9; i++) { const t = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.06), new THREE.MeshStandardMaterial({ color: 0xff8f70, emissive: 0xff8f70, emissiveIntensity: 0.6 })); const a = (i / 9) * 6.283; t.position.set(0, Math.cos(a) * 0.3, Math.sin(a) * 0.3); flywheel.add(t); }
-    // the dashboard: what the agent has right now
-    gaugeTex = canvasTex(512, 256, () => {});
-    gauge = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: gaugeTex, toneMapped: false })); gauge.position.set(0, 0.75, 0.9); gauge.rotation.x = -0.35; eng.add(gauge);
-    const gpost = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.45, 8), std(0xc9d2dc)); gpost.position.set(0, 0.4, 0.88); eng.add(gpost);
-    const paintGauge = (n, effort) => {
-      const { g: c, c: cv } = gaugeTex.userData, W = cv.width, Hh = cv.height;
-      c.fillStyle = "#0f1d26"; rr(c, 0, 0, W, Hh, 28); c.fill();
-      c.fillStyle = "#9fb3c2"; font(c, 700, 24); c.fillText(tr({ en: "RIGHT NOW", es: "AHORA MISMO" }), 26, 44);
-      c.fillStyle = "#ffffff"; font(c, 800, 40); c.fillText(tr({ en: `Skills: ${n} of 6`, es: `Habilidades: ${n} de 6` }), 26, 100);
-      for (let i = 0; i < 6; i++) { c.fillStyle = IDS.length && n > 0 && installedNow.has(IDS[i]) ? "#" + COLORS[i].toString(16).padStart(6, "0") : "#26394a"; rr(c, 26 + i * 76, 122, 64, 18, 9); c.fill(); }
-      c.fillStyle = "#9fb3c2"; font(c, 600, 24); c.fillText(tr({ en: "Brain: Muse Spark", es: "Cerebro: Muse Spark" }), 26, 182);
-      c.fillStyle = "#4aa8ff"; font(c, 700, 26); c.fillText(tr({ en: `Effort: ${effort}`, es: `Esfuerzo: ${effort}` }), 26, 224);
-      gaugeTex.needsUpdate = true;
-    };
-    let installedNow = new Set();
-    relabels.push(() => { lastN = -1; });
-    // floating names
-    const tag = (txt, color, x, y, z) => { const sgn = sign(txt, color, 1.45); sgn.position.set(x, y, z); eng.add(sgn); signs.push(sgn); relabels.push(() => sgn.material.map.userData.redraw()); return sgn; };
-    const cylSign = tag(() => tr({ en: `Cylinders = skills (${installedNow.size}/6)`, es: `Cilindros = habilidades (${installedNow.size}/6)` }), 0x22b864, -1.45, 1.05, 0.5);
-    tag(() => ({ en: "Brain = Muse model", es: "Cerebro = modelo Muse" }), 0x0081fb, 0.0, 2.75, 0);
-    tag(() => ({ en: "Ring = harness", es: "Anillo = arnés" }), 0x3ccf6e, 1.45, 1.05, 0.5);
-    tag(() => ({ en: "Wheel = tools", es: "Volante = herramientas" }), 0xff8f70, 1.6, 0.15, -0.5).rotation.y = -0.5;
-    exhibits.push({ key: "engine", at: [0, 0.4], stand: [0, 2.9], solid: 1.62, hits: [block, oil, ped, dome, ...cyl.map((c) => c.head)], act: () => { state.rev = 4; sound.sfx("engine"); } });
-    updates.push((t, dt) => {
-      const inst = H.getInstalled ? H.getInstalled() : new Set(); installedNow = inst;
-      const effort = H.getEffort ? H.getEffort() : "medium";
-      if (inst.size !== lastN || effort !== lastEffort) { lastN = inst.size; lastEffort = effort; paintGauge(inst.size, effort); cylSign.material.map.userData.redraw(); }
-      state.rev = Math.max(0, state.rev - dt);
-      const target = state.rev > 0 ? 3.2 : 0.35 + inst.size * 0.12;
-      rpm += (target - rpm) * Math.min(1, dt * 3);
-      cyl.forEach((c, i) => {
-        const on = inst.has(IDS[i]);
-        c.piston.position.y = 0.25 + Math.sin(t * rpm * 6 + c.ph) * 0.14 * (on || state.rev > 0 ? 1 : 0.25);
-        const e = on ? 0.9 + Math.sin(t * rpm * 6 + c.ph) * 0.3 : state.rev > 0 ? 0.5 : 0;
-        c.head.material.emissiveIntensity = e; c.piston.material.emissiveIntensity = e * 0.6; c.glow.material.opacity = on ? 0.35 + Math.sin(t * rpm * 6 + c.ph) * 0.2 : 0;
-        wires[i].emissiveIntensity = on ? 0.9 : 0;
-      });
-      brainMesh.rotation.y = t * 0.4; brainMesh.material.emissiveIntensity = 0.35 + Math.sin(t * rpm * 3) * 0.12 + inst.size * 0.08;
-      flywheel.rotation.x = t * rpm * 2; eng.position.y = Math.sin(t * rpm * 12) * 0.004 * rpm;
-      void NAMES; void fuelGlow; void harnessRing;
-    });
+    const E = buildEngine(g, H);
+    exhibits.push(...E.exhibits);
+    updates.push(E.update);
   }
 
   return { exhibits, update: (t, dt) => updates.forEach((f) => f(t, dt)) };
