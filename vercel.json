@@ -19,6 +19,9 @@
     },
     "api/audio.js": {
       "maxDuration": 60
+    },
+    "api/evolve.js": {
+      "maxDuration": 120
     }
   },
   "headers": [

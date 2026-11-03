@@ -4,6 +4,8 @@
 //   validate  the executor answers the validation set again, now with the candidate skill
 //   verdict   the harness compares both runs; a candidate that passes waits for a person, one that fails is rejected
 // The answers live only here (api/_data/evalset.js): the model never sees validation or sealed answers.
+// How the executor answers is the agent's own code (packages/agent-core, run through ./solver.js); how it is
+// scored stays here, out of the agent's reach.
 import { EVALSET } from "../_data/evalset.js";
 
 export const PHASES = /** @type {const} */ (["baseline", "propose", "validate", "awaiting", "done"]);
@@ -43,27 +45,26 @@ const fieldText = (v) => (typeof v === "number" ? String(v) : JSON.stringify(v))
 export function numbered(sc, groups) {
   /** @type {{ n: string, set: string, context: string, truth: string, fields: Record<string, unknown> }[]} */
   const rows = [];
+  /** @type {{ context: string, rows: { n: string, fields: Record<string, unknown> }[] }[]} */
+  const batches = [];
   const lines = [];
-  let lote = 0;
   for (const g of groups) {
     for (const b of g.batches) {
-      lote++;
       const ctx = sc.contexts.find((c) => c.id === b.context);
-      lines.push(`\nLote ${lote} · contexto ${b.context} (${ctx?.name ?? b.context})`);
+      lines.push(`\nLote ${batches.length + 1} · contexto ${b.context} (${ctx?.name ?? b.context})`);
+      const out = { context: b.context, rows: /** @type {{ n: string, fields: Record<string, unknown> }[]} */ ([]) };
       b.items.forEach((it, i) => {
         const n = String(rows.length + 1);
         rows.push({ n, set: g.set, context: b.context, truth: b.truth[i] ?? "", fields: it.fields });
+        out.rows.push({ n, fields: it.fields });
         lines.push(`${n}. ${Object.entries(it.fields).map(([k, v]) => `${k}=${fieldText(v)}`).join("; ")}`);
       });
+      batches.push(out);
     }
   }
-  return { rows, text: lines.join("\n") };
+  // `batches` is what the agent's core receives: the same rows without the set or the answer
+  return { rows, batches, text: lines.join("\n") };
 }
-
-export const EXECUTOR_SYSTEM =
-  "Eres el ejecutor de Agentztein. Etiquetas registros de negocio, uno por uno, con exactamente una de las etiquetas permitidas. " +
-  "Si hay una skill activa para el contexto de un lote, síguela al pie de la letra: la escribió el propio agente y la aprobó una persona. " +
-  "Sin skill, decide con tu mejor criterio. Responde SOLO con JSON: {\"answers\": {\"1\": \"etiqueta\", \"2\": \"etiqueta\", ...}} con todos los números.";
 
 /** @param {Scenario} sc @param {SkillText[]} skills */
 function skillBlock(sc, skills) {
@@ -73,17 +74,6 @@ function skillBlock(sc, skills) {
       return s ? `[${c.id}] skill v${s.version}:\n${s.instructions}` : `[${c.id}] sin skill todavía.`;
     })
     .join("\n\n");
-}
-
-/** @param {Scenario} sc @param {SkillText[]} skills @param {string} rowsText */
-export function executorPrompt(sc, skills, rowsText) {
-  return [
-    `Tarea: ${sc.task}`,
-    `Etiquetas permitidas:\n${sc.labels.map((l) => `- ${l.id}: ${l.meaning}`).join("\n")}`,
-    `Skills activas por contexto:\n${skillBlock(sc, skills)}`,
-    `Registros:${rowsText}`,
-    "Responde solo el JSON con una etiqueta para cada número.",
-  ].join("\n\n");
 }
 
 /** Pulls the first JSON object out of a model reply (tolerates code fences and prose around it). */
@@ -97,16 +87,21 @@ export function parseJsonObject(/** @type {string} */ text) {
 
 /**
  * Scores the executor's answers per set and context. Unanswered rows count as wrong.
- * @param {Scenario} sc @param {ReturnType<typeof numbered>["rows"]} rows @param {string} reply
+ * `reply` is the model's raw text or the answers the agent's core already read from it.
+ * @param {Scenario} sc @param {ReturnType<typeof numbered>["rows"]} rows @param {string | Record<string, unknown>} reply
  */
 export function scoreAnswers(sc, rows, reply) {
   /** @type {Record<string, unknown>} */
   let answers = {};
-  try {
-    const obj = parseJsonObject(reply);
-    answers = obj && typeof obj.answers === "object" && obj.answers ? obj.answers : obj;
-  } catch {
-    answers = {};
+  if (reply && typeof reply === "object") {
+    answers = reply;
+  } else {
+    try {
+      const obj = parseJsonObject(String(reply));
+      answers = obj && typeof obj.answers === "object" && obj.answers ? obj.answers : obj;
+    } catch {
+      answers = {};
+    }
   }
   const allowed = new Set(sc.labels.map((l) => l.id));
   /** @type {Record<string, Scores>} */

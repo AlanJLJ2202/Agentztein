@@ -5,11 +5,10 @@
 //   POST { op: "decide", skillId, decision }   a person approves or rejects a candidate that passed the harness
 //   POST { op: "retire", skillId }       takes an active skill out of use (rollback)
 //   POST { op: "exam", scenario, bare? } the sealed held-out exam, with the active skills (or none, to compare)
-import { costOf, EFFORTS, familyOf, META_MODELS, pickId } from "@skillab/research";
+import * as core from "@skillab/agent-core";
+import { EFFORTS, familyOf, META_MODELS, pickId } from "@skillab/research";
 import {
   benchSummary,
-  EXECUTOR_SYSTEM,
-  executorPrompt,
   harnessVerdict,
   numbered,
   parseProposal,
@@ -19,15 +18,16 @@ import {
   scoreAnswers,
 } from "./_lib/agent.js";
 import { requireUser } from "./_lib/auth.js";
-import { open } from "./_lib/crypto.js";
 import { db } from "./_lib/db.js";
-import { budgetOf, MAX_OUTPUT_TOKENS } from "./_lib/harness.js";
+import { budgetOf } from "./_lib/harness.js";
+import { harnessed, keyOf, MODEL_TIMEOUT_MS } from "./_lib/harnessed.js";
 import { HttpError, handle, json, readJson } from "./_lib/http.js";
-import { complete } from "./_lib/providers.js";
+import { publicScenario, runCore } from "./_lib/solver.js";
 
 const RUNNING = ["baseline", "propose", "validate"];
 const MODEL_ID = /^[A-Za-z0-9._:/-]{2,80}$/;
-const MODEL_TIMEOUT_MS = 110_000;
+/** Model calls the agent's core may make in one exam inside the app (the function has 120 s in total). */
+const CORE_MAX_CALLS = 3;
 
 /** @param {any} r */
 const skillOut = (r) => ({
@@ -65,17 +65,6 @@ const jobOut = (r) => {
   };
 };
 
-/** @param {import("pg").Pool} pool @param {string} userId */
-async function keyOf(pool, userId) {
-  const { rows } = await pool.query(
-    "SELECT provider, secret, model, models FROM app.provider_keys WHERE user_id = $1 AND provider = 'meta' LIMIT 1",
-    [userId],
-  );
-  const row = rows[0];
-  if (!row) throw new HttpError(409, "Connect your Meta key first", { reason: "no-key" });
-  return { provider: row.provider, model: row.model, models: Array.isArray(row.models) ? row.models.map(String) : [], key: open(row.secret, { userId, provider: row.provider }) };
-}
-
 /** @param {import("pg").Pool} pool @param {string} userId @param {string} scenario */
 async function activeSkills(pool, userId, scenario) {
   const { rows } = await pool.query(
@@ -86,29 +75,32 @@ async function activeSkills(pool, userId, scenario) {
 }
 
 /**
- * One model call inside the harness: refused before spending if it could go over the monthly budget,
- * and logged (append-only) with its real tokens and cost.
- * @param {import("pg").Pool} pool
- * @param {string} userId
- * @param {Awaited<ReturnType<typeof keyOf>>} k
- * @param {{ kind: string, model: string, effort: string | null, system: string, prompt: string }} call
+ * The executor takes an exam: the agent's own core (packages/agent-core) answers, every model call it makes goes
+ * through the harness, and the answers are scored here with the truth the core never sees.
+ * @param {import("pg").Pool} pool @param {string} userId @param {Awaited<ReturnType<typeof keyOf>>} k
+ * @param {{ kind: string, model: string, effort: string | null, sc: any, skills: { context: string, version: number, instructions: string }[], groups: { set: string, batches: any[] }[] }} exam
  */
-async function harnessed(pool, userId, k, call) {
-  const budget = await budgetOf(pool, userId);
-  const worst = costOf(call.model, Math.ceil((call.system.length + call.prompt.length) / 4), MAX_OUTPUT_TOKENS);
-  if (budget.spent + worst > budget.monthly) {
-    throw new HttpError(409, "This step could go over your monthly budget. Raise it or wait until next month.", { reason: "budget", ...budget, worst });
+async function takeExam(pool, userId, k, exam) {
+  const { rows, batches } = numbered(exam.sc, exam.groups);
+  const deadline = Date.now() + MODEL_TIMEOUT_MS;
+  let cost = 0;
+  const task = { scenario: publicScenario(exam.sc), skills: exam.skills, batches };
+  let out;
+  try {
+    out = await runCore(core, task, async (req) => {
+      const effort = req.effort === undefined ? exam.effort : effortFor(exam.model, req.effort, exam.effort ?? "medium");
+      const run = await harnessed(pool, userId, k, {
+        kind: exam.kind, model: exam.model, effort, system: req.system, prompt: req.user, messages: req.messages, tools: req.tools,
+        timeoutMs: Math.max(5_000, deadline - Date.now()),
+      });
+      cost += run.cost;
+      return run;
+    }, { maxCalls: CORE_MAX_CALLS });
+  } catch (err) {
+    if (err instanceof HttpError) throw err;
+    throw new HttpError(502, `The agent's core failed: ${err instanceof Error ? err.message : "unknown error"}`, { reason: "core" });
   }
-  const { text, usage } = await complete({
-    provider: k.provider, key: k.key, model: call.model, effort: call.effort, system: call.system, user: call.prompt, timeoutMs: MODEL_TIMEOUT_MS,
-  });
-  const cost = costOf(call.model, usage.input, usage.output);
-  await pool.query(
-    `INSERT INTO app.harness_runs (user_id, kind, provider, model, effort, input_tokens, output_tokens, cost_usd, outcome)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ok')`,
-    [userId, call.kind, k.provider, call.model, call.effort, usage.input, usage.output, cost],
-  );
-  return { text, cost, usage };
+  return { ...scoreAnswers(exam.sc, rows, out.answers), rows, cost, calls: out.calls, core: core.CORE_VERSION };
 }
 
 /** @param {string} model @param {unknown} wanted @param {string} fallback */
@@ -267,11 +259,9 @@ async function post(request) {
     const model = typeof body.executor === "string" && MODEL_ID.test(body.executor) ? body.executor : k.model;
     if (!model) throw new HttpError(409, "Choose which model to use first", { reason: "no-model" });
     const skills = body.bare ? [] : await activeSkills(pool, user.id, sc.id);
-    const { rows, text } = numbered(sc, [{ set: "sealed", batches: sc.sets.sealed }]);
     const effort = effortFor(model, body.effort, "medium");
-    const run = await harnessed(pool, user.id, k, { kind: "exam", model, effort, system: EXECUTOR_SYSTEM, prompt: executorPrompt(sc, skills, text) });
-    const { scores, answered } = scoreAnswers(sc, rows, run.text);
-    return json({ scenario: sc.id, bare: Boolean(body.bare), skills: skills.map((s) => ({ context: s.context, version: s.version })), scores: scores.sealed ?? {}, answered, total: rows.length, cost: run.cost, model });
+    const run = await takeExam(pool, user.id, k, { kind: "exam", model, effort, sc, skills, groups: [{ set: "sealed", batches: sc.sets.sealed }] });
+    return json({ scenario: sc.id, bare: Boolean(body.bare), skills: skills.map((s) => ({ context: s.context, version: s.version })), scores: run.scores.sealed ?? {}, answered: run.answered, total: run.rows.length, cost: run.cost, model, core: run.core });
   }
 
   throw new HttpError(400, "Unknown operation");
@@ -289,10 +279,13 @@ async function runPhase(pool, userId, job, state) {
   const spend = (/** @type {number} */ c) => { state.cost = Number(state.cost ?? 0) + c; };
 
   if (job.phase === "baseline") {
-    const { rows, text } = numbered(sc, [{ set: "practice", batches: sc.sets.practice }, { set: "validation", batches: sc.sets.validation }]);
-    const run = await harnessed(pool, userId, k, { kind: "eval", model: job.executor, effort: job.effort, system: EXECUTOR_SYSTEM, prompt: executorPrompt(sc, active, text) });
+    const run = await takeExam(pool, userId, k, {
+      kind: "eval", model: job.executor, effort: job.effort, sc, skills: active,
+      groups: [{ set: "practice", batches: sc.sets.practice }, { set: "validation", batches: sc.sets.validation }],
+    });
     spend(run.cost);
-    const { scores, marked, answered } = scoreAnswers(sc, rows, run.text);
+    const { scores, marked, answered, rows } = run;
+    state.core = run.core;
     state.skillsUsed = active.map((s) => ({ context: s.context, version: s.version }));
     state.before = { practice: scores.practice ?? {}, validation: scores.validation ?? {}, answered, total: rows.length };
     state.practice = marked.filter((m) => m.set === "practice").map(({ context, fields, truth, given, ok }) => ({ context, fields, truth, given, ok }));
@@ -338,10 +331,9 @@ async function runPhase(pool, userId, job, state) {
     const cand = state.candidate;
     if (!cand) throw new HttpError(409, "This cycle has no candidate");
     const skills = [...active.filter((s) => s.context !== cand.context), { context: cand.context, version: cand.version, instructions: cand.instructions }];
-    const { rows, text } = numbered(sc, [{ set: "validation", batches: sc.sets.validation }]);
-    const run = await harnessed(pool, userId, k, { kind: "eval", model: job.executor, effort: job.effort, system: EXECUTOR_SYSTEM, prompt: executorPrompt(sc, skills, text) });
+    const run = await takeExam(pool, userId, k, { kind: "eval", model: job.executor, effort: job.effort, sc, skills, groups: [{ set: "validation", batches: sc.sets.validation }] });
     spend(run.cost);
-    const { scores } = scoreAnswers(sc, rows, run.text);
+    const { scores } = run;
     const after = scores.validation ?? {};
     const verdict = { ...harnessVerdict(state.before?.validation ?? {}, after, cand.context), before: state.before?.validation ?? {}, after };
     state.after = after;

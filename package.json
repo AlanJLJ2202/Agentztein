@@ -10,7 +10,7 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "pnpm -r --parallel typecheck",
     "test": "vitest run",
-    "check": "pnpm lint && pnpm typecheck && pnpm datasets:verify && pnpm test && pnpm build:panel && pnpm build:app",
+    "check": "pnpm lint && pnpm typecheck && pnpm datasets:verify && pnpm test && pnpm test:core && pnpm build:panel && pnpm build:app",
     "db:generate": "pnpm --filter @skillab/db generate",
     "db:migrate": "pnpm --filter @skillab/db migrate",
     "datasets:generate": "tsx packages/scenarios/src/cli/generate.ts",
@@ -21,7 +21,12 @@
     "build:site": "pnpm build:panel && pnpm build:app && pnpm --filter @skillab/landing build && rm -rf site && mkdir -p site/panel site/app && cp -r apps/landing/dist/. site/ && cp -r apps/panel/dist/. site/panel/ && cp -r apps/app/dist/. site/app/",
     "build:app": "pnpm --filter @skillab/app build",
     "evalset": "tsx scripts/evalset.ts",
-    "auth:check": "node scripts/auth-check.mjs"
+    "auth:check": "node scripts/auth-check.mjs",
+    "test:core": "node --test packages/agent-core/test/*.test.mjs",
+    "evolve:bench": "tsx scripts/evolve/bench.ts",
+    "evolve:gate": "tsx scripts/evolve/gate.ts",
+    "evolve:workshop": "tsx scripts/evolve/workshop.ts",
+    "evolve:forja": "tsx scripts/evolve/forja.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
@@ -37,6 +42,7 @@
     "@skillab/contracts": "workspace:*"
   },
   "dependencies": {
+    "@skillab/agent-core": "workspace:*",
     "@skillab/research": "workspace:*",
     "pg": "^8.23.1"
   }

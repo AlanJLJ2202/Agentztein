@@ -348,3 +348,24 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
     activado en Supabase y que su Client ID sea el mismo que usa el botón (si no, Supabase rechazaría el
     token con "Unacceptable audience").
   - El servidor sigue validando cada petición con Supabase (`/auth/v1/user`); nada cambia en la API.
+
+## ADR-026 — El agente reescribe su propio código, con los modelos de Meta
+- **Contexto (3 nov 2026):** Alan pidió que el agente no se limite a skills de texto: que modifique su código,
+  investigue, abra PRs y los fusione, y que todo use modelos de Meta (objetivo del hackathon, que cierra el 4 nov).
+- **Decisión:**
+  - **El cuerpo:** `packages/agent-core` (`solve(task, tools)`) es el ejecutor de la app y lo único que el agente
+    puede cambiar. No tiene red, archivos ni secretos: llega al modelo solo por `tools.model`, con function calling
+    de Meta (`api/_lib/providers.js` ahora acepta `tools` y `messages`) y límite de llamadas (`api/_lib/solver.js`).
+    El calificador y las respuestas se quedan en el anfitrión.
+  - **Quién hace qué:** Muse Wonder propone la hipótesis (`/api/evolve`, dentro del arnés del usuario); Muse Code
+    (`muse exec`) la implementa en GitHub Actions (`evolve.yml`), con Forja (Muse + function calling,
+    `scripts/evolve/forja.ts`) como respaldo; Muse Spark presenta los exámenes.
+  - **El juez:** `agent-gate.yml` corre con el código de `main`: rutas permitidas, escaneo estático del núcleo y un
+    examen nuevo con semilla aleatoria y perfil held-out para la versión de `main` y la del PR, cada una en un worker
+    sin llaves. Se fusiona solo (squash + tag `agent-vN`) si lo abrió `evolve`, solo toca el núcleo, sube al menos
+    2 aciertos o el 2% y ningún escenario baja. Lo demás espera a una persona.
+  - **Aislamiento:** el constructor trabaja en un taller con solo el núcleo y la práctica, como un usuario sin
+    permisos; el job que tiene el token de GitHub es otro runner y solo acepta un patch dentro de `packages/agent-core`.
+  - Se descartó hacer el ciclo en Vercel Sandbox + Workflow: GitHub Actions ya trae terminal, Node y aislamiento
+    por runner, y deja al juez fuera del alcance del agente.
+  - Detalle, configuración y riesgos: `docs/EVOLVE.md`.

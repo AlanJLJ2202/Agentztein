@@ -1,0 +1,155 @@
+# agent-gate: judges every PR that changes the agent's own code (packages/agent-core) and merges the ones that
+# earn it. The rules, the exam and the scorer always come from main (the base of the PR), never from the PR.
+#
+#   check   pnpm check on the PR, like ci (no secrets)
+#   judge   paths + static scan of the PR's core + a fresh exam (new random seed) for main's core and the PR's,
+#           each in a worker without keys → comment on the PR with the table and the decision
+#   merge   only if judge says "merge" (opened by evolve, only the core, improves, breaks nothing) and check passed;
+#           then tags the merge as agent-vN
+name: agent-gate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: agent-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: skillab
+          POSTGRES_PASSWORD: skillab
+          POSTGRES_DB: skillab
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U skillab" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://skillab:skillab@localhost:5432/skillab
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+
+  judge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      decision: ${{ steps.decide.outputs.decision }}
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Check out main (the judge's code)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: What the PR touches
+        id: paths
+        run: |
+          # fetch-depth: 0 already brought every branch of this repo, the PR's included (fork PRs get no secrets anyway)
+          git cat-file -e "$HEAD_SHA^{commit}" || { echo "::error::The PR's commit is not in this repo (fork PRs are not judged)"; exit 1; }
+          git diff --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/files.txt"
+          cat "$RUNNER_TEMP/files.txt"
+          pnpm -s evolve:gate classify --files "$RUNNER_TEMP/files.txt"
+
+      - name: The PR's core, apart from main's
+        if: steps.paths.outputs.core_changed == 'true'
+        run: |
+          mkdir -p "$RUNNER_TEMP/head"
+          git archive "$HEAD_SHA" packages/agent-core | tar -x -C "$RUNNER_TEMP/head"
+          pnpm -s evolve:gate scan --dir "$RUNNER_TEMP/head/packages/agent-core" --out "$RUNNER_TEMP/scan.json"
+
+      - name: Fresh exam, main vs PR
+        if: steps.paths.outputs.core_changed == 'true'
+        env:
+          META_API_KEY: ${{ secrets.META_API_KEY }}
+          META_MODEL: ${{ vars.META_MODEL }}
+        run: |
+          clean=$(node -e 'console.log(require(process.argv[1]).problems.length===0)' "$RUNNER_TEMP/scan.json")
+          if [ "$clean" != "true" ]; then echo "The scan failed: no exam."; exit 0; fi
+          test -n "$META_API_KEY" || { echo "::error::Secret META_API_KEY is missing (docs/EVOLVE.md)"; exit 1; }
+          seed=$(od -An -N4 -tu4 /dev/urandom | tr -d ' ')
+          pnpm evolve:bench --core packages/agent-core --set fresh --seed "$seed" --out "$RUNNER_TEMP/base.json" &
+          pnpm evolve:bench --core "$RUNNER_TEMP/head/packages/agent-core" --set fresh --seed "$seed" --out "$RUNNER_TEMP/head.json" &
+          wait
+
+      - name: Decide
+        id: decide
+        env:
+          # opened by the evolve workflow: its branches are evolve/<run id>, pushed from this same repo
+          AGENT_PR: ${{ startsWith(github.event.pull_request.head.ref, 'evolve/') && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          extra=""
+          [ -f "$RUNNER_TEMP/scan.json" ] && extra="$extra --scan $RUNNER_TEMP/scan.json"
+          [ -f "$RUNNER_TEMP/base.json" ] && [ -f "$RUNNER_TEMP/head.json" ] && extra="$extra --base $RUNNER_TEMP/base.json --head $RUNNER_TEMP/head.json"
+          # shellcheck disable=SC2086
+          pnpm -s evolve:gate decide --files "$RUNNER_TEMP/files.txt" --agent "$AGENT_PR" --out "$RUNNER_TEMP/report.md" $extra
+
+      - name: Comment on the PR
+        if: always() && steps.paths.outputs.core_changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          [ -f "$RUNNER_TEMP/report.md" ] || printf '<!-- agent-gate -->\n### ⛔ Agent gate: could not judge this PR\n' > "$RUNNER_TEMP/report.md"
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '.[] | select(.body | startswith("<!-- agent-gate -->")) | .id' | tail -n 1)
+          if [ -n "$id" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@"$RUNNER_TEMP/report.md" > /dev/null
+          else gh pr comment "$PR" --repo "$REPO" --body-file "$RUNNER_TEMP/report.md"; fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agent-gate-${{ github.event.pull_request.number }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/*.json
+            ${{ runner.temp }}/report.md
+          if-no-files-found: ignore
+
+  merge:
+    needs: [check, judge]
+    if: needs.judge.outputs.decision == 'merge'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge and tag agent-vN
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test -n "$GH_TOKEN" || { echo "::error::Secret AGENT_GH_TOKEN is missing (docs/EVOLVE.md)"; exit 1; }
+          gh pr merge "$PR" --repo "$REPO" --squash --delete-branch --match-head-commit "$HEAD_SHA"
+          sha=$(gh pr view "$PR" --repo "$REPO" --json mergeCommit --jq .mergeCommit.oid)
+          n=$(gh api "repos/$REPO/git/matching-refs/tags/agent-v" --jq '[.[].ref | sub("refs/tags/agent-v"; "") | tonumber? ] | max // 0')
+          next=$((n + 1))
+          gh api "repos/$REPO/git/refs" -f ref="refs/tags/agent-v$next" -f sha="$sha" > /dev/null
+          gh pr comment "$PR" --repo "$REPO" --body "Fusionado por el gate como \`agent-v$next\`."

@@ -58,6 +58,7 @@ export const T = {
     brain: { en: "Brain", es: "Cerebro" },
     radar: { en: "Research radar", es: "Radar de investigación" },
     agent: { en: "Agent", es: "Agente" },
+    evolve: { en: "Its code", es: "Su código" },
     workshop: { en: "Workshop", es: "Taller" },
   },
   hello: { en: "Hi", es: "Hola" },

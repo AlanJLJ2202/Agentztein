@@ -17,6 +17,16 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {
+    // The agent's core is code the agent rewrites about itself: no Node or browser globals at all, so `fetch`,
+    // `process`, `require`… fail lint (the gate also scans for them). Its tests may use node:test and node:assert.
+    files: ["packages/agent-core/src/**/*.js"],
+    languageOptions: { globals: {} },
+  },
+  {
+    files: ["packages/agent-core/test/**/*.mjs"],
+    languageOptions: { globals: {} },
+  },
+  {
     rules: {
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", ignoreRestSiblings: true }],
       "@typescript-eslint/consistent-type-imports": "error",

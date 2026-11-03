@@ -105,6 +105,18 @@ export type AgentState = {
 };
 export type Exam = { scenario: string; bare: boolean; scores: Scores; answered: number; total: number; cost: number; model: string };
 
+export type GateSummary = { decision: "merge" | "human" | "reject" | "skip" | null; base: { correct: number; total: number } | null; head: { correct: number; total: number } | null; gain: number | null };
+export type EvolveState = {
+  core: { version: string; strategy: string };
+  configured: boolean;
+  canDispatch: boolean;
+  missing?: string[];
+  repo?: string;
+  versions: { tag: string; sha: string }[];
+  prs: { number: number; title: string; url: string; state: "merged" | "open" | "closed"; createdAt: string; mergedAt: string | null; builder: string | null; gate: GateSummary | null }[];
+  ideas: { number: number; title: string; url: string; createdAt: string; comments: number }[];
+};
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -165,6 +177,8 @@ export function api(supabase: SupabaseClient) {
         headers: { "content-type": audio.type || "audio/webm" },
       }),
     emblem: (skillId: string) => call<{ image: string; cost: number }>("/api/media?kind=image", { method: "POST", body: JSON.stringify({ skillId }) }),
+    evolve: () => call<EvolveState>("/api/evolve"),
+    evolveOp: (body: Record<string, unknown>) => call<{ issue: { number: number; url: string; title: string } }>("/api/evolve", { method: "POST", body: JSON.stringify(body) }),
     limits: () => call<Budget>("/api/limits"),
     setLimit: (monthly: number) => call<Budget>("/api/limits", { method: "PUT", body: JSON.stringify({ monthly }) }),
   };

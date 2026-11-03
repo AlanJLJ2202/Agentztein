@@ -69,18 +69,30 @@ export async function verifyKey(provider, key, fetchImpl = fetch) {
 }
 
 /**
- * One request to the user's Meta model. Returns the text of the reply.
- * @param {{ provider: string, key: string, model: string, system: string, user: string, effort?: string | null, timeoutMs?: number, fetchImpl?: typeof fetch }} req
+ * @typedef {{ name: string, description: string, parameters: Record<string, unknown> }} ToolSpec
+ * @typedef {{ id: string, name: string, arguments: string }} ToolCall
  */
-export async function complete({ provider, key, model, system, user, effort = "low", timeoutMs = 55_000, fetchImpl = fetch }) {
+
+/**
+ * One request to the user's Meta model. Returns the text of the reply and, when `tools` were offered, the tool
+ * calls the model asked for (OpenAI-compatible function calling). `messages` replaces `system` + `user` for a
+ * multi-turn tool loop.
+ * @param {{ provider: string, key: string, model: string, system?: string, user?: string, messages?: any[], tools?: ToolSpec[], effort?: string | null, timeoutMs?: number, fetchImpl?: typeof fetch }} req
+ * @returns {Promise<{ text: string, usage: { input: number, output: number }, toolCalls: ToolCall[], message: Record<string, unknown> }>}
+ */
+export async function complete({ provider, key, model, system = "", user = "", messages, tools, effort = "low", timeoutMs = 55_000, fetchImpl = fetch }) {
   const p = PROVIDERS[provider];
   if (!p) throw new HttpError(400, "Unknown provider");
+  const msgs = messages ?? [{ role: "system", content: system }, { role: "user", content: user }];
+  const toolsBody = tools?.length
+    ? { tools: tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.parameters } })) }
+    : {};
   // Sorting headlines is light work: ask Muse Spark for a low reasoning effort (minimal … xhigh). If a model
   // doesn't take the parameter, retry once without it.
-  const send = (effort) => fetchImpl(`${p.base}/chat/completions`, {
+  const send = (/** @type {string | null} */ effort) => fetchImpl(`${p.base}/chat/completions`, {
     method: "POST",
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-    body: JSON.stringify({ model, messages: [{ role: "system", content: system }, { role: "user", content: user }], ...(effort ? { reasoning_effort: effort } : {}) }),
+    body: JSON.stringify({ model, messages: msgs, ...toolsBody, ...(effort ? { reasoning_effort: effort } : {}) }),
     signal: AbortSignal.timeout(timeoutMs),
   });
   let res;
@@ -93,12 +105,20 @@ export async function complete({ provider, key, model, system, user, effort = "l
   }
   if (!res.ok) throw statusError(res.status);
   const body = await res.json();
-  const text = body?.choices?.[0]?.message?.content;
-  if (typeof text !== "string" || !text.trim()) throw new HttpError(502, "The model returned an empty answer");
+  const msg = body?.choices?.[0]?.message ?? {};
+  const text = typeof msg.content === "string" ? msg.content : "";
+  const rawCalls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
+  /** @type {ToolCall[]} */
+  const toolCalls = rawCalls
+    .map((/** @type {any} */ c) => ({ id: String(c?.id ?? ""), name: String(c?.function?.name ?? ""), arguments: typeof c?.function?.arguments === "string" ? c.function.arguments : JSON.stringify(c?.function?.arguments ?? {}) }))
+    .filter((/** @type {ToolCall} */ c) => c.name);
+  if (!text.trim() && !toolCalls.length) throw new HttpError(502, "The model returned an empty answer");
   // real token counts when Meta reports them; otherwise a rough estimate (about 4 characters per token)
   const usage = {
-    input: Number(body?.usage?.prompt_tokens) || Math.ceil((system.length + user.length) / 4),
-    output: Number(body?.usage?.completion_tokens) || Math.ceil(text.length / 4),
+    input: Number(body?.usage?.prompt_tokens) || Math.ceil(JSON.stringify(msgs).length / 4),
+    output: Number(body?.usage?.completion_tokens) || Math.ceil((text.length + JSON.stringify(rawCalls).length) / 4),
   };
-  return { text, usage };
+  // the assistant turn as the API wants it back in `messages` for the next step of a tool loop
+  const message = { role: "assistant", content: text || null, ...(rawCalls.length ? { tool_calls: rawCalls } : {}) };
+  return { text, usage, toolCalls, message };
 }
