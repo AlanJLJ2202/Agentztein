@@ -64,6 +64,7 @@ function screen(w, h, px, draw, { x = 0, y = 0, z = 0, ry = 0, frame = 0x1c2b33 
   g.add(slab(w + 0.1, h + 0.1, 0.08, matte(frame, { roughness: 0.4 })), face);
   g.position.set(x, y, z); g.rotation.y = ry;
   let acc = 0;
+  g.userData.emit = "chirps";
   g.userData.tick = (t, dt) => { if ((acc += dt) < 0.12) return; acc = 0; const { g: c, c: cv } = tex.userData; draw(c, cv.width, cv.height, t); tex.needsUpdate = true; };
   g.userData.redraw = (t = 0) => { const { g: c, c: cv } = tex.userData; draw(c, cv.width, cv.height, t); tex.needsUpdate = true; };
   return g;
@@ -122,6 +123,7 @@ function arcade(color, ry) {
   const ctl = at(box(0.7, 0.1, 0.3, 0x2a3d4c), 0, 0.82, 0.4); ctl.rotation.x = 0.2; g.add(ctl);
   g.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), lit(0xff6a3d, 0.8)), -0.15, 0.9, 0.42));
   [0.05, 0.17].forEach((bx, i) => g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.03, 12), lit(i ? 0xffc83d : 0x3ccf6e, 0.8)), bx, 0.89, 0.42)));
+  g.userData.emit = "pickup";
   g.userData.scr = scr; g.rotation.y = ry;
   return g;
 }
@@ -186,6 +188,58 @@ function ceiling(w, d, color, { dark = false } = {}) {
   return m;
 }
 
+
+/* ---------- things that move on their own: the lab has company ---------- */
+function drone(color) {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 14), glossy(0xffffff)));
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.016, 8, 32), lit(color, 1.4)); ring.rotation.x = Math.PI / 2; g.add(ring);
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), lit(color, 1.6)); eye.position.set(0, 0.02, 0.115); g.add(eye);
+  [-1, 1].forEach((s) => g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.1, 6), matte(0x1c2b33)), s * 0.1, 0.14, 0)));
+  const h = halo(color, 0.9, 0.4); g.add(h);
+  g.userData = { eye, ring, halo: h };
+  return g;
+}
+function roomba(color) {
+  const g = new THREE.Group();
+  g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.3, 0.09, 32), glossy(0x1c2b33)), 0, 0.06, 0));
+  const r = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.012, 6, 32), lit(color, 1.4)); r.rotation.x = Math.PI / 2; r.position.y = 0.11; g.add(r);
+  const led = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), lit(0x7ee2a8, 1.5)); led.position.set(0, 0.11, 0.2); g.add(led);
+  g.userData.led = led;
+  return g;
+}
+function aquarium() {
+  const g = new THREE.Group();
+  g.add(at(box(2.3, 0.7, 0.75, 0xffffff), 0, 0.35, 0));
+  const water = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.8, 0.6), new THREE.MeshPhysicalMaterial({ color: 0x9fe3ff, transparent: true, opacity: 0.28, roughness: 0.05, depthWrite: false })); water.position.y = 1.1; g.add(water);
+  g.add(at(slab(2.1, 0.06, 0.6, matte(0xe8d9b5)), 0, 0.73, 0));
+  [[-0.7, 0.9], [0.2, 1.1], [0.8, 0.85]].forEach(([x, h]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.02, h * 0.5, 6), matte(0x22b864)); w.position.set(x, 0.76 + h * 0.25, 0.1); g.add(w); });
+  g.add(at(slab(2.2, 0.04, 0.7, glossy(0xffffff)), 0, 1.52, 0));
+  g.add(at(slab(2.0, 0.02, 0.1, lit(0xdff4ff, 1.6)), 0, 1.5, 0.2));
+  const fish = [0xff8f70, 0xffc83d, 0x5b9bff, 0x8a7dff, 0x3ccf6e, 0xff6600].map((col, i) => {
+    const f = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 10), glossy(col, { emissive: col, emissiveIntensity: 0.2 })); body.scale.set(1.6, 1, 0.6);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.1, 8), glossy(col)); tail.rotation.z = Math.PI / 2; tail.position.x = -0.12;
+    f.add(body, tail); f.userData = { tail, i, y: 0.95 + (i % 3) * 0.2, z: -0.15 + (i % 2) * 0.22, sp: 0.25 + i * 0.05, ph: i * 1.7 };
+    g.add(f); return f;
+  });
+  const bub = Array.from({ length: 8 }, (_, i) => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, toneMapped: false })); b.userData = { k: i / 8 }; g.add(b); return b; });
+  g.userData.emit = "bubble";
+  return { g, update: (t) => { fish.forEach((f) => { const d = f.userData, x = Math.sin(t * d.sp + d.ph) * 0.85, dx = Math.cos(t * d.sp + d.ph); f.position.set(x, d.y + Math.sin(t * 1.3 + d.ph) * 0.05, d.z); f.rotation.y = dx > 0 ? 0 : Math.PI; d.tail.rotation.y = Math.sin(t * 9 + d.ph) * 0.5; });
+    bub.forEach((b) => { const k = (t * 0.2 + b.userData.k) % 1; b.position.set(-0.9 + Math.sin(k * 12 + b.userData.k * 6) * 0.03, 0.78 + k * 0.7, 0.05); b.material.opacity = 0.7 * (1 - k); }); } };
+}
+function frameArt(color, seed) {
+  const g = new THREE.Group();
+  const art = canvasTex(256, 192, (c, W, H) => {
+    c.fillStyle = "#ffffff"; c.fillRect(0, 0, W, H);
+    const grad = c.createLinearGradient(0, 0, W, H); grad.addColorStop(0, hex(color) + "55"); grad.addColorStop(1, "#ffffff"); c.fillStyle = grad; c.fillRect(0, 0, W, H);
+    for (let i = 0; i < 5; i++) { c.fillStyle = hex(color) + (i % 2 ? "cc" : "66"); c.beginPath(); c.arc(((seed * 37 + i * 61) % 200) + 30, ((seed * 53 + i * 47) % 130) + 30, 14 + ((seed + i * 13) % 30), 0, 7); c.fill(); }
+    c.strokeStyle = "#1c2b33"; c.lineWidth = 5; c.beginPath(); c.moveTo(20, H - 40); c.bezierCurveTo(W * 0.3, 20 + seed % 40, W * 0.6, H, W - 20, 40); c.stroke();
+  });
+  g.add(slab(0.92, 0.72, 0.05, matte(0x1c2b33)), at(new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.6), new THREE.MeshBasicMaterial({ map: art, toneMapped: false })), 0, 0, 0.03));
+  return g;
+}
+
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
 /* ---------- one dresser per room ---------- */
@@ -213,7 +267,9 @@ DRESS.cuna = (g, { color, ceil, updates }) => {
   }, { x, y: 1.9, z: 5.86, ry: Math.PI });
   [dash(-3.2, "SKILLS / WEEK", "bars"), dash(0, "SCORE", "line"), dash(3.2, "HARNESS", "status")].forEach((s) => { g.add(s); updates.push(s.userData.tick); });
   // east and west walls: tall light panels
-  [-5.86, 5.86].forEach((x) => [-1.0, 0, 1.0].forEach((z, i) => g.add(at(slab(0.05, 1.6 + (i === 1 ? 0.5 : 0), 0.1, lit(blue, 1.2)), x, 1.5, z))));
+  [-5.86].forEach((x) => [-1.0, 0, 1.0].forEach((z, i) => g.add(at(slab(0.05, 1.6 + (i === 1 ? 0.5 : 0), 0.1, lit(blue, 1.2)), x, 1.5, z))));
+  // an aquarium on the east wall, with fish
+  const aq = aquarium(); aq.g.position.set(5.5, 0, 0); aq.g.rotation.y = -Math.PI / 2; g.add(aq.g); updates.push(aq.update);
   // the ceiling you see from inside
   [[-3, 0], [3, 0], [0, 3], [0, -3]].forEach(([x, z]) => { const p = pendant(0xdff0ff, 2.5); p.position.set(x, 0, z); ceil.add(p); });
   updates.push((t) => { rings.forEach((r, i) => { r.rotation.x = t * (0.6 + i * 0.25) + i; r.rotation.y = t * (0.4 - i * 0.2); r.position.y = [0.7, 1.35, 2.0][i] + Math.sin(t * 1.4 + i) * 0.06; }); beam.material.opacity = 0.08 + Math.sin(t * 2) * 0.03; });
@@ -334,7 +390,7 @@ DRESS.research = (g, { color, ceil, updates }) => {
   ms.add(at(box(0.9, 0.7, 0.6, 0xffffff), 0, 0.35, 0));
   const arm = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.04, 8, 20, Math.PI), glossy(0x1c2b33)); arm.position.set(0.05, 0.9, 0); arm.rotation.z = -Math.PI / 2 + 0.2; ms.add(arm);
   ms.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.4, 14), glossy(0xc9d2dc, { metalness: 0.6 })), -0.12, 1.05, 0).rotateZ(-0.35));
-  const table = new THREE.Group(); table.position.set(2.45, 0, 2.5); g.add(table);
+  const table = new THREE.Group(); table.position.set(2.45, 0, 2.5); table.userData.emit = "bubble"; g.add(table);
   table.add(at(box(0.7, 0.8, 1.7, 0xffffff), 0, 0.4, 0));
   const bubbles = [];
   [0xff6600, 0x2ec4b6, 0x8a7dff, 0xffc83d].forEach((col, i) => {
@@ -375,7 +431,7 @@ DRESS.horizon = (g, { color, ceil, updates }) => {
     const hand = (ang, len, w, col) => { c.strokeStyle = col; c.lineWidth = w; c.lineCap = "round"; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.sin(ang) * R * len, cy - Math.cos(ang) * R * len); c.stroke(); };
     hand(((d.getHours() % 12) + d.getMinutes() / 60) / 12 * 6.283, 0.5, 9, "#1c2b33"); hand((d.getMinutes() + d.getSeconds() / 60) / 60 * 6.283, 0.75, 6, "#1c2b33"); hand(d.getSeconds() / 60 * 6.283, 0.85, 3, hex(color));
   }, { x: 2.86, y: 1.8, z: 1.9, ry: -Math.PI / 2, frame: 0x1c2b33 });
-  g.add(clock); clock.userData.redraw(0);
+  g.add(clock); clock.userData.redraw(0); clock.userData.emit = "tick";
   updates.push((t, dt) => { clock.userData.tick(t, dt); or.rotation.y = t * 0.15; planets.forEach((p) => { const a = p.userData.a + t * p.userData.sp; p.position.set(Math.cos(a) * p.userData.r, 0, Math.sin(a) * p.userData.r); }); sunH.material.opacity = 0.4 + Math.sin(t * 2) * 0.1; const k = (t * 0.35) % 1; pulse.position.z = 3.6 - k * 6.2; pulse.material.opacity = 0.7 * Math.sin(k * Math.PI); });
   g.add(plant(-2.5, 3.4), plant(2.5, 3.4));
   // the ceiling here is a night sky
@@ -399,10 +455,24 @@ export function decorate(id, g, room) {
     [-1.7, 1.7].forEach((x) => { const sc = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), lit(room.color, 1.3)); sc.position.set(x, 2.1, 3.86); g.add(sc); const h = halo(room.color, 1.1, 0.45); h.position.copy(sc.position); g.add(h); });
   }
   updates.push(dust(g, room.color, cuna ? 70 : 38, [hx - 0.3, hz - 0.3]));
+  // company: a drone that patrols the room, a floor robot (in the big hall) and a couple of paintings
+  const dr = drone(room.color); g.add(dr);
+  const ax = hx - 1.0, az = hz - 1.4, ph = id.length;
+  updates.push((t) => { const x = Math.sin(t * 0.23 + ph) * ax, z = Math.sin(t * 0.31 + ph * 2) * az - (cuna ? 0 : 0.3); const nx = Math.sin((t + 0.1) * 0.23 + ph) * ax, nz = Math.sin((t + 0.1) * 0.31 + ph * 2) * az - (cuna ? 0 : 0.3); dr.position.set(x, 1.7 + Math.sin(t * 1.1 + ph) * 0.12, z); dr.rotation.y = Math.atan2(nx - x, nz - z); dr.userData.ring.rotation.z = t * 3; dr.userData.eye.material.emissiveIntensity = 1 + Math.sin(t * 5) * 0.6; });
+  if (cuna) {
+    const rb = roomba(room.color); g.add(rb);
+    updates.push((t) => { const a = t * 0.18, x = Math.cos(a) * 4.2, z = Math.sin(a * 1.3) * 3.4 + 0.8; rb.position.set(x, 0, z); rb.rotation.y = Math.atan2(-Math.sin(a) * 4.2, Math.cos(a * 1.3) * 3.4 * 1.3); rb.userData.led.material.emissiveIntensity = 0.5 + (Math.sin(t * 4) > 0 ? 1 : 0); });
+  } else {
+    [-2.25, 2.25].forEach((x, i) => { const f = frameArt(room.color, ph * 7 + i * 5); f.position.set(x, 1.45, 3.86); f.rotation.y = Math.PI; g.add(f); });
+  }
   const dark = ceil.userData.dark;
   const c = ceiling(hx * 2, hz * 2, room.color, { dark });
   ceil.add(c);
   g.add(ceil);
   ceil.visible = false;
-  return { ceil, update: (t, dt) => updates.forEach((f) => f(t, dt)) };
+  // what makes small sounds when you walk up to it (the page plays them by distance)
+  const emitters = [];
+  g.updateMatrixWorld(true);
+  g.traverse((o) => { if (o.userData?.emit) emitters.push({ obj: o, kind: o.userData.emit }); });
+  return { ceil, emitters, update: (t, dt) => updates.forEach((f) => f(t, dt)) };
 }

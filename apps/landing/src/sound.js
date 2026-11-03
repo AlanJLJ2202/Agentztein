@@ -13,6 +13,7 @@ const store = {
   set(v) { try { localStorage.setItem(KEY, v); } catch { /* private window */ } },
 };
 
+let out = null; // where the synthesised sounds go for the current call (set by sfx to apply a volume)
 let ctx = null, master = null, sfxBus = null, voiceBus = null;
 let enabled = false, unlocked = false, lang = "en";
 let remote = null; // null = not checked yet, true = ElevenLabs answers, false = use the synthesised sounds
@@ -54,7 +55,7 @@ function clip(name, url) {
     if (!(await checkRemote()) || !ctx) return null;
     try {
       const r = await fetch(url);
-      if (!r.ok) { if (r.status === 503) remote = false; return null; }
+      if (!r.ok) { if (r.status === 503) remote = false; else buffers.set(name, null); return null; }
       const buf = await ctx.decodeAudioData(await r.arrayBuffer());
       buffers.set(name, buf);
       return buf;
@@ -92,7 +93,7 @@ function tone(type, f0, f1, t0, dur, vol = 0.3, attack = 0.005) {
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.exponentialRampToValueAtTime(vol, t0 + attack);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  o.connect(g); g.connect(sfxBus);
+  o.connect(g); g.connect(out || sfxBus);
   o.start(t0); o.stop(t0 + dur + 0.05);
 }
 function hiss(t0, dur, { type = "bandpass", f0 = 1000, f1 = f0, q = 1, vol = 0.3, attack = 0.004 } = {}) {
@@ -104,11 +105,14 @@ function hiss(t0, dur, { type = "bandpass", f0 = 1000, f1 = f0, q = 1, vol = 0.3
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.exponentialRampToValueAtTime(vol, t0 + attack);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  s.connect(f); f.connect(g); g.connect(sfxBus);
+  s.connect(f); f.connect(g); g.connect(out || sfxBus);
   s.start(t0, Math.random()); s.stop(t0 + dur + 0.05);
 }
 const SYNTH = {
-  step() { const t = ctx.currentTime, p = rand(0.85, 1.2); hiss(t, 0.07, { f0: 1500 * p, q: 0.9, vol: 0.5 }); tone("sine", 140 * p, 60, t, 0.09, 0.35); tone("square", 2400 * p, 1800, t, 0.02, 0.03); },
+  step() { const t = ctx.currentTime, p = rand(0.85, 1.15); hiss(t, 0.06, { type: "lowpass", f0: 900 * p, q: 0.5, vol: 0.12 }); tone("sine", 95 * p, 55, t, 0.08, 0.1); },
+  chirps() { const t = ctx.currentTime; for (let i = 0, n = 3 + Math.floor(rand(0, 4)); i < n; i++) tone("sine", rand(900, 2600), rand(900, 2600), t + i * rand(0.05, 0.11), 0.05, 0.05, 0.004); },
+  tick() { const t = ctx.currentTime; tone("triangle", 1800, 1200, t, 0.03, 0.06, 0.002); },
+  bubble() { const t = ctx.currentTime, f = rand(300, 700); tone("sine", f, f * 2.2, t, 0.09, 0.07, 0.01); },
   zap() { const t = ctx.currentTime; for (let i = 0; i < 14; i++) hiss(t + i * 0.09 + rand(0, 0.04), rand(0.03, 0.09), { type: "highpass", f0: rand(1500, 4500), vol: rand(0.2, 0.55) }); tone("sawtooth", 70, 420, t, 1.3, 0.16, 0.05); tone("square", 50, 50, t, 1.4, 0.07); },
   awake() { const t = ctx.currentTime; tone("sine", 110, 520, t, 0.9, 0.3, 0.05); tone("triangle", 220, 1040, t, 0.9, 0.12, 0.05); tone("sine", 784, 784, t + 0.95, 0.35, 0.25); tone("sine", 1175, 1175, t + 1.1, 0.5, 0.25); },
   door() { const t = ctx.currentTime; hiss(t, 0.55, { f0: 400, f1: 3200, q: 1.2, vol: 0.35, attack: 0.08 }); tone("sine", 180, 90, t, 0.4, 0.12); },
@@ -131,8 +135,11 @@ function sfx(id, { rate = 1, gain = 1, every = 0 } = {}) {
   lastPlay.set(id, now);
   const buf = buffers.get(`sfx:${id}`);
   if (buf) { playBuffer(buf, { rate, gain }); return; }
-  if (!buffers.has(`sfx:${id}`)) sfxClip(id); // fetch it for next time
-  SYNTH[id]?.();
+  if (SFX_IDS.includes(id) && !buffers.has(`sfx:${id}`)) sfxClip(id); // fetch it for next time
+  if (!SYNTH[id]) return;
+  if (gain === 1) { SYNTH[id](); return; }
+  out = ctx.createGain(); out.gain.value = gain; out.connect(sfxBus);
+  try { SYNTH[id](); } finally { out = null; }
 }
 
 /** Says a line from the catalog out loud. Waits up to ~3 s for the first-ever generation, then gives up. */
@@ -179,7 +186,7 @@ export const sound = {
   say,
   setLanguage(l) { lang = l === "es" ? "es" : "en"; },
   /** Footsteps: call while the agent walks; it paces itself. */
-  step() { sfx("step", { rate: rand(0.9, 1.12), gain: rand(0.8, 1), every: 120 }); },
+  step() { sfx("step", { rate: rand(0.92, 1.1), gain: rand(0.3, 0.42), every: 140 }); },
   get on() { return enabled; },
   toggle() { return enabled ? (disable(), false) : enable(); },
   onChange(f) { listeners.add(f); return () => listeners.delete(f); },

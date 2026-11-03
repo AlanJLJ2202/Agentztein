@@ -17,6 +17,7 @@ export const SFX = {
   fail: { prompt: "Short low electronic error buzz, two pulses, sci-fi", seconds: 0.8 },
   pickup: { prompt: "Arcade item pickup sparkle, quick bright coin-like chime", seconds: 0.8 },
   chip: { prompt: "A small electronic chip snapping into place with a satisfying click and a soft power-on tone", seconds: 0.9 },
+  chirps: { prompt: "Soft futuristic computer data chirps and quiet beeps, a screen processing information, gentle, low volume, no music", seconds: 2 },
   alarm: { prompt: "Sci-fi security alarm, two urgent siren pulses, short, no voice", seconds: 2 },
   shield: { prompt: "Energy force field dome activating, rising electric hum with a shimmering sweep", seconds: 1.5 },
   shieldhit: { prompt: "Energy shield deflecting an impact, electric zap with a low thud", seconds: 1 },

@@ -489,7 +489,6 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .lab-svg .a-type, .lab-svg .a-fadein { animation: fadein .45s ease both; }
 @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
 .lab-svg .a-blink, .lab-svg .a-zap { animation: blink 1.3s ease-in-out infinite; }
-@keyframes blink { 50% { opacity: .25; } }
 .lab-svg .a-pulse { animation: pulse 1.8s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .65; } }
 .lab-svg .a-stamp { transform-box: fill-box; transform-origin: center; animation: stamp .5s cubic-bezier(.3, 1.6, .5, 1) 1.8s both; }
@@ -732,13 +731,13 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .dome-svg .dnode.stop .dn-body { fill: #ff4b3a; stroke: #ff4b3a; } .dome-svg .dnode.stop .dn-ico { stroke: #fff; } .dome-svg .dnode.stop .dn-halo { fill: #ff4b3a; fill-opacity: .35; animation: layerAlarm .45s ease-in-out infinite alternate; }
 .dome-svg .dnode.wait .dn-body { fill: #ffb020; stroke: #ffb020; } .dome-svg .dnode.wait .dn-ico { stroke: #3a2400; } .dome-svg .dnode.wait .dn-halo { fill: #ffb020; fill-opacity: .35; }
 .dome-svg .agent-bob { animation: bob 3.2s ease-in-out infinite; transform-box: fill-box; }
-@keyframes bob { 50% { transform: translateY(-4px); } }
-.dome-svg .eye { fill: var(--dc); transition: fill .4s; animation: blink 5s infinite; transform-box: fill-box; transform-origin: center; }
-@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
-.dome-svg .mouth { stroke: var(--dc); transition: stroke .4s; }
-.dome-card[data-state="alert"] .dome-svg .mouth { d: path("M-8 -89q8 -4 16 0"); }
-.dome-svg .beat { stroke: var(--dc); transition: stroke .4s; }
-.dome-svg .orb { transform: translate(24px, 352px); transition: transform .5s var(--ease), opacity .35s; opacity: 0; }
+@keyframes bob { 50% { transform: translateY(-3px); } }
+.dome-svg .ag { transition: opacity .35s; filter: drop-shadow(0 0 12px color-mix(in srgb, var(--dc) 55%, transparent)); }
+.dome-svg .ag-alert { opacity: 0; }
+.dome-card[data-state="alert"] .dome-svg .ag-ok { opacity: 0; }
+.dome-card[data-state="alert"] .dome-svg .ag-alert { opacity: 1; animation: shake .12s linear 6; }
+@keyframes shake { 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+.dome-card[data-state="alert"] .dome-svg .orb { transform: translate(24px, 352px); transition: transform .5s var(--ease), opacity .35s; opacity: 0; }
 .dome-svg .orb.on { opacity: 1; }
 .dome-svg .o-glow { fill: #4aa8ff; fill-opacity: .28; transition: fill .3s; animation: pulse 1s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
 .dome-svg .o-core { fill: #7cc2ff; transition: fill .3s; }
@@ -1090,21 +1089,10 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
           <g class="layers"><path class="layer" data-g="0" d="M58 390 A262 262 0 0 1 582 390"/><path class="layer" data-g="1" d="M94 390 A226 226 0 0 1 546 390"/><path class="layer" data-g="2" d="M130 390 A190 190 0 0 1 510 390"/><path class="layer" data-g="3" d="M166 390 A154 154 0 0 1 474 390"/><path class="layer" data-g="4" d="M202 390 A118 118 0 0 1 438 390"/></g>
           <path class="scan" d="M58 390 A262 262 0 0 1 582 390" pathLength="100"/>
           <path class="route" d="M24 352 L89 267 L200 198 L320 200 L402 259 L424 335 L352 342"/>
-          <g class="agent" transform="translate(320 391)">
-            <g class="agent-bob">
-              <rect x="-50" y="-66" width="15" height="42" rx="7.5" fill="#8fd6b3"/><rect x="35" y="-66" width="15" height="42" rx="7.5" fill="#8fd6b3"/>
-              <rect x="-31" y="-70" width="62" height="56" rx="15" fill="#a6e3c4"/>
-              <rect x="-19" y="-58" width="38" height="28" rx="8" fill="#0f1d26"/>
-              <path class="beat" d="M-14 -44h7l3-8 5 15 3-7h12" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-              <rect x="-9" y="-80" width="18" height="12" rx="3" fill="#c9d2dc"/><rect x="-42" y="-110" width="8" height="14" rx="2" fill="#c9d2dc" transform="rotate(-18 -38 -103)"/><rect x="34" y="-110" width="8" height="14" rx="2" fill="#c9d2dc" transform="rotate(18 38 -103)"/>
-              <rect x="-36" y="-130" width="72" height="56" rx="18" fill="#a6e3c4"/>
-              <rect x="-28" y="-121" width="56" height="36" rx="11" fill="#0f1d26"/>
-              <circle class="eye" cx="-11" cy="-103" r="5.5"/><circle class="eye" cx="11" cy="-103" r="5.5"/>
-              <path d="M-9 -92q9 6 18 0" class="mouth" fill="none" stroke-width="2.4" stroke-linecap="round"/>
-              <path d="M-26 -132a26 22 0 0 1 52 0z" fill="#bfe3ff" fill-opacity=".5" stroke="#d8eeff" stroke-width="1.5"/>
-              <path d="M-12 -138q6-8 12 0t12 0" fill="none" stroke="#6d5ce8" stroke-width="2.4" stroke-linecap="round"/>
-            </g>
-          </g>
+          <g class="agent"><g class="agent-bob">
+            <image class="ag ag-ok" href="img/agent-ok.webp" x="268" y="236" width="104" height="157" preserveAspectRatio="xMidYMax meet"/>
+            <image class="ag ag-alert" href="img/agent-alert.webp" x="268" y="236" width="104" height="157" preserveAspectRatio="xMidYMax meet"/>
+          </g></g>
           <g class="nodes"><g class="dnode" data-g="0" transform="translate(89 267)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><path d="M12 3 19.5 6v6c0 4.4-3.2 8.1-7.5 9-4.3-.9-7.5-4.6-7.5-9V6z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></g></g><g class="dnode" data-g="1" transform="translate(200 198)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></g></g><g class="dnode" data-g="2" transform="translate(320 200)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><path d="M3.5 7.5h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-14z"/><path d="M3.5 7.5 15 4v3.5"/><circle cx="16" cy="13.5" r="1"/></g></g><g class="dnode" data-g="3" transform="translate(402 259)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.2M12 17h.01"/></g></g><g class="dnode" data-g="4" transform="translate(424 335)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="m16 11 2 2 4-4.2"/></g></g></g>
           <g id="hBurst"><circle class="burst" r="10"/></g>
           <g class="orb" id="hOrb"><circle class="o-glow" r="19"/><circle class="o-core" r="9"/></g>

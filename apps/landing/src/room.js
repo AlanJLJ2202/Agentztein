@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import {
   C, makeAgent, pose, setArms, makeCoil, makeBolt, makeChip, makeBadge, setupRenderer, addLights, paintScreen,
-  makeMetaLogo, tr, canvasTex, rr, windowPanel, FONT,
+  makeMetaLogo, tr, canvasTex, rr, windowPanel, FONT, gait, LEG_DROP,
 } from "./agent.js";
 import { ROOMS } from "./museum.js";
 import { decorate } from "./decor.js";
@@ -16,7 +16,8 @@ import { LINES } from "../../../api/_data/audio-catalog.js";
 
 const H = 3; // wall height
 const R = 0.42; // agent radius
-const HOVER_Y = 0.38;
+const SCALE = 0.85;
+const HOVER_Y = LEG_DROP * SCALE; // the agent walks: its origin sits one leg above the floor
 const EYE = 1.72;
 const hex = (n) => "#" + n.toString(16).padStart(6, "0");
 const glossy = (color, o = {}) => new THREE.MeshPhysicalMaterial({ color, roughness: 0.35, clearcoat: 0.7, clearcoatRoughness: 0.25, ...o });
@@ -154,6 +155,7 @@ export function buildRoom(scene) {
   const obstacles = []; // circles [x, z, r]
   const extra = { pods: {} };
   const ceilings = [];
+  const emitters = [];
   LAYOUT.forEach((r) => {
     const g = new THREE.Group();
     if (r.id === "cuna") g.position.set(0, 0, 0);
@@ -175,9 +177,10 @@ export function buildRoom(scene) {
     const dressed = decorate(r.id, g, ROOMS[r.id]);
     updates.push(dressed.update);
     ceilings.push(dressed.ceil);
+    dressed.emitters.forEach((e) => { const pos = new THREE.Vector3(); e.obj.getWorldPosition(pos); emitters.push({ room: r.id, kind: e.kind, pos, next: 1 + Math.random() * 4 }); });
   });
 
-  return { root, walls, ceilings, floorHit, doors, exhibits, updates, obstacles, extra, relabel: () => relabels.forEach((f) => f()) };
+  return { root, walls, ceilings, emitters, floorHit, doors, exhibits, updates, obstacles, extra, relabel: () => relabels.forEach((f) => f()) };
 }
 
 
@@ -636,8 +639,8 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   const B = buildRoom(scene);
   const { walls, floorHit, doors, exhibits, updates, obstacles, extra } = B;
 
-  const agent = makeAgent({ hover: true });
-  agent.scale.setScalar(0.85);
+  const agent = makeAgent({ legs: true });
+  agent.scale.setScalar(SCALE);
   agent.rotation.order = "YXZ";
   agent.position.set(0, HOVER_Y, 0.4);
   agent.rotation.y = Math.PI;
@@ -652,7 +655,8 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   let path = [], pendingRoom = null, pendingExhibit = null, currentRoom = "cuna", guideKey = "", engaged = false, visible = true;
   let yaw = Math.PI, pitch = -0.05, camAz = 0, wallK = 0.32, stuck = 0;
   const keys = new Set();
-  let locked = false, stepClock = 0.2;
+  let locked = false, gaitPhase = 0, gaitAmt = 0;
+  const lastPos = new THREE.Vector3();
   const say = (o) => onSay(tr(o));
   // a line from the catalog: the speech bubble shows it and the agent says it out loud
   const line = (id) => { onSay(tr(LINES[id])); sound.say(id); };
@@ -956,7 +960,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     tickPods(tt, dt);
 
     // movement
-    let moving = false;
+
     if (fp) {
       if (keys.has("l")) yaw += dt * 2.2;
       if (keys.has("r")) yaw -= dt * 2.2;
@@ -966,7 +970,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       if (keys.has("b")) v.sub(fwd);
       if (keys.has("sr")) v.add(right);
       if (keys.has("sl")) v.sub(right);
-      if (v.lengthSq() > 0) { path = []; pendingRoom = null; pendingExhibit = null; v.normalize().multiplyScalar((keys.has("run") ? 5 : 3) * dt); agent.position.add(v); collide(agent.position); moving = true; onMove(); }
+      if (v.lengthSq() > 0) { path = []; pendingRoom = null; pendingExhibit = null; v.normalize().multiplyScalar((keys.has("run") ? 5 : 3) * dt); agent.position.add(v); collide(agent.position); onMove(); }
     } else {
       if (keys.size) {
         camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize(); right.crossVectors(fwd, up).normalize();
@@ -975,7 +979,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
         if (keys.has("b")) v.sub(fwd);
         if (keys.has("r") || keys.has("sr")) v.add(right);
         if (keys.has("l") || keys.has("sl")) v.sub(right);
-        if (v.lengthSq() > 0) { path = []; pendingRoom = null; pendingExhibit = null; v.normalize(); agent.position.addScaledVector(v, 3 * dt); collide(agent.position); moving = true; turnTo(Math.atan2(v.x, v.z), dt); onMove(); }
+        if (v.lengthSq() > 0) { path = []; pendingRoom = null; pendingExhibit = null; v.normalize(); agent.position.addScaledVector(v, 3 * dt); collide(agent.position); turnTo(Math.atan2(v.x, v.z), dt); onMove(); }
       }
     }
     {
@@ -986,7 +990,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
         else {
           const step = Math.min(dist, Math.min(3.4, dist * 3 + 0.6) * dt);
           agent.position.x += (dx / dist) * step; agent.position.z += (dz / dist) * step;
-          collide(agent.position); moving = true;
+          collide(agent.position);
           turnTo(Math.atan2(dx, dz), dt);
           const after = Math.hypot(p.x - agent.position.x, p.z - agent.position.z);
           stuck = after > dist - 0.002 ? stuck + dt : 0; // blocked by a wall or an exhibit: give up on this point
@@ -999,10 +1003,28 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       if (!fp || path.length || pendingExhibit) yaw = agent.rotation.y;
       else agent.rotation.y = yaw;
     }
-    if (moving) { stepClock += dt * (keys.has("run") && fp ? 1.5 : 1); if (stepClock > 0.34) { stepClock = 0; sound.step(); } } else stepClock = 0.25;
-    const lean = moving && !fp ? 0.14 : 0;
+    // the walk cycle follows how fast it really moves; each foot strike makes a soft step
+    const sp = lastPos.lengthSq() ? Math.hypot(agent.position.x - lastPos.x, agent.position.z - lastPos.z) / Math.max(dt, 1e-3) : 0;
+    lastPos.copy(agent.position);
+    gaitAmt += (Math.min(1, sp / 2.6) - gaitAmt) * Math.min(1, dt * 7);
+    if (gaitAmt > 0.04) {
+      const before = Math.floor((gaitPhase - Math.PI / 2) / Math.PI);
+      gaitPhase += dt * (4.2 + sp * 1.7);
+      if (Math.floor((gaitPhase - Math.PI / 2) / Math.PI) !== before && gaitAmt > 0.3) sound.step();
+    }
+    gait(agent, gaitPhase, gaitAmt, tt);
+    const lean = (fp ? 0 : 0.12) * gaitAmt;
     agent.rotation.x += (lean - agent.rotation.x) * Math.min(1, dt * 6);
-    agent.position.y = HOVER_Y + (fp ? 0 : Math.sin(tt * 2.2) * 0.05);
+    agent.position.y = HOVER_Y + Math.abs(Math.cos(gaitPhase)) * 0.045 * gaitAmt + Math.sin(tt * 1.7) * 0.006 * (1 - gaitAmt);
+    agent.rotation.z = Math.sin(gaitPhase) * 0.035 * gaitAmt; // a little roll with each stride
+
+    // screens, arcades, the clock and the flasks make small sounds when you are close to them
+    for (const e of B.emitters) {
+      if (e.room !== currentRoom || t < e.next) continue;
+      const d = Math.hypot(e.pos.x - agent.position.x, e.pos.z - agent.position.z);
+      e.next = t + (e.kind === "tick" ? 1 : e.kind === "bubble" ? 0.8 + Math.random() * 1.5 : 2 + Math.random() * 5);
+      if (d < 5.5) sound.sfx(e.kind, { gain: Math.pow(1 - d / 5.5, 1.6) * (e.kind === "chirps" ? 0.9 : 0.6), rate: 0.9 + Math.random() * 0.25 });
+    }
 
     // which room are we in
     const here = roomAt(agent.position.x, agent.position.z);
@@ -1056,8 +1078,8 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     const mood = u.power < 0.5 ? "sleep" : t < alertUntil ? "alert" : t < thinkUntil ? "think" : t < happyUntil ? "happy" : "idle";
     u.look.set(0, pendingExhibit && !path.length ? -0.2 : 0);
     pose(agent, mood, tt, dt);
-    const swing = moving ? Math.sin(tt * 9) * 0.35 : 0, raised = t < armsUp;
-    setArms(agent, raised ? -2.5 : -0.16 - Math.abs(swing) * 0.2, raised ? 2.5 : 0.16 + Math.abs(swing) * 0.2, swing, -swing);
+    const swing = Math.sin(gaitPhase) * 0.55 * gaitAmt, raised = t < armsUp;
+    setArms(agent, raised ? -2.5 : -0.16 - Math.abs(swing) * 0.15, raised ? 2.5 : 0.16 + Math.abs(swing) * 0.15, raised ? 0 : swing, raised ? 0 : -swing);
     if ((screenTick += dt) > 0.06) { screenTick = 0; paintScreen(u.screenTex, screenMode || (currentRoom === "cuna" ? "pulse" : "test"), tt); }
 
     // walls: full height in first person, a cutaway in third person
@@ -1069,7 +1091,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     // camera
     if (fp) {
       camera.fov += (72 - camera.fov) * Math.min(1, dt * 6);
-      camera.position.set(agent.position.x, HOVER_Y + EYE - 0.38 + Math.sin(tt * 7) * (moving ? 0.025 : 0), agent.position.z);
+      camera.position.set(agent.position.x, EYE + Math.abs(Math.cos(gaitPhase)) * 0.05 * gaitAmt, agent.position.z);
       tmp.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).add(camera.position);
       camera.lookAt(tmp);
     } else {
@@ -1117,8 +1139,8 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
 export function renderRoomStill(renderer, scene, camera) {
   const B = buildRoom(scene);
   B.walls.scale.y = 0.32;
-  const agent = makeAgent({ hover: true });
-  agent.scale.setScalar(0.85);
+  const agent = makeAgent({ legs: true });
+  agent.scale.setScalar(SCALE);
   agent.position.set(0, HOVER_Y, 0.4);
   agent.userData.power = 1;
   for (let i = 0; i < 30; i++) pose(agent, "happy", 2, 0.05);

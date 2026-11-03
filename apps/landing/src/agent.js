@@ -133,7 +133,8 @@ function stitches(n, len, gap, mat) {
   return g;
 }
 
-export function makeAgent({ hover = false } = {}) {
+export const LEG_DROP = 0.67; // how far below its origin the soles are when it has legs
+export function makeAgent({ hover = false, legs = false } = {}) {
   const A = new THREE.Group();
   const ink = std(C.ink, { roughness: 0.5 });
   const white = glossy(C.white);
@@ -141,7 +142,9 @@ export function makeAgent({ hover = false } = {}) {
   const metal = std(C.metal, { metalness: 0.7, roughness: 0.25 });
 
   let thruster = null;
-  if (hover) {
+  if (legs) {
+    // no base: it walks
+  } else if (hover) {
     // a levitation base, so it can move around the lab
     const base = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.48, 0.22, 48), white);
     base.position.y = 0.0;
@@ -174,6 +177,30 @@ export function makeAgent({ hover = false } = {}) {
   screen.position.set(0, 1.0, 0.452);
   torso.add(screen);
   A.add(torso);
+
+  // legs: hip, knee and ankle pivots, so it can really walk
+  let legRig = null;
+  if (legs) {
+    const T = 0.38, S = 0.38;
+    const thighM = glossy(0xdbe9ff), shinM = glossy(0xe3ebf3), shoe = glossy(C.ink, { roughness: 0.45 });
+    legRig = {};
+    [["l", -1], ["r", 1]].forEach(([key, side]) => {
+      const hip = new THREE.Group(); hip.position.set(side * 0.34, 0.2, 0);
+      const pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.17, 20, 14), metal); hip.add(pelvis);
+      const thigh = new THREE.Mesh(new THREE.CapsuleGeometry(0.135, T - 0.2, 8, 16), thighM); thigh.position.y = -T / 2;
+      const knee = new THREE.Group(); knee.position.y = -T;
+      const kneeCap = new THREE.Mesh(new THREE.SphereGeometry(0.14, 20, 14), metal);
+      const shin = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, S - 0.2, 8, 16), shinM); shin.position.y = -S / 2;
+      const ankle = new THREE.Group(); ankle.position.y = -S;
+      const foot = new THREE.Mesh(new RoundedBoxGeometry(0.3, 0.14, 0.5, 4, 0.06), shoe); foot.position.set(0, -0.04, 0.1);
+      const toe = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.025, 0.1), std(C.meta, { emissive: C.meta, emissiveIntensity: 0.5 })); toe.position.set(0, -0.04, 0.37);
+      ankle.add(foot, toe);
+      knee.add(kneeCap, shin, ankle);
+      hip.add(thigh, knee);
+      A.add(hip);
+      legRig[key] = { hip, knee, ankle };
+    });
+  }
 
   // arms (pivot at the shoulder); the left one is a different piece, sewn on
   const arm = (side, mat) => {
@@ -287,7 +314,7 @@ export function makeAgent({ hover = false } = {}) {
   hit.position.y = 1.4;
   A.add(hit);
 
-  A.userData = { head, eyes, brows, mouth, armL, armR, bolts, brain, screenTex, hit, thruster, power: 0, mood: "idle", look: new THREE.Vector2() };
+  A.userData = { head, eyes, brows, mouth, armL, armR, bolts, brain, screenTex, hit, thruster, legs: legRig, power: 0, mood: "idle", look: new THREE.Vector2() };
   return A;
 }
 
@@ -334,6 +361,21 @@ export function pose(agent, mood, t = 0, dt = 1) {
   lerp(u.head.rotation, "x", -u.look.y * 0.18 + (mood === "sleep" ? 0.28 : 0));
   lerp(u.head.rotation, "z", mood === "think" ? 0.12 : mood === "alert" ? -0.06 : 0);
   u.head.position.y = 1.68 + (mood === "sleep" ? -0.04 : Math.sin(t * 1.6) * 0.012 * on);
+}
+
+/** Walk cycle for an agent built with legs. phase advances while it walks; amt 0 (standing) to 1 (full stride). */
+export function gait(agent, phase, amt, t = 0) {
+  const L = agent.userData.legs;
+  if (!L) return;
+  [L.l, L.r].forEach((leg, i) => {
+    const p = phase + (i ? Math.PI : 0);
+    const hip = -Math.sin(p) * 0.62 * amt + Math.sin(t * 0.7 + i * 3) * 0.012 * (1 - amt);
+    const knee = (Math.max(0, Math.cos(p)) * 1.05 + 0.04) * amt;
+    leg.hip.rotation.x = hip;
+    leg.hip.rotation.z = (i ? -1 : 1) * Math.sin(t * 0.5) * 0.025 * (1 - amt); // weight shift when standing
+    leg.knee.rotation.x = knee;
+    leg.ankle.rotation.x = -(hip + knee) + Math.max(0, -Math.cos(p)) * 0.3 * amt; // flat foot, toe-off at the back
+  });
 }
 
 export function setArms(agent, l = -0.12, r = 0.12, lx = 0, rx = 0) {
