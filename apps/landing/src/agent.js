@@ -202,6 +202,27 @@ export function makeAgent({ hover = false, legs = false } = {}) {
     });
   }
 
+  // jetpack: a pack on its back with two turbines; the flames scale with the thrust
+  let jet = null;
+  if (legs) {
+    const pack = new THREE.Group(); pack.position.set(0, 0.95, -0.62);
+    pack.add(new THREE.Mesh(new RoundedBoxGeometry(0.95, 1.0, 0.3, 4, 0.1), glossy(0xdbe9ff)));
+    const flames = [], glows = [];
+    [-1, 1].forEach((side) => {
+      const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.95, 20), metal); tank.position.set(side * 0.3, 0.02, -0.2);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.175, 0.025, 8, 24), std(C.meta, { emissive: C.meta, emissiveIntensity: 0.7 })); band.rotation.x = Math.PI / 2; band.position.set(side * 0.3, 0.25, -0.2);
+      const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.17, 0.14, 20), ink); nozzle.position.set(side * 0.3, -0.52, -0.2);
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.15, 1, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xffb44a, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+      flame.geometry.translate(0, -0.5, 0); flame.position.set(side * 0.3, -0.58, -0.2); flame.scale.set(1, 0.001, 1);
+      const core = new THREE.Mesh(new THREE.ConeGeometry(0.08, 1, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+      core.geometry.translate(0, -0.5, 0); flame.add(core); core.position.set(0, 0, 0);
+      pack.add(tank, band, nozzle, flame);
+      flames.push(flame); glows.push(core);
+    });
+    A.add(pack);
+    jet = { pack, flames };
+  }
+
   // arms (pivot at the shoulder); the left one is a different piece, sewn on
   const arm = (side, mat) => {
     const pivot = new THREE.Group();
@@ -314,7 +335,7 @@ export function makeAgent({ hover = false, legs = false } = {}) {
   hit.position.y = 1.4;
   A.add(hit);
 
-  A.userData = { head, eyes, brows, mouth, armL, armR, bolts, brain, screenTex, hit, thruster, legs: legRig, power: 0, mood: "idle", look: new THREE.Vector2() };
+  A.userData = { head, eyes, brows, mouth, armL, armR, bolts, brain, screenTex, hit, thruster, legs: legRig, jet, power: 0, mood: "idle", look: new THREE.Vector2() };
   return A;
 }
 
@@ -364,17 +385,17 @@ export function pose(agent, mood, t = 0, dt = 1) {
 }
 
 /** Walk cycle for an agent built with legs. phase advances while it walks; amt 0 (standing) to 1 (full stride). */
-export function gait(agent, phase, amt, t = 0) {
+export function gait(agent, phase, amt, t = 0, air = 0) {
   const L = agent.userData.legs;
   if (!L) return;
   [L.l, L.r].forEach((leg, i) => {
     const p = phase + (i ? Math.PI : 0);
     const hip = -Math.sin(p) * 0.62 * amt + Math.sin(t * 0.7 + i * 3) * 0.012 * (1 - amt);
     const knee = (Math.max(0, Math.cos(p)) * 1.05 + 0.04) * amt;
-    leg.hip.rotation.x = hip;
+    leg.hip.rotation.x = hip * (1 - air) - 0.35 * air;
     leg.hip.rotation.z = (i ? -1 : 1) * Math.sin(t * 0.5) * 0.025 * (1 - amt); // weight shift when standing
-    leg.knee.rotation.x = knee;
-    leg.ankle.rotation.x = -(hip + knee) + Math.max(0, -Math.cos(p)) * 0.3 * amt; // flat foot, toe-off at the back
+    leg.knee.rotation.x = knee * (1 - air) + 0.6 * air;
+    leg.ankle.rotation.x = (-(hip + knee) + Math.max(0, -Math.cos(p)) * 0.3 * amt) * (1 - air) + 0.5 * air; // flat foot, toe-off at the back
   });
 }
 

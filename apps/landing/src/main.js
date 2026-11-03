@@ -7,6 +7,8 @@ import { createHero } from "./hero.js";
 import { createRoom } from "./room.js";
 import { setLanguage, tr } from "./agent.js";
 import { sound } from "./sound.js";
+import { music } from "./music.js";
+import "./popups.js";
 import { ROOMS, UI } from "./museum.js";
 import "./details.js";
 import "./cycle.js";
@@ -21,6 +23,8 @@ let hero3d = null;
 document.addEventListener("lang:change", (e) => {
   setLanguage(e.detail);
   sound.setLanguage(e.detail);
+  labKey = "";
+  paintMusic();
   if (hero3d) hero3d.relabel();
   if (room) { room.relabel(); renderGuide(lastGuide); viewLabel(); }
 });
@@ -79,6 +83,25 @@ function viewLabel() {
   if (fsTxt) fsTxt.textContent = tr(document.fullscreenElement ? UI.exitFull : UI.full);
 }
 
+/* The popup that sits on the exhibit you are near: title plus the first sentence of its explanation. */
+const labPop = $("#labPop");
+let labKey = "";
+function labAnchor(a) {
+  if (!labPop) return;
+  if (!a) { labPop.classList.remove("on"); labKey = ""; return; }
+  const key = `${a.room}:${a.item}`;
+  if (key !== labKey) {
+    labKey = key;
+    const r = ROOMS[a.room], it = r.items[a.item];
+    if (!it) { labPop.classList.remove("on"); return; }
+    labPop.firstElementChild.textContent = tr(it.title);
+    labPop.lastElementChild.textContent = tr(it.text).split(/(?<=[.!?])\s/)[0];
+    labPop.style.setProperty("--c", hexColor(r.color));
+    labPop.classList.add("on");
+  }
+  labPop.style.transform = `translate(${a.x}px, ${a.y - 14}px) translate(-50%, -100%)`;
+}
+
 function startRoom() {
   if (room) return;
   const canvas = $("#room3d");
@@ -95,6 +118,7 @@ function startRoom() {
       onGuide: renderGuide,
       onView: (fp) => { $(".stage").classList.toggle("fp", fp); viewLabel(); },
       onRun: () => document.dispatchEvent(new CustomEvent("room:run")),
+      onAnchor: labAnchor,
     });
     root.classList.add("room-3d");
     viewLabel();
@@ -163,6 +187,20 @@ if (snd) {
     await sound.toggle();
     if (wasOff && sound.on) hero3d?.poke(); // let them hear it right away: another jolt and a line
   });
+}
+
+/* Music: its own switch, and a button that cycles through the three beats. */
+const musBtn = $("#musBtn"), beatBtn = $("#beatBtn");
+function paintMusic() {
+  if (!musBtn) return;
+  musBtn.setAttribute("aria-pressed", String(music.on && sound.on));
+  beatBtn.hidden = !(music.on && sound.on);
+  $("#beatTxt").textContent = music.beat.name[root.lang === "es" ? "es" : "en"];
+}
+if (musBtn) {
+  music.onChange(paintMusic); sound.onChange(paintMusic); paintMusic();
+  musBtn.addEventListener("click", async () => { if (!sound.on) { await sound.toggle(); if (!music.on) music.toggle(); } else music.toggle(); paintMusic(); });
+  beatBtn.addEventListener("click", () => { music.next(); paintMusic(); });
 }
 
 if (hasWebGL()) {

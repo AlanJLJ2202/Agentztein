@@ -121,6 +121,7 @@ const SYNTH = {
   fail() { const t = ctx.currentTime; tone("square", 150, 120, t, 0.18, 0.18); tone("square", 150, 110, t + 0.24, 0.26, 0.18); },
   pickup() { const t = ctx.currentTime; tone("square", 988, 988, t, 0.08, 0.14); tone("square", 1319, 1319, t + 0.08, 0.3, 0.14); },
   chip() { const t = ctx.currentTime; tone("triangle", 1500, 700, t, 0.05, 0.3); hiss(t, 0.04, { f0: 3500, q: 2, vol: 0.3 }); tone("sine", 440, 880, t + 0.06, 0.2, 0.2); },
+  jet() { const t = ctx.currentTime; hiss(t, 0.7, { type: "lowpass", f0: 500, f1: 2600, q: 0.7, vol: 0.5, attack: 0.05 }); tone("sawtooth", 60, 180, t, 0.6, 0.1, 0.05); },
   alarm() { const t = ctx.currentTime; for (let i = 0; i < 4; i++) { tone("square", 720, 720, t + i * 0.38, 0.17, 0.2); tone("square", 960, 960, t + i * 0.38 + 0.19, 0.17, 0.2); } },
   shield() { const t = ctx.currentTime; tone("sine", 180, 760, t, 1.1, 0.26, 0.1); tone("triangle", 184, 770, t, 1.1, 0.16, 0.1); tone("sine", 1500, 2400, t + 0.5, 0.6, 0.06); },
   shieldhit() { const t = ctx.currentTime; hiss(t, 0.25, { type: "highpass", f0: 2500, vol: 0.55 }); tone("sine", 90, 40, t, 0.4, 0.55); tone("sawtooth", 600, 100, t, 0.3, 0.12); },
@@ -181,7 +182,26 @@ const firstGesture = (ev) => {
 window.addEventListener("pointerdown", firstGesture, { capture: true });
 window.addEventListener("keydown", firstGesture, { capture: true });
 
+/** The jetpack's steady roar while it burns: level 0 (off) to 1 (full thrust). Called every frame. */
+let jetNode = null;
+function jetLoop(level) {
+  if (!enabled || !ctx || ctx.state !== "running") { if (jetNode) jetNode.g.gain.value = 0; return; }
+  if (!jetNode) {
+    const src = ctx.createBufferSource(); src.buffer = noise(); src.loop = true;
+    const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 600;
+    const g = ctx.createGain(); g.gain.value = 0;
+    src.connect(f); f.connect(g); g.connect(sfxBus); src.start();
+    jetNode = { g, f };
+  }
+  jetNode.g.gain.setTargetAtTime(level * 0.2, ctx.currentTime, 0.06);
+  jetNode.f.frequency.setTargetAtTime(500 + level * 1000, ctx.currentTime, 0.1);
+}
+
+/** Lets other modules (the music) share the audio context and its master volume. */
+export const audio = () => (ctx ? { ctx, out: master } : null);
+
 export const sound = {
+  jet: jetLoop,
   sfx,
   say,
   setLanguage(l) { lang = l === "es" ? "es" : "en"; },

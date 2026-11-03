@@ -17,6 +17,8 @@ import { LINES } from "../../../api/_data/audio-catalog.js";
 const H = 3; // wall height
 const R = 0.42; // agent radius
 const SCALE = 0.85;
+const WALL_CLEAR = 2.7; // flying above this height clears the walls
+const FLY_MAX = 4.6;
 const HOVER_Y = LEG_DROP * SCALE; // the agent walks: its origin sits one leg above the floor
 const EYE = 1.72;
 const hex = (n) => "#" + n.toString(16).padStart(6, "0");
@@ -631,7 +633,7 @@ const THEMES = T;
  *   onFrame?: (head: { x: number, y: number }) => void, onFlash?: () => void, onMove?: () => void,
  *   onGuide?: (g: { room: string, item?: string } | null) => void, onView?: (fp: boolean) => void, onRun?: (room: string) => void }} o
  */
-export function createRoom(canvas, { reduced = false, minimap = null, onArrive = () => {}, onSay = () => {}, onFrame = () => {}, onFlash = () => {}, onMove = () => {}, onGuide = () => {}, onView = () => {}, onRun = () => {} } = {}) {
+export function createRoom(canvas, { reduced = false, minimap = null, onArrive = () => {}, onSay = () => {}, onFrame = () => {}, onFlash = () => {}, onMove = () => {}, onGuide = () => {}, onView = () => {}, onRun = () => {}, onAnchor = () => {} } = {}) {
   const renderer = setupRenderer(canvas);
   const scene = new THREE.Scene();
   addLights(scene, renderer, { extent: 16, mapSize: 2048 });
@@ -655,6 +657,8 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   let path = [], pendingRoom = null, pendingExhibit = null, currentRoom = "cuna", guideKey = "", engaged = false, visible = true;
   let yaw = Math.PI, pitch = -0.05, camAz = 0, wallK = 0.32, stuck = 0;
   const keys = new Set();
+  // the jetpack: alt is the height above the floor; a route between rooms flies over the wall instead of using the door
+  let alt = 0, vy = 0, flyRoute = false, jetOn = 0, wasUp = false;
   let locked = false, gaitPhase = 0, gaitAmt = 0;
   const lastPos = new THREE.Vector3();
   const say = (o) => onSay(tr(o));
@@ -682,14 +686,14 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   // ---- collisions and routes ----
   function collide(p) {
     for (let pass = 0; pass < 2; pass++) {
-      for (const [x1, z1, x2, z2] of WALLS) {
+      if (alt < WALL_CLEAR) for (const [x1, z1, x2, z2] of WALLS) {
         const cx = THREE.MathUtils.clamp(p.x, Math.min(x1, x2), Math.max(x1, x2));
         const cz = THREE.MathUtils.clamp(p.z, Math.min(z1, z2), Math.max(z1, z2));
         const dx = p.x - cx, dz = p.z - cz, d = Math.hypot(dx, dz);
         if (d < R + 0.1 && d > 1e-6) { p.x = cx + (dx / d) * (R + 0.1); p.z = cz + (dz / d) * (R + 0.1); }
         else if (d <= 1e-6) { if (x1 === x2) p.x += p.x < x1 ? -(R + 0.1) : R + 0.1; else p.z += p.z < z1 ? -(R + 0.1) : R + 0.1; }
       }
-      for (const [ox, oz, or] of obstacles) {
+      if (alt < 1.3) for (const [ox, oz, or] of obstacles) {
         const dx = p.x - ox, dz = p.z - oz, d = Math.hypot(dx, dz), m = or + R * 0.8;
         if (d < m && d > 1e-6) { p.x = ox + (dx / d) * m; p.z = oz + (dz / d) * m; }
       }
@@ -697,17 +701,11 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     p.x = THREE.MathUtils.clamp(p.x, -13.5, 13.5); p.z = THREE.MathUtils.clamp(p.z, -13.5, 5.5);
     return p;
   }
-  const doorPoint = (id, side) => { const r = BYID[id]; return new THREE.Vector3(r.door[0] + r.normal[0] * side, HOVER_Y, r.door[1] + r.normal[1] * side); };
   function route(to) {
     const from = roomAt(agent.position.x, agent.position.z) ?? currentRoom;
     const dest = roomAt(to.x, to.z) ?? from;
-    const pts = [];
-    if (from !== dest) {
-      if (from !== "cuna") pts.push(doorPoint(from, 1.1), doorPoint(from, -1.1));
-      if (dest !== "cuna") pts.push(doorPoint(dest, -1.1), doorPoint(dest, 1.1));
-    }
-    pts.push(to.clone().setY(HOVER_Y));
-    return pts;
+    flyRoute = from !== dest; // between rooms it takes off, flies over the wall and lands
+    return [to.clone().setY(HOVER_Y)];
   }
   function walkTo(p, { roomId = null, exhibit = null } = {}) {
     onMove(); clearExercise();
@@ -831,7 +829,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   canvas.addEventListener("pointerup", endPointer);
   canvas.addEventListener("pointercancel", () => { down = null; });
 
-  const KEYMAP = { ArrowUp: "f", KeyW: "f", ArrowDown: "b", KeyS: "b", ArrowLeft: "l", KeyA: "sl", ArrowRight: "r", KeyD: "sr", ShiftLeft: "run", ShiftRight: "run" };
+  const KEYMAP = { ArrowUp: "f", KeyW: "f", ArrowDown: "b", KeyS: "b", ArrowLeft: "l", KeyA: "sl", ArrowRight: "r", KeyD: "sr", ShiftLeft: "run", ShiftRight: "run", Space: "jet" };
   const active = () => document.activeElement === canvas || (engaged && visible);
   const onKey = (isDown) => (ev) => {
     if (ev.altKey || ev.ctrlKey || ev.metaKey || /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target?.tagName || "")) return;
@@ -983,10 +981,12 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       }
     }
     {
+      if (!path.length) flyRoute = false;
       if (path.length) {
         const p = path[0];
         const dx = p.x - agent.position.x, dz = p.z - agent.position.z, dist = Math.hypot(dx, dz);
         if (dist < 0.08 || stuck > 0.8) { path.shift(); stuck = 0; }
+        else if (flyRoute && alt < 2.6 && dist > 2.4) { turnTo(Math.atan2(dx, dz), dt); } // taking off first
         else {
           const step = Math.min(dist, Math.min(3.4, dist * 3 + 0.6) * dt);
           agent.position.x += (dx / dist) * step; agent.position.z += (dz / dist) * step;
@@ -1010,12 +1010,25 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     if (gaitAmt > 0.04) {
       const before = Math.floor((gaitPhase - Math.PI / 2) / Math.PI);
       gaitPhase += dt * (4.2 + sp * 1.7);
-      if (Math.floor((gaitPhase - Math.PI / 2) / Math.PI) !== before && gaitAmt > 0.3) sound.step();
+      if (Math.floor((gaitPhase - Math.PI / 2) / Math.PI) !== before && gaitAmt > 0.3 && alt < 0.1) sound.step();
     }
-    gait(agent, gaitPhase, gaitAmt, tt);
-    const lean = (fp ? 0 : 0.12) * gaitAmt;
+    // altitude: hold Space to climb, let go to come down gently; a flight between rooms does it by itself
+    const goal = path.length === 1 ? Math.hypot(path[0].x - agent.position.x, path[0].z - agent.position.z) : 99;
+    const wantUp = keys.has("jet") || (flyRoute && path.length > 0 && goal > 2.4);
+    vy = wantUp ? Math.min(vy + 15 * dt, 4.2) : Math.max(vy - 9 * dt, -3.6);
+    if (!wantUp && vy < 0) vy = Math.max(vy, -0.9 - alt * 0.8); // soft landing
+    alt = THREE.MathUtils.clamp(alt + vy * dt, 0, FLY_MAX);
+    if (alt === 0 && vy < 0) { if (wasUp) { sound.sfx("step", { gain: 1.4 }); wasUp = false; } vy = 0; }
+    if (wantUp && alt < 0.6 && !wasUp) { wasUp = true; sound.sfx("jet"); }
+    const air = THREE.MathUtils.clamp(alt / 0.5, 0, 1);
+    jetOn += ((wantUp ? 1 : alt > 0.05 ? 0.35 : 0) - jetOn) * Math.min(1, dt * 10);
+    sound.jet(jetOn > 0.05 ? 0.25 + jetOn * 0.75 : 0);
+    const jt = u.jet;
+    if (jt) jt.flames.forEach((f, i) => { const k = jetOn * (0.85 + 0.3 * Math.sin(tt * 40 + i * 2)); f.scale.set(1 + jetOn * 0.2, Math.max(0.001, k * 1.3), 1 + jetOn * 0.2); });
+    gait(agent, gaitPhase, gaitAmt * (1 - air), tt, air);
+    const lean = (fp ? 0 : 0.12) * gaitAmt + 0.18 * Math.min(1, alt / 0.6) * Math.min(1, sp / 2);
     agent.rotation.x += (lean - agent.rotation.x) * Math.min(1, dt * 6);
-    agent.position.y = HOVER_Y + Math.abs(Math.cos(gaitPhase)) * 0.045 * gaitAmt + Math.sin(tt * 1.7) * 0.006 * (1 - gaitAmt);
+    agent.position.y = HOVER_Y + alt + Math.abs(Math.cos(gaitPhase)) * 0.045 * gaitAmt * (1 - air) + Math.sin(tt * 1.7) * 0.006 * (1 - gaitAmt);
     agent.rotation.z = Math.sin(gaitPhase) * 0.035 * gaitAmt; // a little roll with each stride
 
     // screens, arcades, the clock and the flasks make small sounds when you are close to them
@@ -1086,17 +1099,17 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     const wk = fp ? 1 : 0.32;
     wallK += (wk - wallK) * Math.min(1, dt * 5);
     walls.scale.y = wallK;
-    B.ceilings.forEach((c) => { c.visible = fp && wallK > 0.97; }); // the ceiling only exists when you are inside
+    B.ceilings.forEach((c) => { c.visible = fp && wallK > 0.97 && alt < 1.2; }); // the ceiling only exists when you are inside
 
     // camera
     if (fp) {
       camera.fov += (72 - camera.fov) * Math.min(1, dt * 6);
-      camera.position.set(agent.position.x, EYE + Math.abs(Math.cos(gaitPhase)) * 0.05 * gaitAmt, agent.position.z);
+      camera.position.set(agent.position.x, EYE + alt + Math.abs(Math.cos(gaitPhase)) * 0.05 * gaitAmt, agent.position.z);
       tmp.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).add(camera.position);
       camera.lookAt(tmp);
     } else {
       camera.fov += ((camera.aspect < 1 ? 56 : 40) - camera.fov) * Math.min(1, dt * 6);
-      tmp.set(agent.position.x, 0.8, agent.position.z);
+      tmp.set(agent.position.x, 0.8 + alt * 0.6, agent.position.z);
       camTarget.lerp(tmp, Math.min(1, dt * 3));
       const dist = camera.aspect < 1 ? 15 : 12.5, el = 0.85;
       camera.position.set(camTarget.x + Math.sin(camAz) * Math.cos(el) * dist, camTarget.y + Math.sin(el) * dist, camTarget.z + Math.cos(camAz) * Math.cos(el) * dist);
@@ -1107,6 +1120,9 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     // signs and plaques face whoever is looking only through their own rotation (they're fixed); render
     renderer.render(scene, camera);
     updateGuide();
+    // a popup follows the exhibit you are near (or looking at), so the explanation sits right on it
+    if (focus) { tmp.set(focus.world.x, 2.1, focus.world.z).project(camera); onAnchor(tmp.z < 1 && Math.abs(tmp.x) < 1.1 ? { x: (tmp.x * 0.5 + 0.5) * canvas.clientWidth, y: (-tmp.y * 0.5 + 0.5) * canvas.clientHeight, room: focus.room, item: focus.key } : null); }
+    else onAnchor(null);
     if ((mapTick += dt) > 0.1) { mapTick = 0; drawMap(); }
 
     if (fp) onFrame({ x: canvas.clientWidth / 2, y: canvas.clientHeight * 0.32 });

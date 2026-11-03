@@ -415,12 +415,35 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .sheet .dlg-live li::before { content: none; }
 
 /* ---------- The cycle: a ring of six phases around Agentztein ---------- */
-.gloss { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 14px; }
-.gloss > div { padding: 16px 18px; border-radius: 18px; background: #fff; border: 1px solid var(--soft-2); }
-.gloss dt { font-weight: 800; font-size: 1.0625rem; margin-bottom: 4px; }
-.gloss dd { margin: 0; color: var(--muted); font-size: .9375rem; line-height: 1.5; }
-.gnote { margin: 0 0 28px; padding: 12px 16px; border-radius: 14px; background: var(--amber-bg); color: var(--amber); font-size: .9375rem; line-height: 1.45; font-weight: 600; }
-@media (max-width: 900px) { .gloss { grid-template-columns: minmax(0, 1fr); } }
+.terms { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 30px; }
+.term { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 9px; min-height: 44px; padding: 6px 16px 6px 8px; border-radius: 999px; background: #fff; border: 1px solid var(--soft-2); cursor: help; font-size: .9375rem; transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s; }
+.term:hover, .term:focus-visible, .term[aria-expanded="true"] { transform: translateY(-2px); border-color: var(--c); box-shadow: 0 8px 22px color-mix(in srgb, var(--c) 22%, transparent); }
+.term:focus-visible { outline: 3px solid var(--meta); outline-offset: 2px; }
+.term i { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--c) 16%, #fff); color: var(--c); font-style: normal; font-weight: 800; font-size: .875rem; }
+.term b { font-weight: 800; }
+.term span { color: var(--muted); }
+.term.today { background: var(--amber-bg); border-color: transparent; }
+@media (max-width: 640px) { .term span { display: none; } }
+/* floating popups: they appear next to the thing they explain */
+.pop { position: fixed; left: 0; top: 0; z-index: 70; width: max-content; max-width: min(330px, calc(100vw - 16px)); padding: 14px 16px; border-radius: 16px; background: var(--ink); color: #e8eef3; font-size: .9375rem; line-height: 1.45; box-shadow: 0 18px 50px rgba(10, 22, 32, .35); opacity: 0; pointer-events: none; transform: translateY(6px) scale(.97); transition: opacity .18s var(--ease), transform .22s var(--ease); }
+.pop.on { opacity: 1; transform: none; }
+.pop b { display: block; margin-bottom: 4px; color: #fff; font-size: 1rem; }
+.pop::after { content: ""; position: absolute; left: var(--ax, 50%); bottom: -6px; width: 12px; height: 12px; margin-left: -6px; background: var(--ink); transform: rotate(45deg); border-radius: 2px; }
+.pop.below::after { bottom: auto; top: -6px; }
+.labpop { position: absolute; left: 0; top: 0; z-index: 3; width: max-content; max-width: 260px; padding: 12px 14px 12px 18px; border-radius: 16px; background: #fff; color: var(--ink); font-size: .875rem; line-height: 1.4; box-shadow: 0 14px 40px rgba(10, 22, 32, .22); pointer-events: none; opacity: 0; transition: opacity .25s var(--ease); will-change: transform; }
+.labpop.on { opacity: 1; }
+.labpop::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 5px; border-radius: 0 4px 4px 0; background: var(--c, var(--meta)); }
+.labpop::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; margin-left: -6px; background: #fff; transform: rotate(45deg); border-radius: 2px; }
+.labpop b { display: block; font-size: .9375rem; margin-bottom: 2px; }
+.labpop span { color: var(--muted); }
+/* the sound dock: sound, music and the beat */
+.snddock { position: fixed; left: 16px; bottom: 16px; z-index: 40; display: flex; gap: 8px; align-items: center; }
+.snddock .sndbtn { position: static; }
+.sndbtn.mini span { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sndbtn[hidden] { display: none; }
+.pk.jet { grid-column: 1; grid-row: 1; background: var(--meta); color: #fff; }
+.pk.jet:hover { background: #0a6fdc; }
+
 
 .loop { --c: var(--meta); display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(24px, 4vw, 64px); align-items: center; }
 .ring { position: relative; width: min(100%, 580px); aspect-ratio: 1; margin: 0 auto; }
@@ -759,7 +782,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .dome-card .try-t { margin-top: 2px; }
 @media (prefers-reduced-motion: reduce) { .dome-card, .dome-svg *, .dome-pill i { animation: none !important; } }
 /* the sound switch */
-.sndbtn { position: fixed; left: 16px; bottom: 16px; z-index: 40; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 12px; border: 0; border-radius: 999px; background: var(--ink); color: #fff; font: 700 .9375rem/1 var(--font); cursor: pointer; box-shadow: 0 8px 24px rgba(28, 43, 51, .28); transition: transform .2s var(--ease), background-color .2s; }
+.sndbtn { position: static; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 12px; border: 0; border-radius: 999px; background: var(--ink); color: #fff; font: 700 .9375rem/1 var(--font); cursor: pointer; box-shadow: 0 8px 24px rgba(28, 43, 51, .28); transition: transform .2s var(--ease), background-color .2s; }
 .sndbtn:hover { transform: translateY(-2px); }
 .sndbtn:focus-visible { outline: 3px solid var(--meta); outline-offset: 2px; }
 .sndbtn svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -770,7 +793,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .sndbtn .x { opacity: 0; }
 .sndbtn.nudge { animation: nudge 2.4s ease-in-out 3; }
 @keyframes nudge { 50% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(0, 129, 251, .22); } }
-@media (max-width: 640px) { .sndbtn span { display: none; } .sndbtn { padding: 0 12px; } }
+@media (max-width: 640px) { .sndbtn:not(.mini) span { display: none; } .sndbtn { padding: 0 12px; } }
 .verdict { min-height: 3em; color: #d4dee6; line-height: 1.45; }
 .verdict b { color: #fff; }
 #hApprove[hidden] { display: none; }
@@ -841,15 +864,15 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 <section id="como-funciona">
   <div class="wrap">
     <div class="head ent">
-      <h2 data-es="Así se desarrolla sola">How it builds itself</h2>
-      <p class="lead" data-es="Un ciclo de seis fases que nunca termina: cuando acaba la sexta, vuelve a medirse.">A six-phase cycle that never ends: after the sixth, it measures itself again.</p>
+      <h2 data-es="Auto-desarrollo">Self-development</h2>
+      <p class="lead" data-es="Seis fases que se repiten sin parar. Toca una para verla.">Six phases that repeat forever. Tap one to see it.</p>
     </div>
-    <dl class="gloss ent">
-      <div><dt data-es="Habilidad">Skill</dt><dd data-es="Un párrafo corto de instrucciones escritas (hasta 1,500 caracteres) que el agente suma a su prompt en una situación concreta. Por ejemplo: «en un juego nuevo, mueve una pieza y observa antes de buscar en la web». Es texto, no código nuevo: el modelo no se modifica.">A short paragraph of written instructions (up to 1,500 characters) that the agent adds to its prompt in one specific situation. For example: “in a brand-new game, move a piece and watch before searching the web”. It is text, not new code: the model itself is never modified.</dd></div>
-      <div><dt data-es="Examen">Exam</dt><dd data-es="Un conjunto fijo de tareas con respuesta correcta conocida, para poder calificar cada respuesta como bien o mal. Hay tres: de práctica (de ahí aprende), de validación (con él prueba mejoras) y uno sellado que solo se corre al final.">A fixed set of tasks with a known correct answer, so every answer can be scored right or wrong. There are three: practice (it learns from it), validation (it tests improvements on it) and a sealed one that only runs at the end.</dd></div>
-      <div><dt data-es="Línea base">Baseline</dt><dd data-es="La calificación que saca hoy, antes de cambiar nada. Toda mejora se compara contra ese número.">The score it gets today, before changing anything. Every improvement is compared against that number.</dd></div>
-    </dl>
-    <p class="gnote ent" data-es="Qué funciona hoy: en la app, con tu propia llave de Meta, las fases 1 a 5 corren de verdad sobre cinco ejercicios de negocio sintéticos (por ejemplo, etiquetar movimientos bancarios). Correrlas sobre los benchmarks públicos del laboratorio (SWE-bench, Terminal-Bench…) es la meta: todavía no hay resultados en ninguno.">What works today: in the app, with your own Meta key, phases 1 to 5 really run on five synthetic business exercises (for example, labeling bank transactions). Running them on the public benchmarks in the lab (SWE-bench, Terminal-Bench…) is the goal: there are no results on any of them yet.</p>
+    <div class="terms ent" role="list" aria-label="Key words" data-es-aria-label="Palabras clave">
+      <button class="term" role="listitem" type="button" style="--c:#6d5ce8" data-pop-title-en="Skill" data-pop-title-es="Habilidad" data-pop-en="A short text of instructions the agent adds to its prompt in one specific situation. For example: “in a brand-new game, move a piece and watch before searching the web”. It is text, not code: the model itself never changes." data-pop-es="Un texto corto de instrucciones que el agente suma a su prompt en una situación concreta. Por ejemplo: «en un juego nuevo, mueve una pieza y observa antes de buscar en la web». Es texto, no código: el modelo no cambia."><i aria-hidden="true">✎</i><b data-es="Habilidad">Skill</b><span data-es="instrucciones que él escribe">instructions it writes</span></button>
+      <button class="term" role="listitem" type="button" style="--c:#0081fb" data-pop-title-en="Exam" data-pop-title-es="Examen" data-pop-en="Tasks with a known right answer, so every answer is marked right or wrong. There are three: practice (to learn from), validation (to test changes) and a sealed one that only runs at the end." data-pop-es="Tareas con respuesta correcta conocida, para marcar cada respuesta como bien o mal. Hay tres: de práctica (para aprender), de validación (para probar cambios) y uno sellado que solo se corre al final."><i aria-hidden="true">✓</i><b data-es="Examen">Exam</b><span data-es="tareas con respuesta conocida">tasks with a known answer</span></button>
+      <button class="term" role="listitem" type="button" style="--c:#22b864" data-pop-title-en="Baseline" data-pop-title-es="Línea base" data-pop-en="The score it gets today, before changing anything. Every improvement has to beat that number." data-pop-es="La calificación que saca hoy, antes de cambiar nada. Toda mejora tiene que superar ese número."><i aria-hidden="true">◎</i><b data-es="Línea base">Baseline</b><span data-es="su calificación de hoy">its score today</span></button>
+      <button class="term today" role="listitem" type="button" style="--c:#c98a00" data-pop-title-en="What works today" data-pop-title-es="Qué funciona hoy" data-pop-en="In the app, with your own Meta key, phases 1 to 5 really run on five synthetic business exercises (for example, labeling bank transactions). Running them on public benchmarks like SWE-bench is the goal: there are no results on any of them yet." data-pop-es="En la app, con tu propia llave de Meta, las fases 1 a 5 corren de verdad sobre cinco ejercicios de negocio sintéticos (por ejemplo, etiquetar movimientos bancarios). Correrlas en benchmarks públicos como SWE-bench es la meta: todavía no hay resultados en ninguno."><i aria-hidden="true">●</i><b data-es="Qué funciona hoy">What works today</b><span data-es="fases 1 a 5">phases 1 to 5</span></button>
+    </div>
     <div class="loop ent" id="cycle" style="--c:#6d5ce8">
       <div class="ring">
         <svg class="ring-svg" viewBox="0 0 400 400" aria-hidden="true">
@@ -993,6 +1016,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         <img class="still" src="img/room.webp" width="1600" height="1000" alt="Agentztein's lab in 3D: a white room with the Meta logo on the wall, a whiteboard of frontier benchmarks, a Muse Spark screen, the cradle between two Tesla coils and six tables, one per benchmark, each with its object." data-es-alt="El laboratorio de Agentztein en 3D: un cuarto blanco con el logo de Meta en la pared, un pizarrón con los benchmarks de frontera, una pantalla de Muse Spark, la cuna entre dos bobinas de Tesla y seis mesas, una por benchmark, cada una con su objeto." loading="lazy" />
         <canvas id="room3d" tabindex="0" aria-label="3D lab: a building with one room per benchmark. Tap the floor, a door or an exhibit to walk there, or use the arrows and W, A, S, D. Press V for first person and E to interact. The card below explains what you are looking at." data-es-aria-label="Laboratorio en 3D: un edificio con un cuarto por benchmark. Toca el piso, una puerta o una exhibición para ir, o usa las flechas y W, A, S, D. Presiona V para primera persona y E para interactuar. La tarjeta de abajo explica lo que estás viendo."></canvas>
         <div class="bubble" id="roomBubble" aria-live="polite"><span></span></div>
+        <div class="labpop" id="labPop" aria-hidden="true"><b></b><span></span></div>
         <div class="flash" id="roomFlash" aria-hidden="true"></div>
         <span class="hint" id="roomHint">Tap the floor or a door · arrows to walk · V for first person</span>
         <button class="viewbtn" id="viewBtn" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg><span id="viewTxt">First person</span></button>
@@ -1000,6 +1024,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         <canvas class="minimap" id="miniMap" width="168" height="120" aria-hidden="true"></canvas>
         <span class="cross" aria-hidden="true"></span>
         <div class="pad" role="group" aria-label="Move Agentztein" data-es-aria-label="Mover a Agentztein">
+          <button class="pk jet" data-k="jet" aria-label="Jetpack (Space)" data-es-aria-label="Jetpack (Espacio)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1c2 2 3 4.500 3 7.500L8 11 5 8.500C5 5.500 6 3 8 1z"/><path d="M6 12.500c.4 1.200 1 2 2 2.500 1-.5 1.600-1.300 2-2.500z" opacity=".7"/></svg></button>
           <button class="pk up" data-k="f" aria-label="Forward" data-es-aria-label="Adelante"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3 3 9h10z"/></svg></button>
           <button class="pk left" data-k="l" aria-label="Left" data-es-aria-label="Izquierda"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8l6-5v10z"/></svg></button>
           <button class="pk right" data-k="r" aria-label="Right" data-es-aria-label="Derecha"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8 7 3v10z"/></svg></button>
@@ -1181,7 +1206,10 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   </div></div>
 </footer>
 
-<button class="sndbtn" id="sndBtn" type="button" aria-pressed="false" aria-label="Sound" data-es-aria-label="Sonido"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path class="w" d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/><path class="x" d="m16 9.5 5 5M21 9.5l-5 5"/></svg><span id="sndTxt" data-es="Sonido">Sound</span></button>
+<div class="snddock"><button class="sndbtn" id="sndBtn" type="button" aria-pressed="false" aria-label="Sound" data-es-aria-label="Sonido"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path class="w" d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/><path class="x" d="m16 9.5 5 5M21 9.5l-5 5"/></svg><span id="sndTxt" data-es="Sonido">Sound</span></button>
+<button class="sndbtn" id="musBtn" type="button" aria-pressed="false" aria-label="Music" data-es-aria-label="Música"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg><span data-es="Música">Music</span></button>
+<button class="sndbtn mini" id="beatBtn" type="button" hidden aria-label="Next beat" data-es-aria-label="Siguiente beat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h3l2-6 4 12 2-6h5"/></svg><span id="beatTxt">Lab Chill</span></button>
+</div>
 <script type="module" src="lab.js"></script>
 <script>
 (() => {
