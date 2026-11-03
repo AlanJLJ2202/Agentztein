@@ -54,7 +54,7 @@ export const T = {
   loading: { en: "Loading…", es: "Cargando…" },
   signOut: { en: "Sign out", es: "Salir" },
   tabs: {
-    overview: { en: "Overview", es: "Resumen" },
+    overview: { en: "Home", es: "Inicio" },
     brain: { en: "Brain", es: "Cerebro" },
     radar: { en: "Research radar", es: "Radar de investigación" },
     agent: { en: "Agent", es: "Agente" },
