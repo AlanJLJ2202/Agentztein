@@ -3,6 +3,7 @@
    skill to see it. Also renders the still pictures used on the page. */
 import * as THREE from "three";
 import { renderRoomStill } from "./room.js";
+import { drawFeedHeader } from "./sources.js";
 import {
   SKILLS, C, makeAgent, pose, setArms, makeCoil, makeBolt, makeChip, makePaper, makeBadge, makeBench,
   setupRenderer, addLights, makeFloor, paintScreen, makeMetaLogo, windowPanel, rr,
@@ -108,17 +109,14 @@ export function renderStill(canvas, which, size = 900) {
       scene.add(paper, watch);
       look(0, 2.1, 8.4, 0, 1.6, 0);
     } else if (which === "step1") {
-      // researches: reads the week's AI news on Hacker News and sorts each idea
+      // researches: reads the week's most discussed AI news and sorts each idea
       u.look.set(-0.85, 0.2);
       awake(agent, "think");
       setArms(agent, -1.25, 0.2, 0.15, 0);
       paintScreen(u.screenTex, "pulse", 0.6);
       const heads = ["Tree search for agents", "New open model tops a board", "Prompt tricks that 10x it all", "Sandboxes for terminal agents"];
       const news = windowPanel(1.3, 1.4, false, (c, W) => {
-        c.fillStyle = "#ff6600"; c.fillRect(0, 50, W, 64);
-        c.fillStyle = "#ffffff"; c.fillRect(22, 62, 40, 40);
-        c.fillStyle = "#ff6600"; c.font = "800 34px Figtree, Arial"; c.fillText("Y", 31, 95);
-        c.fillStyle = "#ffffff"; c.font = "800 30px Figtree, Arial"; c.fillText("Hacker News", 78, 93);
+        drawFeedHeader(c, { y: 50, w: W, h: 64, family: "Figtree, Arial" });
         heads.forEach((h, i) => {
           const y = 150 + i * 92;
           c.fillStyle = "#f6f6ef"; rr(c, 18, y, W - 36, 76, 12); c.fill();

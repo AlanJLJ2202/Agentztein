@@ -3,6 +3,8 @@
    Motion: CSS classes defined in index.html (paused by prefers-reduced-motion) and a few SMIL animations
    that details.js freezes on their final frame when motion is reduced. */
 
+import { sourcesSvg } from "./sources.js";
+
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const INK = "#1c2b33", MUTED = "#4b5f6d", OK = "#18794e", OKBG = "#ddf3e6", BAD = "#c42d12", BADBG = "#fde6e1", AMBER = "#c98a00", AMBERBG = "#ffefcf", VIOLET = "#6d5ce8";
 
@@ -94,9 +96,9 @@ function researchDesk(L) {
     ["Sandboxes for terminal agents", L("Experiment", "Experimentar"), VIOLET, "#efeaff"],
   ];
   let body = `<g transform="translate(30 60)"><rect width="370" height="250" rx="14" fill="#fff" stroke="#e1e7ed" stroke-width="2"/>
-    <rect width="370" height="40" rx="14" fill="#ff6600"/><rect y="26" width="370" height="14" fill="#ff6600"/>
-    <rect x="12" y="9" width="22" height="22" rx="3" fill="#fff"/>${t(23, 26, "Y", { size: 15, weight: 800, fill: "#ff6600", anchor: "middle" })}
-    ${t(44, 26, "Hacker News", { size: 15, weight: 800, fill: "#fff" })}
+    <line x1="2" x2="368" y1="40" y2="40" stroke="#e6ebf0" stroke-width="2"/>
+    ${sourcesSvg(14, 11, 18, 7)}
+    ${t(96, 26, L("Trending in AI", "Lo más comentado en IA"), { size: 14, weight: 800 })}
     ${rows.map(([h, v, c, bg], i) => `<g transform="translate(12 ${54 + i * 48})">
       ${rect(0, 0, 346, 40, "#f6f6ef", { r: 8 })}${t(12, 25, `${i + 1}. ${h}`, { size: 12, weight: 700 })}
       <g transform="translate(262 6)"><g class="a-stamp"${d(0.6 + i * 0.7)}>${rect(0, 0, 78, 28, bg, { r: 14, stroke: c, sw: 1.5 })}${t(39, 19, v, { size: 10.5, weight: 800, fill: c, anchor: "middle" })}</g></g>
@@ -116,7 +118,7 @@ function researchDesk(L) {
   body += `<path class="a-flow" d="M402 120 C 440 120, 430 250, 470 268" fill="none" stroke="${VIOLET}" stroke-width="2.5" stroke-dasharray="6 6"/>`;
   body += chip(470, 252, L("→ to the lab", "→ al laboratorio"), VIOLET, { cls: "a-pop", delay: 3.4, fill: "#f6f3ff", w: 150 });
   return room(L("Research desk", "Mesa de investigación"), "#ff6600", body,
-    L("Research desk: a Hacker News page with four AI headlines, each stamped with a verdict (experiment, watch or skip). A balance weighs gain against cost, and the ideas worth an experiment go to the lab.", "Mesa de investigación: una página de Hacker News con cuatro titulares de IA, cada uno sellado con un veredicto (experimentar, vigilar o descartar). Una balanza pesa ganancia contra costo y las ideas que valen un experimento van al laboratorio."));
+    L("Research desk: a feed of four AI headlines from the tech community, each stamped with a verdict (experiment, watch or skip). A balance weighs gain against cost, and the ideas worth an experiment go to the lab.", "Mesa de investigación: un feed con cuatro titulares de IA de la comunidad tech, cada uno sellado con un veredicto (experimentar, vigilar o descartar). Una balanza pesa ganancia contra costo y las ideas que valen un experimento van al laboratorio."));
 }
 
 function failureLab(L) {

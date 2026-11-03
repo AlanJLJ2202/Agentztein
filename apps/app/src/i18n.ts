@@ -37,8 +37,8 @@ export const T = {
     es: "Crea tu cuenta, conéctale Muse Spark, el modelo de Meta, con tu propia llave y deja que lea a diario lo nuevo en IA.",
   },
   signInBullets: {
-    en: ["Your own Meta API key, encrypted on our server", "A research radar that reads Hacker News", "Every decision with its trade-off, saved for you"],
-    es: ["Tu propia llave de Meta, cifrada en nuestro servidor", "Un radar de investigación que lee Hacker News", "Cada decisión con su trade-off, guardada para ti"],
+    en: ["Your own Meta API key, encrypted on our server", "A research radar that reads the tech community", "Every decision with its trade-off, saved for you"],
+    es: ["Tu propia llave de Meta, cifrada en nuestro servidor", "Un radar de investigación que lee a la comunidad tech", "Cada decisión con su trade-off, guardada para ti"],
   },
   google: { en: "Continue with Google", es: "Continuar con Google" },
   signInFine: {
@@ -68,7 +68,7 @@ export const T = {
   steps: [
     { t: { en: "Account created", es: "Cuenta creada" }, d: { en: "Your notes and keys are yours only.", es: "Tus notas y llaves son solo tuyas." } },
     { t: { en: "Connect its brain", es: "Conéctale el cerebro" }, d: { en: "Add your Meta Model API key: Muse Spark does the thinking.", es: "Agrega tu llave de la Meta Model API: Muse Spark es quien piensa." } },
-    { t: { en: "Run the research radar", es: "Corre el radar de investigación" }, d: { en: "It reads Hacker News and decides what deserves an experiment.", es: "Lee Hacker News y decide qué merece un experimento." } },
+    { t: { en: "Run the research radar", es: "Corre el radar de investigación" }, d: { en: "It reads what the tech community discusses and decides what deserves an experiment.", es: "Lee lo que comenta la comunidad tech y decide qué merece un experimento." } },
     { t: { en: "Let it improve itself", es: "Deja que se mejore solo" }, d: { en: "It takes a real exam, writes itself a skill and asks for your approval.", es: "Presenta un examen real, se escribe una skill y te pide aprobación." } },
     { t: { en: "Buy AI credits", es: "Compra créditos de IA" }, d: { en: "Phase 2: use Agentztein without your own key.", es: "Fase 2: usa Agentztein sin tu propia llave." } },
   ],
@@ -109,15 +109,15 @@ export const T = {
   creditsLead: { en: "Buy credits and use Agentztein without your own key. Coming in phase 2.", es: "Compra créditos y usa Agentztein sin tu propia llave. Llega en la fase 2." },
   radarTitle: { en: "Research radar", es: "Radar de investigación" },
   radarLead: {
-    en: "Agentztein reads the most discussed AI stories on Hacker News this week. With your model it decides which deserve an experiment, which to watch and which to skip, and writes down the trade-off. Nothing is adopted without passing the lab.",
-    es: "Agentztein lee las historias de IA más comentadas de la semana en Hacker News. Con tu modelo decide cuáles merecen un experimento, cuáles vigilar y cuáles descartar, y anota el trade-off. Nada se adopta sin pasar por el laboratorio.",
+    en: "Agentztein reads the AI stories the tech community discussed most this week. With your model it decides which deserve an experiment, which to watch and which to skip, and writes down the trade-off. Nothing is adopted without passing the lab.",
+    es: "Agentztein lee las historias de IA que más comentó la comunidad tech esta semana. Con tu modelo decide cuáles merecen un experimento, cuáles vigilar y cuáles descartar, y anota el trade-off. Nada se adopta sin pasar por el laboratorio.",
   },
   triage: { en: "Triage with my model", es: "Clasificar con mi modelo" },
   triaging: { en: "Reading and deciding…", es: "Leyendo y decidiendo…" },
   needKey: { en: "Connect a key first to let it decide.", es: "Conecta una llave primero para que pueda decidir." },
-  liveTitle: { en: "On Hacker News this week", es: "En Hacker News esta semana" },
+  liveTitle: { en: "Most discussed this week", es: "Lo más comentado esta semana" },
   liveNote: { en: "Tags are a keyword guess from the headline, not the agent's verdict.", es: "Las etiquetas son una suposición por palabras del titular, no el veredicto del agente." },
-  liveError: { en: "Hacker News didn't answer. Try again in a moment.", es: "Hacker News no respondió. Intenta en un momento." },
+  liveError: { en: "The feed didn't answer. Try again in a moment.", es: "El feed no respondió. Intenta en un momento." },
   notesTitle: { en: "What it decided", es: "Lo que decidió" },
   notesEmpty: { en: "No decisions yet. Run the radar to see the first ones.", es: "Aún no hay decisiones. Corre el radar para ver las primeras." },
   all: { en: "All", es: "Todo" },
@@ -129,9 +129,8 @@ export const T = {
   gain: { en: "Gain", es: "Ganancia" },
   cost: { en: "Cost", es: "Costo" },
   why: { en: "Why", es: "Por qué" },
-  discussion: { en: "discussion", es: "discusión" },
   comments: { en: "comments", es: "comentarios" },
-  points: { en: "points", es: "puntos" },
+  points: { en: "votes", es: "votos" },
   judgedBy: { en: "Judged from the headline by", es: "Juzgado por el titular con" },
   read: { en: "stories read", es: "historias leídas" },
   auth: {
@@ -197,5 +196,6 @@ export const T = {
     auth: { en: "The database rejected the user or password in DATABASE_URL. With the pooler the user is postgres.<project-ref>.", es: "La base rechazó el usuario o la contraseña de DATABASE_URL. Con el pooler el usuario es postgres.<ref-del-proyecto>." },
     schema: { en: "The database has no app tables: run GitHub → Actions → db-migrate against the same database Vercel uses.", es: "La base no tiene las tablas de la app: corre GitHub → Actions → db-migrate contra la misma base que usa Vercel." },
   },
-  hnNote: { en: "Not affiliated with Y Combinator or Hacker News.", es: "Sin afiliación con Y Combinator ni con Hacker News." },
+  sourcesKicker: { en: "Tech community", es: "Comunidad tech" },
+  sourcesNote: { en: "Logos belong to their owners; no affiliation.", es: "Los logos son de sus dueños; sin afiliación." },
 } as const;

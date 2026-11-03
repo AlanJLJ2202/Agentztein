@@ -10,7 +10,7 @@ const E = (en: string, es: string): Text => ({ en, es });
 
 type ToolId = "radar" | "planner" | "exam" | "skills" | "harness" | "human" | "voice";
 const TOOLS: { id: ToolId; x: number; y: number; name: Text; does: Text; icon: string; color: string }[] = [
-  { id: "radar", x: 11, y: 26, name: E("Hacker News radar", "Radar de Hacker News"), does: E("reads what's new in AI", "lee lo nuevo en IA"), icon: "Y", color: "#ff6600" },
+  { id: "radar", x: 11, y: 26, name: E("AI news radar", "Radar de noticias de IA"), does: E("reads what's new in AI", "lee lo nuevo en IA"), icon: "📡", color: "#ff6600" },
   { id: "voice", x: 30, y: 12, name: E("Muse Voice", "Voz de Muse"), does: E("hears your guidance", "escucha tu guía"), icon: "🎙", color: "#3ccf6e" },
   { id: "planner", x: 50, y: 9, name: E("Planner (Muse Wonder)", "Planificador (Muse Wonder)"), does: E("writes the new skill", "escribe la habilidad nueva"), icon: "✎", color: "#6d5ce8" },
   { id: "exam", x: 70, y: 12, name: E("Exam runner (Muse Spark)", "Ejecutor de exámenes (Muse Spark)"), does: E("takes the exam", "presenta el examen"), icon: "✓", color: "#0081fb" },
@@ -48,7 +48,7 @@ function realBeats(job: Job): Beat[] {
 
 /** An illustrated cycle, clearly labeled as such. */
 const DEMO: Beat[] = [
-  { tool: "radar", say: E("Reading Hacker News for ideas.", "Leyendo Hacker News para buscar ideas."), log: E("Radar: “tree search” → experiment", "Radar: «búsqueda en árbol» → experimentar") },
+  { tool: "radar", say: E("Reading what the community discusses, for ideas.", "Leyendo lo que comenta la comunidad, para buscar ideas."), log: E("Radar: “tree search” → experiment", "Radar: «búsqueda en árbol» → experimentar") },
   { tool: "voice", say: E("You told me: focus on card payments.", "Me dijiste: enfócate en pagos con tarjeta."), log: E("Muse Voice: guidance transcribed", "Voz de Muse: guía transcrita") },
   { tool: "exam", say: E("Taking the exam: 26 of 40 right.", "Presentando el examen: 26 de 40 bien."), log: E("Exam runner: baseline 26/40", "Ejecutor de exámenes: línea base 26/40") },
   { tool: "planner", say: E("Writing a skill for the card-payment mistakes.", "Escribiendo una habilidad para los errores de pagos con tarjeta."), log: E("Planner: skill v2 written", "Planificador: habilidad v2 escrita") },

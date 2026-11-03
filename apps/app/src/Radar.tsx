@@ -1,10 +1,10 @@
-// The research radar: what Hacker News is discussing this week, and what Agentztein decided about it.
+// The research radar: what the tech community is discussing this week, and what Agentztein decided about it.
 import { CAPABILITIES, EFFORTS, familyOf, fetchAiStories, type Story } from "@skillab/research";
 import { useEffect, useState } from "react";
 import { ApiError, type Api, type Budget, type Note, type SavedKey, type Verdict } from "./api.js";
 import type { Tab } from "./App.js";
 import { T, useT, type Lang } from "./i18n.js";
-import { HnMark } from "./Logos.js";
+import { SourceMarks } from "./Logos.js";
 
 type Props = { client: Api; keys: SavedKey[] | null; onKeys: (k: SavedKey[]) => void; onNotes: (n: number) => void; go: (t: Tab) => void; lang: Lang };
 type Cap = keyof typeof CAPABILITIES;
@@ -83,7 +83,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
     <section>
       <div className="radar-head">
         <div>
-          <p className="kicker"><HnMark size={20} /> Hacker News</p>
+          <p className="kicker"><SourceMarks size={20} /> {t(T.sourcesKicker)}</p>
           <h1 className="h1">{t(T.radarTitle)}</h1>
           <p className="lead">{t(T.radarLead)}</p>
         </div>
@@ -152,7 +152,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
                     <span className={`verdict ${n.verdict}`}>{t(T.verdict[n.verdict])}</span>
                     <CapChip cap={n.capability} lang={lang} />
                   </div>
-                  <h3><a href={n.url ?? n.discussionUrl ?? "#"} target="_blank" rel="noreferrer">{n.title}</a></h3>
+                  <h3>{n.url ? <a href={n.url} target="_blank" rel="noreferrer">{n.title}</a> : n.title}</h3>
                   <dl>
                     {n.gain && <div><dt>{t(T.gain)}</dt><dd>{n.gain}</dd></div>}
                     {n.cost && <div><dt>{t(T.cost)}</dt><dd>{n.cost}</dd></div>}
@@ -170,7 +170,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
                     )
                   )}
                   <p className="meta">
-                    {n.points ?? 0} {t(T.points)} · {n.discussionUrl && <a href={n.discussionUrl} target="_blank" rel="noreferrer">{t(T.discussion)}</a>} · {t(T.judgedBy)} {n.model} · {ago(n.assessedAt, lang)}
+                    {n.points ?? 0} {t(T.points)} · {t(T.judgedBy)} {n.model} · {ago(n.assessedAt, lang)}
                   </p>
                 </li>
               ))}
@@ -186,17 +186,17 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
             <p className="muted">{t(T.loading)}</p>
           ) : (
             <ol className="stories">
-              {stories.map((s) => (
+              {stories.filter((s) => s.url).map((s) => (
                 <li key={s.id}>
-                  <a href={s.url ?? s.hnUrl} target="_blank" rel="noreferrer">{s.title}</a>
+                  <a href={s.url ?? undefined} target="_blank" rel="noreferrer">{s.title}</a>
                   <p className="meta">
-                    <CapChip cap={s.hint} lang={lang} /> {s.points} {t(T.points)} · <a href={s.hnUrl} target="_blank" rel="noreferrer">{s.comments} {t(T.comments)}</a> · {ago(s.postedAt, lang)}
+                    <CapChip cap={s.hint} lang={lang} /> {s.points} {t(T.points)} · {s.comments} {t(T.comments)} · {ago(s.postedAt, lang)}
                   </p>
                 </li>
               ))}
             </ol>
           )}
-          <p className="fine">{t(T.liveNote)} {t(T.hnNote)}</p>
+          <p className="fine">{t(T.liveNote)} {t(T.sourcesNote)}</p>
         </aside>
       </div>
     </section>

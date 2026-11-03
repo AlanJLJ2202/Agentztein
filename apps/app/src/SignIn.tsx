@@ -6,7 +6,7 @@ import type { Config } from "./api.js";
 import { LangSwitch } from "./App.js";
 import { GoogleButton } from "./GoogleButton.js";
 import { T, useT, type Lang } from "./i18n.js";
-import { Check, HnMark } from "./Logos.js";
+import { Check, SourceMarks } from "./Logos.js";
 
 type Mode = "signin" | "signup" | "verify" | "forgot" | "reset";
 const A = T.auth;
@@ -146,7 +146,7 @@ export function SignIn({ supabase, google: gconf, lang, setLang }: { supabase: S
               <p className="lead">{t(T.signInLead)}</p>
               <ul className="checks">
                 {T.signInBullets[lang].map((b, i) => (
-                  <li key={b}>{i === 1 ? <HnMark size={18} /> : <span className="tick" aria-hidden="true"><Check size={11} /></span>}{b}</li>
+                  <li key={b}>{i === 1 ? <SourceMarks size={16} /> : <span className="tick" aria-hidden="true"><Check size={11} /></span>}{b}</li>
                 ))}
               </ul>
               <GoogleButton

@@ -5,6 +5,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { canvasTex, rr, FONT, tr } from "./agent.js";
+import { drawFeedHeader } from "./sources.js";
 
 const hex = (n) => "#" + n.toString(16).padStart(6, "0");
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -382,16 +383,15 @@ DRESS.web = (g, { color, ceil, updates }) => {
 };
 
 DRESS.research = (g, { color, ceil, updates }) => {
-  // a Hacker News front page on the left wall, in its own orange
-  const rows = ["Agents that improve themselves, safely", "Show HN: a tiny lab for AI benchmarks", "Why sealed exams beat leaderboards", "METR: the doubling time of task length", "A gentle intro to rubric grading"];
-  const hn = screen(2.3, 1.45, 640, (c, W, H) => {
+  // the radar's feed on the left wall: what the communities it follows are discussing
+  const rows = ["Agents that improve themselves, safely", "A tiny lab for AI benchmarks", "Why sealed exams beat leaderboards", "METR: the doubling time of task length", "A gentle intro to rubric grading"];
+  const feed = screen(2.3, 1.45, 640, (c, W, H) => {
     c.fillStyle = "#f6f6ef"; c.fillRect(0, 0, W, H);
-    c.fillStyle = "#ff6600"; c.fillRect(0, 0, W, 70);
-    c.fillStyle = "#fff"; c.fillRect(16, 14, 42, 42); c.fillStyle = "#ff6600"; c.font = `800 34px ${FONT}`; c.textAlign = "center"; c.fillText("Y", 37, 48);
-    c.textAlign = "left"; c.fillStyle = "#1c2b33"; c.font = `800 30px ${FONT}`; c.fillText("Hacker News", 74, 46);
+    drawFeedHeader(c, { w: W, h: 70, family: FONT });
+    c.textAlign = "left";
     rows.forEach((r, i) => { c.fillStyle = "#828282"; c.font = `600 22px ${FONT}`; c.fillText(`${i + 1}.`, 18, 118 + i * 62); c.fillStyle = "#1c2b33"; c.font = `700 25px ${FONT}`; c.fillText(r, 52, 116 + i * 62); c.fillStyle = "#828282"; c.font = `500 18px ${FONT}`; c.fillText(`${312 - i * 41} points · ${64 - i * 9} comments`, 52, 140 + i * 62); });
   }, { x: -2.86, y: 1.55, z: 1.9, ry: Math.PI / 2, frame: 0xff6600 });
-  g.add(hn); hn.userData.redraw(0);
+  g.add(feed); feed.userData.redraw(0);
   // a microscope and a rack of flasks with bubbling liquid
   const ms = new THREE.Group(); ms.position.set(-2.2, 0, 3.0); g.add(ms);
   ms.add(at(box(0.9, 0.7, 0.6, 0xffffff), 0, 0.35, 0));

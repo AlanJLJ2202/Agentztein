@@ -77,8 +77,8 @@ if (cyc) {
   document.addEventListener("visibilitychange", schedule);
   document.addEventListener("lang:change", label);
   new IntersectionObserver(([e]) => { inView = e.isIntersecting; schedule(); }, { threshold: 0.35 }).observe(cyc);
-  // the hero badge ("watches Hacker News") lands on the research phase
-  document.querySelector(".hn-pill")?.addEventListener("click", () => show(1));
+  // the hero badge (the sources it watches) lands on the research phase
+  document.querySelector(".src-pill")?.addEventListener("click", () => show(1));
   label();
   show(0);
 }

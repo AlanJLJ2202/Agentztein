@@ -46,6 +46,7 @@ code { font: 500 .875em/1 ui-monospace, SFMono-Regular, Menlo, monospace; backgr
 .h2 { font-size: 1.75rem; font-weight: 700; }
 .h3 { font-size: 1.25rem; font-weight: 700; }
 .lead { margin-top: 12px; max-width: 46em; color: var(--muted); font-size: clamp(1.0625rem, 1rem + .3vw, 1.25rem); line-height: 1.5; }
+.source-marks { display: inline-flex; align-items: center; gap: 5px; flex: none; }
 .kicker { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--hn); margin-bottom: 10px; }
 
 /* Buttons and controls */
