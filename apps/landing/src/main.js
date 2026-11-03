@@ -23,7 +23,6 @@ let hero3d = null;
 document.addEventListener("lang:change", (e) => {
   setLanguage(e.detail);
   sound.setLanguage(e.detail);
-  cardKey = "";
   paintMusic();
   if (hero3d) hero3d.relabel();
   if (room) { room.relabel(); renderGuide(lastGuide); viewLabel(); }
@@ -83,30 +82,7 @@ function viewLabel() {
   if (fsTxt) fsTxt.textContent = tr(document.fullscreenElement ? UI.exitFull : UI.full);
 }
 
-/* The guide card IS the popup: it sits on the exhibit you are near (or looking at), big, with the keys that work there.
-   With nothing to point at, it rests in the corner and explains the room. */
-const guideCard = $("#card");
 const stageEl = $(".stage");
-const phone = matchMedia("(max-width: 760px)");
-let cardKey = "", cardW = 0, cardH = 0;
-function labAnchor(a) {
-  if (!guideCard || phone.matches) { guideCard?.classList.remove("anchored"); return; }
-  if (!a) { cardKey = ""; guideCard.classList.remove("anchored", "below"); guideCard.style.transform = ""; return; }
-  const key = `${a.room}:${a.item}`;
-  if (key !== cardKey || !guideCard.classList.contains("anchored")) {
-    cardKey = key;
-    renderGuide({ room: a.room, item: a.item });
-    guideCard.classList.add("anchored");
-    cardW = guideCard.offsetWidth; cardH = guideCard.offsetHeight;
-  }
-  const W = stageEl.clientWidth, H = stageEl.clientHeight;
-  const left = Math.min(Math.max(12, a.x - cardW / 2), W - cardW - 12);
-  let top = a.y - cardH - 20, below = false;
-  if (top < 64) { top = Math.min(a.y + 24, H - cardH - 12); below = true; }
-  guideCard.classList.toggle("below", below);
-  guideCard.style.setProperty("--ax", `${Math.min(Math.max(22, a.x - left), cardW - 22)}px`);
-  guideCard.style.transform = `translate(${left}px, ${Math.max(10, top)}px)`;
-}
 
 /* A small caption over the room's agent while it works: what it is doing right now. */
 let workEl = null;
@@ -134,7 +110,6 @@ function startRoom() {
       onGuide: renderGuide,
       onView: (fp) => { $(".stage").classList.toggle("fp", fp); viewLabel(); },
       onRun: () => document.dispatchEvent(new CustomEvent("room:run")),
-      onAnchor: labAnchor,
       onWorker: workCaption,
       onTour: (id) => { if (tourOn) sound.narrate(`tour-${id}`); },
     });

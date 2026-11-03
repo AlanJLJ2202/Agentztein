@@ -41,7 +41,7 @@ export function buildWorkshop(g, H) {
     const LINES = [["$ ls", "#e6edf3"], ["tests/  src/  Makefile", "#9fb3c2"], ["$ make test", "#e6edf3"], ["FAILED  3 of 12", "#ff9b87"], ["$ patch -p1 < fix.diff", "#e6edf3"], ["PASS  12 of 12", "#7ee2a8"]];
     let d;
     const draw = (c, W, Hh, n) => { c.fillStyle = "#0f1d26"; c.fillRect(0, 0, W, Hh); font(c, 600, 24, true); LINES.slice(0, Math.max(1, n)).forEach(([s, col], i) => { c.fillStyle = col; c.fillText(s, 24, 50 + i * 40); }); c.fillStyle = "#e6edf3"; c.fillRect(24 + Math.min(1, n) * 0, 50 + Math.max(1, n) * 40 - 24, 14, 28); };
-    station("terminal", -5.15, -0.95, Math.PI / 2, 0x2ec4b6, { en: "Terminal", es: "Terminal" }, (grp) => {
+    station("terminal", -5.15, -1.6, Math.PI / 2, 0x2ec4b6, { en: "Terminal", es: "Terminal" }, (grp) => {
       d = desk(grp, draw, 0x2ec4b6); d.state.s = 1; d.paint(1);
       return { hits: d.hits, act: () => { sound.sfx("chirps"); for (let i = 1; i <= LINES.length; i++) anim(0.01, () => { d.state.s = i; d.paint(i); }, i * 0.5); } };
     }, { stand: 1.7 });
@@ -54,7 +54,7 @@ export function buildWorkshop(g, H) {
       font(c, 600, 22, true); code.forEach(([s, col], i) => { if (i === 2 && n) { c.fillStyle = "rgba(60,207,110,.18)"; c.fillRect(0, 56 + i * 44, W, 40); } c.fillStyle = col; c.fillText(s, 24, 86 + i * 44); });
       font(c, 700, 20); c.fillStyle = n ? "#7ee2a8" : "#ff9b87"; c.fillText(n ? tr({ en: "✓ tests pass", es: "✓ las pruebas pasan" }) : tr({ en: "✗ 3 tests fail", es: "✗ 3 pruebas fallan" }), 24, 290);
     };
-    station("editor", -5.15, 0.95, Math.PI / 2, 0x5b9bff, { en: "Code editor", es: "Editor de código" }, (grp) => {
+    station("editor", -5.15, 1.6, Math.PI / 2, 0x5b9bff, { en: "Code editor", es: "Editor de código" }, (grp) => {
       const d = desk(grp, draw, 0x5b9bff);
       return { hits: d.hits, act: () => { sound.sfx("chirps"); d.state.s = 0; d.paint(0); anim(0.01, () => { sound.sfx("interact"); d.state.s = 1; d.paint(1); }, 1.4); } };
     }, { stand: 1.7 });
@@ -67,7 +67,7 @@ export function buildWorkshop(g, H) {
       for (let i = 0; i < 4; i++) { const hi = n && i === 1; c.fillStyle = hi ? "#e3f7ea" : "#f6f8fa"; rr(c, 20, 66 + i * 58, W - 40, 48, 10); c.fill(); c.fillStyle = hi ? "#18794e" : "#1c2b33"; font(c, 700, 20); c.fillText(["Workshop proceedings", "Paper: three authors, 1987", "Archive index", "Forum thread"][i], 36, 98 + i * 58); }
       if (n) { c.fillStyle = "#3ccf6e"; c.beginPath(); c.arc(W - 50, 124, 14, 0, 7); c.fill(); }
     };
-    station("browser", 5.15, -0.95, -Math.PI / 2, 0x3ccf6e, { en: "Web browser", es: "Navegador web" }, (grp) => {
+    station("browser", 5.15, -1.6, -Math.PI / 2, 0x3ccf6e, { en: "Web browser", es: "Navegador web" }, (grp) => {
       const d = desk(grp, draw, 0x3ccf6e);
       return { hits: d.hits, act: () => { sound.sfx("chirps"); d.state.s = 0; d.paint(0); anim(0.01, () => { sound.sfx("pickup"); d.state.s = 1; d.paint(1); }, 1.3); } };
     }, { stand: 1.7 });
@@ -75,7 +75,7 @@ export function buildWorkshop(g, H) {
   // 4. Hacker News radar: a dish that sweeps and a front page
   {
     let dish, rows;
-    station("radar", 5.15, 0.95, -Math.PI / 2, 0xff6600, { en: "Hacker News radar", es: "Radar de Hacker News" }, (grp) => {
+    station("radar", 5.15, 1.6, -Math.PI / 2, 0xff6600, { en: "Hacker News radar", es: "Radar de Hacker News" }, (grp) => {
       grp.add(place(box(1.5, 0.8, 0.65, 0xffffff), 0, 0.4, 0));
       const board = plane(1.4, 0.9, 512, (c, W, Hh) => {
         c.fillStyle = "#f6f6ef"; c.fillRect(0, 0, W, Hh); c.fillStyle = "#ff6600"; c.fillRect(0, 0, W, 60); c.fillStyle = "#fff"; c.fillRect(14, 12, 36, 36); c.fillStyle = "#ff6600"; font(c, 800, 30); c.fillText("Y", 23, 42);
@@ -93,7 +93,7 @@ export function buildWorkshop(g, H) {
     }, { stand: 1.7 });
   }
   // south row: five benches facing north
-  const Z = 4.3, face = Math.PI;
+  const Z = -4.2, face = 0; // the bench row stands against the back wall, facing the door
   // 5. Exam runner: three tubes that go from red to green
   {
     let tubes, ok;

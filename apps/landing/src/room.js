@@ -39,9 +39,10 @@ export const LAYOUT = [
   { id: "web", center: [3, -10], rot: 0, door: [3, -6], normal: [0, -1] },
   { id: "research", center: [10, -3], rot: -Math.PI / 2, door: [6, -3], normal: [1, 0] },
   { id: "horizon", center: [10, 3], rot: -Math.PI / 2, door: [6, 3], normal: [1, 0] },
+  { id: "taller", center: [0, 11], rot: Math.PI, door: [0, 6], normal: [0, 1], half: [6, 5] }, // the workshop, south of the reception
 ].map((r) => {
   if (r.rect) return r;
-  const side = Math.abs(r.normal[0]) ? [4, 3] : [3, 4]; // half extents in x, z
+  const side = r.half ?? (Math.abs(r.normal[0]) ? [4, 3] : [3, 4]); // half extents in x, z
   return { ...r, rect: [r.center[0] - side[0], r.center[1] - side[1], r.center[0] + side[0], r.center[1] + side[1]] };
 });
 const BYID = Object.fromEntries(LAYOUT.map((r) => [r.id, r]));
@@ -50,7 +51,7 @@ export const STATIONS = LAYOUT.map((r) => ({ id: r.id, name: ROOMS[r.id].bench ?
 // walls as segments [x1, z1, x2, z2], with gaps for the doors
 const WALLS = [
   [-6, -6, -6, -4], [-6, -2, -6, 2], [-6, 4, -6, 6], [6, -6, 6, -4], [6, -2, 6, 2], [6, 4, 6, 6],
-  [-6, -6, -4, -6], [-2, -6, 2, -6], [4, -6, 6, -6], [-6, 6, 6, 6],
+  [-6, -6, -4, -6], [-2, -6, 2, -6], [4, -6, 6, -6], [-6, 6, -1, 6], [1, 6, 6, 6], [-6, 6, -6, 16], [6, 6, 6, 16], [-6, 16, 6, 16],
   [-14, -6, -14, 6], [-14, -6, -6, -6], [-14, 6, -6, 6], [-14, 0, -6, 0],
   [-6, -14, 6, -14], [-6, -14, -6, -6], [6, -14, 6, -6], [0, -14, 0, -6],
   [14, -6, 14, 6], [6, -6, 14, -6], [6, 6, 14, 6], [6, 0, 14, 0],
@@ -116,8 +117,8 @@ export function buildRoom(scene) {
     f.receiveShadow = true;
     root.add(f);
   });
-  const floorHit = new THREE.Mesh(new THREE.PlaneGeometry(30, 22), new THREE.MeshBasicMaterial({ visible: false }));
-  floorHit.rotation.x = -Math.PI / 2; floorHit.position.set(0, 0.01, -4);
+  const floorHit = new THREE.Mesh(new THREE.PlaneGeometry(30, 34), new THREE.MeshBasicMaterial({ visible: false }));
+  floorHit.rotation.x = -Math.PI / 2; floorHit.position.set(0, 0.01, 2);
   root.add(floorHit);
 
   // walls (they shrink to a cutaway in third person)
@@ -166,7 +167,7 @@ export function buildRoom(scene) {
     else { g.position.set(r.center[0], 0, r.center[1]); g.rotation.y = r.rot; }
     root.add(g);
     const built = THEMES[r.id](g, { relabels, room: ROOMS[r.id], extra });
-    if (r.id !== "cuna") addPod(g, r.id, built, relabels, extra);
+    if (r.id !== "cuna" && r.id !== "taller") addPod(g, r.id, built, relabels, extra);
     g.updateMatrixWorld(true);
     built.exhibits.forEach((ex) => {
       const world = g.localToWorld(new THREE.Vector3(ex.at[0], 0, ex.at[1]));
@@ -240,7 +241,7 @@ function plaque(g, x, z, n, title, color, relabels, face = 0) {
 }
 
 /* A mural on the back wall of a room: its name, the benchmark and the one-line idea. */
-function mural(g, room, draw) {
+function mural(g, room, draw, z = -3.86) {
   const m = plane(5.4, 1.4, 1300, (gg, W, Hh) => {
     gg.fillStyle = "#ffffff"; rr(gg, 0, 0, W, Hh, 40); gg.fill();
     gg.fillStyle = hex(room.color); rr(gg, 0, 0, 24, Hh, 12); gg.fill();
@@ -249,7 +250,7 @@ function mural(g, room, draw) {
     gg.fillStyle = "#1c2b33"; gg.font = `800 64px ${FONT}`; gg.fillText(tr(room.name), 60, 150);
     gg.fillStyle = "#4b5f6d"; gg.font = `500 32px ${FONT}`; wrapText(gg, tr(room.intro), 60, 205, W - 380, 40);
   }, { transparent: true });
-  m.position.set(0, 2.2, -3.86);
+  m.position.set(0, 2.2, z);
   g.add(m);
   return () => m.material.map.userData.redraw();
 }
@@ -278,6 +279,7 @@ T.cuna = (g, { relabels, room, extra }) => {
   const coils = [-1, 1].map((k) => { const c = makeCoil(k * 1.7); c.position.z = -0.2; cradle.add(c); return c; });
   cradle.add(plat, ring);
   extra.coils = coils; extra.cradle = cradle;
+  extra.effort = () => LEVELS[lit];
   const logo = makeMetaLogo(2.4); logo.scale.setScalar(0.8); logo.position.set(0, 3.5, -5.6); g.add(logo);
   // the brain's kiosk, with the effort levels
   const LEVELS = ["minimal", "low", "medium", "high", "xhigh"];
@@ -311,7 +313,7 @@ T.cuna = (g, { relabels, room, extra }) => {
   const map = plane(1.9, 1.4, 760, (c, W, Hh) => {
     c.fillStyle = "#ffffff"; rr(c, 0, 0, W, Hh, 26); c.fill();
     c.fillStyle = "#1c2b33"; c.font = `800 34px ${FONT}`; c.fillText(tr({ en: "The lab", es: "El laboratorio" }), 26, 50);
-    const sx = (x) => 30 + ((x + 14) / 28) * (W - 60), sz = (z) => 74 + ((z + 14) / 20) * (Hh - 100);
+    const sx = (x) => 30 + ((x + 14) / 28) * (W - 60), sz = (z) => 74 + ((z + 14) / 30) * (Hh - 100);
     LAYOUT.forEach((r) => {
       const [x1, z1, x2, z2] = r.rect;
       c.fillStyle = r.id === "cuna" ? "#e9f2ff" : hex(ROOMS[r.id].color) + "55";
@@ -327,21 +329,13 @@ T.cuna = (g, { relabels, room, extra }) => {
   plaque(g, 0, -2.6, 1, room.items.coils.title, room.color, relabels);
   plaque(g, -2.7, 2.0, 2, room.items.brain.title, room.color, relabels, 0.55);
   plaque(g, 2.7, 2.0, 3, room.items.map.title, room.color, relabels, -0.55);
-  // the tools and the engine (anatomy) that fill the hall
-  const ws = buildWorkshop(g, {
-    THREE, box, glossy, std, plane, sign, anim, canvasTex, rr, FONT, tr, makeChip, SKILLS, sound, relabels,
-    getInstalled: () => extra.installed?.() ?? new Set(),
-    getEffort: () => LEVELS[lit],
-  });
   const hit = (w, h, d, parent, y = h / 2) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ visible: false })); m.position.y = y; parent.add(m); return m; };
   return {
     exhibits: [
       { key: "coils", at: [0, -4.3], stand: [0, -2.4], hits: [hit(4, 2.6, 1.4, cradle)], act: () => extra.zap?.() },
       { key: "brain", at: [-3.6, 2.4], stand: [-2.6, 1.4], solid: 0.5, hits: [hit(2, 2.5, 0.6, kiosk)], act: () => { for (let i = 0; i < 6; i++) anim(0.01, () => { lit = (lit + 1) % LEVELS.length; drawBrain(); }, i * 0.45); extra.think?.(); } },
       { key: "map", at: [3.6, 2.4], stand: [2.6, 1.4], solid: 0.5, hits: [hit(2, 2.5, 0.6, mapG)], act: () => extra.lightDoors?.() },
-      ...ws.exhibits,
     ],
-    update: ws.update,
   };
 };
 
@@ -639,6 +633,15 @@ T.horizon = (g, { relabels, room }) => {
     ],
   };
 };
+T.taller = (g, { relabels, room, extra }) => {
+  const m = mural(g, room, null, -4.86);
+  const ws = buildWorkshop(g, {
+    THREE, box, glossy, std, plane, sign, anim, canvasTex, rr, FONT, tr, makeChip, SKILLS, sound, relabels,
+    getInstalled: () => extra.installed?.() ?? new Set(),
+    getEffort: () => extra.effort?.() ?? "medium",
+  });
+  return { mural: m, exhibits: ws.exhibits, update: ws.update };
+};
 const THEMES = T;
 
 /* ================================================================================================== */
@@ -652,7 +655,7 @@ const THEMES = T;
 export function createRoom(canvas, { reduced = false, minimap = null, onArrive = () => {}, onSay = () => {}, onFrame = () => {}, onFlash = () => {}, onMove = () => {}, onGuide = () => {}, onView = () => {}, onRun = () => {}, onAnchor = () => {}, onWorker = () => {}, onTour = () => {} } = {}) {
   const renderer = setupRenderer(canvas);
   const scene = new THREE.Scene();
-  addLights(scene, renderer, { extent: 16, mapSize: 2048 });
+  addLights(scene, renderer, { extent: 22, mapSize: 2048 });
   const camera = new THREE.PerspectiveCamera(40, 1, 0.08, 120);
   const B = buildRoom(scene);
   const { walls, floorHit, doors, exhibits, updates, obstacles, extra } = B;
@@ -660,7 +663,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   const agent = makeAgent({ legs: true });
   agent.scale.setScalar(SCALE);
   agent.rotation.order = "YXZ";
-  agent.position.set(0, HOVER_Y, 2.4);
+  agent.position.set(0, HOVER_Y, 0.4);
   agent.rotation.y = Math.PI;
   scene.add(agent);
   const u = agent.userData;
@@ -716,7 +719,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
         if (d < m && d > 1e-6) { p.x = ox + (dx / d) * m; p.z = oz + (dz / d) * m; }
       }
     }
-    p.x = THREE.MathUtils.clamp(p.x, -13.5, 13.5); p.z = THREE.MathUtils.clamp(p.z, -13.5, 5.5);
+    p.x = THREE.MathUtils.clamp(p.x, -13.5, 13.5); p.z = THREE.MathUtils.clamp(p.z, -13.5, 15.5);
     return p;
   }
   function route(to) {
@@ -760,7 +763,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   function updateGuide() {
     focus = (fp ? aimed() : null) ?? nearest();
     // reaching a room's main exhibit (the engine in the workshop) once per visit: the page may narrate it
-    const mainKey = focus ? (focus.room === "cuna" ? "engine" : mainOf(focus.room)?.key) : null;
+    const mainKey = focus ? (focus.room === "taller" ? "engine" : mainOf(focus.room)?.key) : null;
     if (focus && focus.key === mainKey && !toured.has(focus.room)) { toured.add(focus.room); onTour(focus.room); }
     const key = focus ? focus.id : currentRoom;
     if (key === guideKey) return;
@@ -1017,7 +1020,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     if (!mm) return;
     const W = minimap.width, Hh = minimap.height;
     mm.clearRect(0, 0, W, Hh);
-    const sx = (x) => 6 + ((x + 14) / 28) * (W - 12), sz = (z) => 6 + ((z + 14) / 20) * (Hh - 12);
+    const sx = (x) => 6 + ((x + 14) / 28) * (W - 12), sz = (z) => 6 + ((z + 14) / 30) * (Hh - 12);
     LAYOUT.forEach((r) => {
       const [x1, z1, x2, z2] = r.rect;
       mm.fillStyle = r.id === currentRoom ? hex(ROOMS[r.id].color) : r.id === "cuna" ? "#e9f2ff" : hex(ROOMS[r.id].color) + "44";
@@ -1260,7 +1263,7 @@ export function renderRoomStill(renderer, scene, camera) {
   paintScreen(agent.userData.screenTex, "pulse", 0.5);
   scene.add(agent);
   camera.fov = 40;
-  camera.position.set(0, 21, 14);
-  camera.lookAt(0, 0, -4.2);
+  camera.position.set(0, 25, 18);
+  camera.lookAt(0, 0, 0);
   camera.updateMatrixWorld();
 }

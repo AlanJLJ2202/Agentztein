@@ -87,6 +87,13 @@ function plant(x, z, scale = 1) {
   g.position.set(x, 0, z); g.scale.setScalar(scale);
   return g;
 }
+function bench(x, z, ry, color) {
+  const g = new THREE.Group();
+  g.add(at(box(1.5, 0.12, 0.44, 0xffffff), 0, 0.42, 0));
+  [-0.62, 0.62].forEach((lx) => g.add(at(box(0.1, 0.4, 0.38, color), lx, 0.2, 0)));
+  g.position.set(x, 0, z); g.rotation.y = ry;
+  return g;
+}
 function shelf(books) {
   const g = new THREE.Group();
   g.add(at(box(2.0, 1.9, 0.4, 0xf1e6d6), 0, 0.95, 0));
@@ -238,6 +245,13 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 /* ---------- one dresser per room ---------- */
 const DRESS = {};
 
+DRESS.taller = (g, { color, ceil }) => {
+  // the workshop is a working room: warm light, plants in the corners and lamps overhead
+  [[-5.3, 4.3], [5.3, 4.3], [-5.3, -4.3], [5.3, -4.3]].forEach(([x, z]) => g.add(plant(x, z, 1.3)));
+  g.add(poolAt(color, 3.2, 0.25, 0, 0.4));
+  [[-3, -1], [3, -1], [-3, 2.5], [3, 2.5]].forEach(([x, z]) => { const p = pendant(0xffd27a, 2.4); p.position.set(x, 0, z); ceil.add(p); });
+};
+
 DRESS.cuna = (g, { color, ceil, updates }) => {
   const blue = 0x4aa8ff;
   // the floor emblem and the holo rings that wake up around the cradle
@@ -248,7 +262,8 @@ DRESS.cuna = (g, { color, ceil, updates }) => {
   beam.position.set(0, 1.45, -4.3); g.add(beam);
   const logoHalo = halo(blue, 5.2, 0.35); logoHalo.position.set(0, 3.5, -5.5); g.add(logoHalo);
   // benches and plants
-  [[-5.3, 5.3], [5.3, 5.3], [-5.3, -5.3], [5.3, -5.3], [-1.9, -5.3], [1.9, -5.3]].forEach(([x, z], i) => g.add(plant(x, z, i < 4 ? 1.4 : 1.1)));
+  g.add(bench(-4.6, 4.8, 0, color), bench(4.6, 4.8, 0, color));
+  [[-5.2, 5.2], [5.2, 5.2], [-5.3, -0.2], [5.3, -0.2], [-1.9, -5.3], [1.9, -5.3]].forEach(([x, z], i) => g.add(plant(x, z, i < 4 ? 1.4 : 1.1)));
   // the dashboards on the south wall: bars, a line and the harness status
   const dash = (x, title, kind) => screen(1.9, 1.1, 512, (c, W, H, t) => {
     c.fillStyle = "#0f1d26"; c.fillRect(0, 0, W, H);
@@ -259,8 +274,9 @@ DRESS.cuna = (g, { color, ceil, updates }) => {
   }, { x, y: 1.9, z: 5.86, ry: Math.PI });
   [dash(-3.2, "SKILLS / WEEK", "bars"), dash(0, "SCORE", "line"), dash(3.2, "HARNESS", "status")].forEach((s) => { g.add(s); updates.push(s.userData.tick); });
   // east and west walls: tall light panels
+  [-5.86].forEach((x) => [-1.0, 0, 1.0].forEach((z, i) => g.add(at(slab(0.05, 1.6 + (i === 1 ? 0.5 : 0), 0.1, lit(blue, 1.2)), x, 1.5, z))));
   // an aquarium on the east wall, with fish
-  const aq = aquarium(); aq.g.position.set(-5.5, 0, -4.95); aq.g.rotation.y = Math.PI / 2; aq.g.scale.setScalar(0.8); g.add(aq.g); updates.push(aq.update);
+  const aq = aquarium(); aq.g.position.set(5.5, 0, 0); aq.g.rotation.y = -Math.PI / 2; g.add(aq.g); updates.push(aq.update);
   // the ceiling you see from inside
   [[-3, 0], [3, 0], [0, 3], [0, -3]].forEach(([x, z]) => { const p = pendant(0xdff0ff, 2.5); p.position.set(x, 0, z); ceil.add(p); });
   updates.push((t) => { rings.forEach((r, i) => { r.rotation.x = t * (0.6 + i * 0.25) + i; r.rotation.y = t * (0.4 - i * 0.2); r.position.y = [0.7, 1.35, 2.0][i] + Math.sin(t * 1.4 + i) * 0.06; }); beam.material.opacity = 0.08 + Math.sin(t * 2) * 0.03; });
@@ -434,7 +450,7 @@ export function decorate(id, g, room) {
   const updates = [];
   const ceil = new THREE.Group();
   const cuna = id === "cuna";
-  const hx = cuna ? 6 : 3, hz = cuna ? 6 : 4;
+  const [hx, hz] = cuna ? [6, 6] : id === "taller" ? [6, 5] : [3, 4];
   const gaps = cuna
     ? { n: [[-4.15, -1.85], [1.85, 4.15]], s: [], w: [[-4.15, -1.85], [1.85, 4.15]], e: [[-4.15, -1.85], [1.85, 4.15]] }
     : { n: [], s: [[-1.2, 1.2]], w: [], e: [] };
@@ -443,7 +459,7 @@ export function decorate(id, g, room) {
   DRESS[id](g, parts);
   // light shared by every room: dust in the air and two wall sconces by the door
   if (!cuna) {
-    [-1.7, 1.7].forEach((x) => { const sc = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), lit(room.color, 1.3)); sc.position.set(x, 2.1, 3.86); g.add(sc); const h = halo(room.color, 1.1, 0.45); h.position.copy(sc.position); g.add(h); });
+    [-1.7, 1.7].forEach((x) => { const sc = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), lit(room.color, 1.3)); sc.position.set(x, 2.1, hz - 0.14); g.add(sc); const h = halo(room.color, 1.1, 0.45); h.position.copy(sc.position); g.add(h); });
   }
   updates.push(dust(g, room.color, cuna ? 70 : 38, [hx - 0.3, hz - 0.3]));
   // company: a drone that patrols the room, a floor robot (in the big hall) and a couple of paintings
@@ -454,7 +470,7 @@ export function decorate(id, g, room) {
     const rb = roomba(room.color); g.add(rb);
     updates.push((t) => { const a = t * 0.18, x = Math.cos(a) * 4.2, z = Math.sin(a * 1.3) * 3.4 + 0.8; rb.position.set(x, 0, z); rb.rotation.y = Math.atan2(-Math.sin(a) * 4.2, Math.cos(a * 1.3) * 3.4 * 1.3); rb.userData.led.material.emissiveIntensity = 0.5 + (Math.sin(t * 4) > 0 ? 1 : 0); });
   } else {
-    [-2.25, 2.25].forEach((x, i) => { const f = frameArt(room.color, ph * 7 + i * 5); f.position.set(x, 1.45, 3.86); f.rotation.y = Math.PI; g.add(f); });
+    [-2.25, 2.25].forEach((x, i) => { const f = frameArt(room.color, ph * 7 + i * 5); f.position.set(x, 1.45, hz - 0.14); f.rotation.y = Math.PI; g.add(f); });
   }
   const dark = ceil.userData.dark;
   const c = ceiling(hx * 2, hz * 2, room.color, { dark });

@@ -419,17 +419,11 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .workcap { position: absolute; left: 0; top: 0; z-index: 3; padding: 8px 14px; border-radius: 999px; background: var(--ink); color: #fff; font-size: .875rem; font-weight: 700; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .25s var(--ease); box-shadow: 0 8px 24px rgba(10, 22, 32, .25); will-change: transform; }
 .workcap.on { opacity: 1; }
 .workcap::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: #3ccf6e; animation: ping 1.4s ease-out infinite; }
-.card.anchored { right: auto; bottom: auto; left: 0; top: 0; width: min(440px, calc(100% - 24px)); padding: 22px 26px 22px; will-change: transform; box-shadow: 0 18px 50px rgba(10, 22, 32, .28); }
-.card.anchored .who-name { font-size: 1.5rem; }
-.card.anchored dd { font-size: 1.125rem; }
-.card.anchored::after { content: ""; position: absolute; left: var(--ax, 50%); bottom: -7px; width: 16px; height: 16px; margin-left: -8px; background: #fff; transform: rotate(45deg); border-radius: 3px; }
-.card.anchored.below::after { bottom: auto; top: -7px; }
 .card .keys { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--soft-2); color: var(--muted); font-size: .8125rem; font-weight: 600; }
 .card .keys span { display: inline-flex; align-items: center; gap: 4px; }
 .card .keys i { font-style: normal; }
 .card .keys kbd { background: var(--soft); color: var(--ink); border: 1px solid var(--soft-2); padding: 3px 6px; border-radius: 6px; font: 700 .75rem/1 ui-monospace, monospace; }
-@media (max-width: 760px) { .card { position: absolute; left: 12px; right: 12px; bottom: 12px; width: auto; margin: 0; padding: 14px 16px; } .card.anchored { left: 12px; right: 12px; top: auto; bottom: 12px; transform: none !important; width: auto; } .card.anchored::after { display: none; } .card .keys, .card dl { display: none; } }
-
+@media (max-width: 760px) { .card { position: static; width: auto; margin-top: 12px; box-shadow: none; background: var(--soft); } .card .keys { display: none; } }
 .terms { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 0 30px; }
 .term { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 6px 16px 6px 8px; border-radius: 999px; background: #fff; border: 1px solid var(--soft-2); cursor: help; font-size: .9375rem; transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s; }
 .term:hover, .term:focus-visible, .term[aria-expanded="true"] { transform: translateY(-2px); border-color: var(--c); box-shadow: 0 8px 22px color-mix(in srgb, var(--c) 22%, transparent); }
@@ -1048,10 +1042,11 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
           <ol id="exLog" aria-live="polite"></ol>
           <p class="ex-end" id="exEnd"></p>
         </section>
+      </div>
       <div class="card" id="card" aria-live="polite">
         <p class="who-name"><span class="dot" id="cDot"></span><span id="cName" data-es="Su laboratorio">Its lab</span></p>
         <dl>
-          <div><dt id="cL1" data-es="Qué es">What it is</dt><dd id="cA" data-es="Siete estaciones: la cuna donde despierta y una por cada benchmark de frontera que quiere superar.">Seven stations: the cradle where it wakes up and one for each frontier benchmark it wants to beat.</dd></div>
+          <div><dt id="cL1" data-es="Qué es">What it is</dt><dd id="cA" data-es="Ocho estaciones: la cuna donde despierta, una por cada benchmark de frontera que quiere superar y el taller central con todas sus herramientas.">Eight stations: the cradle where it wakes up, one for each frontier benchmark it wants to beat, and the central workshop with all its tools.</dd></div>
           <div><dt id="cL2" data-es="Cómo se usa">How to use it</dt><dd id="cB" data-es="Elige una estación y Agentztein va hacia ella para mostrarte qué mide.">Pick a station and Agentztein goes there to show you what it measures.</dd></div>
         </dl>
         <div class="card-acts">
@@ -1062,7 +1057,6 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         </div>
         <p class="keys" aria-hidden="true"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <i data-es="mover">move</i></span><span><kbd>Shift</kbd> <i data-es="correr">run</i></span><span><kbd>Space</kbd> <i data-es="jetpack">jetpack</i></span><span><kbd>V</kbd> <i data-es="vista">view</i></span></p>
       </div>
-      </div>
     </div>
     <div class="picker" role="group" aria-label="Send Agentztein to a station" data-es-aria-label="Enviar a Agentztein a una estación">
       <button class="pick" aria-pressed="false" data-id="cuna" style="--c:#0081fb"><i></i><span data-es="La cuna">The cradle</span></button>
@@ -1072,6 +1066,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
       <button class="pick" aria-pressed="false" data-id="web" style="--c:#3ccf6e"><i></i>BrowseComp</button>
       <button class="pick" aria-pressed="false" data-id="research" style="--c:#ff6600"><i></i><span data-es="MLE-bench y PaperBench">MLE-bench &amp; PaperBench</span></button>
       <button class="pick" aria-pressed="false" data-id="horizon" style="--c:#8a7dff"><i></i><span data-es="Horizonte de METR">METR time horizon</span></button>
+      <button class="pick" aria-pressed="false" data-id="taller" style="--c:#f2b01e"><i></i><span data-es="Taller central">Central workshop</span></button>
     </div>
     <p class="note" data-es="Aún no hay resultados de Agentztein en estos benchmarks: son la meta. Cuando los haya, se publicarán todos, también los malos.">There are no Agentztein results on these benchmarks yet: they are the goal. When there are, all of them will be published, including the bad ones.</p>
     <div class="bl-head">
@@ -1480,6 +1475,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     web: { c: "#3ccf6e", name: "BrowseComp", a: { en: "Whether it finds very hard-to-find information by browsing the web.", es: "Si encuentra información muy difícil de hallar navegando la web." }, b: { en: "Web.", es: "Web." } },
     research: { c: "#ff6600", name: { en: "MLE-bench & PaperBench", es: "MLE-bench y PaperBench" }, a: { en: "Whether it does AI research: solving machine learning competitions and replicating scientific papers.", es: "Si hace investigación de IA: resolver competencias de machine learning y replicar artículos científicos." }, b: { en: "Research.", es: "Investigación." } },
     horizon: { c: "#8a7dff", name: { en: "METR time horizon", es: "Horizonte de METR" }, a: { en: "How many hours of expert work it completes on its own. For the best models it has doubled every few months.", es: "Cuántas horas de trabajo experto completa solo. En los mejores modelos se ha duplicado cada pocos meses." }, b: { en: "Autonomy.", es: "Autonomía." } },
+    taller: { c: "#f2b01e", name: { en: "The central workshop", es: "El taller central" }, a: { en: "Every tool the agent can reach for, and its anatomy like an engine: one cylinder per skill it really has installed.", es: "Todas las herramientas que tiene a su alcance y su anatomía como un motor: un cilindro por cada habilidad que de verdad tiene instalada." }, b: { en: "Tools.", es: "Herramientas." } },
   };
   const MEASURES = { en: "What it measures", es: "Qué mide" }, TRAINS = { en: "Skill it trains", es: "Habilidad que entrena" };
   const picks = [...document.querySelectorAll(".pick")];
