@@ -22,6 +22,9 @@
     },
     "api/evolve.js": {
       "maxDuration": 120
+    },
+    "api/evolve-ci.js": {
+      "maxDuration": 30
     }
   },
   "headers": [

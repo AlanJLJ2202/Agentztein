@@ -20,8 +20,9 @@ El objetivo es un protocolo reproducible y un reporte honesto, incluido el caso 
 
 ## Qué NO es
 - No reentrena pesos ni hace fine-tuning: el modelo es fijo.
-- No modifica arbitrariamente el código del agente: solo `packages/agent-core`, y cada cambio pasa por un juez que lo
-  examina con registros nuevos y lo fusiona únicamente si mejora sin romper nada (ADR-026, [`docs/EVOLVE.md`](docs/EVOLVE.md)).
+- No modifica arbitrariamente el código del agente: cada usuario tiene su propia copia de `packages/agent-core`, y
+  cada cambio pasa por un juez que la examina con registros nuevos y la adopta solo si mejora sin romper nada
+  (ADR-026, [`docs/EVOLVE.md`](docs/EVOLVE.md)).
 - No detecta drift automáticamente: los cambios de reglas son explícitos.
 - No usa datos reales, bancarios ni personales: los escenarios son sintéticos. Mejorar en ellos no demuestra
   que funcione en un negocio real.
@@ -67,9 +68,9 @@ Todo se opera desde el navegador (ADR-015):
 4. **Vercel:** importa el repo; `vercel.json` ya indica cómo construir el sitio (`pnpm build:site`): la landing
    (`apps/landing`) en `/` y el panel (`apps/panel`) en `/panel/`. Producción sale de `main`; cada rama tiene su URL de *preview*.
 5. Cada push corre `ci` (lint, typecheck, verificación de datasets y tests con Postgres efímero).
-6. **Auto-cambio de código (opcional):** secretos `META_API_KEY` y `AGENT_GH_TOKEN` en el repo, y `AGENT_GH_TOKEN`,
-   `AGENT_GH_REPO` y `EVOLVE_ADMINS` en Vercel. Los workflows `evolve` y `agent-gate` hacen el resto; los pasos
-   están en [`docs/EVOLVE.md`](docs/EVOLVE.md).
+6. **Auto-cambio de código (opcional):** cada usuario lo usa con su propia llave de Meta. El servidor necesita
+   `AGENT_GH_TOKEN`, `AGENT_GH_REPO` y `EVOLVE_CI_SECRET` en Vercel, y el mismo `EVOLVE_CI_SECRET` como secreto del
+   repo; migración `0008`. Los pasos están en [`docs/EVOLVE.md`](docs/EVOLVE.md).
 
 ### Login (Google o correo con código) y llave de Meta (`/app/`, ADR-019 y ADR-020)
 

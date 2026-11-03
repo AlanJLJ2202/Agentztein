@@ -4,11 +4,14 @@ Este paquete es **la parte del agente que el propio agente puede reescribir**. L
 el banco de pruebas, el calificador, el arnés, los workflows) es el anfitrión y el juez, y el agente no lo toca
 (ver `docs/EVOLVE.md` y ADR-026).
 
+Este paquete es el núcleo de la plataforma (v0). Cada usuario tiene su propia línea de versiones de él, guardada en
+la app, y la que tiene activa es la que presenta sus exámenes, siempre en un proceso aislado (`api/_lib/sandbox.js`).
+
 Lo usan dos anfitriones:
 
 - La app (`/api/agent`), cada vez que el ejecutor presenta un examen en un ciclo de mejora.
-- El juez del PR (`scripts/evolve/bench.ts` en el workflow `agent-gate`), que compara la versión de `main`
-  contra la del PR en un examen nuevo, generado con una semilla secreta que nadie ve.
+- El juez (`scripts/evolve/bench.ts`, en el workflow `evolve` y en `agent-gate`), que compara la versión actual
+  contra la nueva en un examen nuevo, generado con una semilla aleatoria que nadie ve.
 
 ## El contrato
 
@@ -39,5 +42,6 @@ export const STRATEGY      // una o dos frases sobre cómo resuelve hoy
 
 ## Cómo se acepta un cambio
 
-El PR se fusiona solo si: toca únicamente este paquete, pasa `pnpm check`, el examen nuevo sube al menos
-2 aciertos en total y ningún escenario baja más de 1. Si toca cualquier otra cosa, espera a una persona.
+Una versión nueva queda activa para su usuario solo si cumple las reglas, sus pruebas pasan y el examen nuevo sube
+al menos 2 aciertos (o el 2%) en total sin que ningún escenario baje más de lo permitido. Lo decide el servidor con
+`api/_lib/core-rules.js`.

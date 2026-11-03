@@ -26,7 +26,8 @@
     "evolve:bench": "tsx scripts/evolve/bench.ts",
     "evolve:gate": "tsx scripts/evolve/gate.ts",
     "evolve:workshop": "tsx scripts/evolve/workshop.ts",
-    "evolve:forja": "tsx scripts/evolve/forja.ts"
+    "evolve:forja": "tsx scripts/evolve/forja.ts",
+    "evolve:ci": "tsx scripts/evolve/ci.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

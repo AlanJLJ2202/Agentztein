@@ -88,7 +88,7 @@ describe("the verdict", () => {
     const noGain = { ...improves, pass: false, reason: "no-gain" as const, gain: 1 };
     expect(decide({ files: ["README.md"], problems: [], verdict: null, agentPr: true }).decision).toBe("skip");
     expect(decide({ files: core, problems: ["src/index.js: uses fetch"], verdict: improves, agentPr: true }).decision).toBe("reject");
-    expect(decide({ files: core, problems: [], verdict: null, agentPr: true }).decision).toBe("reject");
+    expect(decide({ files: core, problems: [], verdict: null, agentPr: true }).decision).toBe("human");
     expect(decide({ files: core, problems: [], verdict: { ...improves, pass: false, reason: "regression" }, agentPr: true }).decision).toBe("reject");
     expect(decide({ files: core, problems: [], verdict: improves, agentPr: true }).decision).toBe("merge");
     expect(decide({ files: [...core, "api/agent.js"], problems: [], verdict: improves, agentPr: true }).decision).toBe("human");

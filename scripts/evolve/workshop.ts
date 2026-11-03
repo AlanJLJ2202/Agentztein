@@ -1,9 +1,8 @@
 // The workshop: a separate folder where the builder (Muse Code, or Forja as fallback) works on a copy of the
 // agent's core. It holds only what the builder needs: the core, the practice set with its answers, the latest
 // practice mistakes, a brief and a script to try the core. The exams the judge uses, the scorer and the rest of
-// the repo are not there. Only the core comes back.
-//   pnpm evolve:workshop prepare --out <dir> [--idea idea.md] [--practice practice.json]
-//   pnpm evolve:workshop apply --from <dir>
+// the repo are not there. Only the core (agent-core/) and CHANGES.md come back to the app.
+//   pnpm evolve:workshop prepare --out <dir> [--core <the user's current core>] [--idea idea.md] [--practice practice.json]
 import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -71,9 +70,9 @@ esta carpeta se descarta, y fuera de ella no hay nada que te sirva.
 
 ## Objetivo
 
-Que \`agent-core\` etiquete mejor registros de negocio que **nunca ha visto**. El juez del PR genera un examen
-nuevo con una semilla aleatoria (4 escenarios, unas ${o.examSize} filas, perfil *held-out*), corre la versión de
-\`main\` y la tuya en workers sin llaves, y solo fusiona tu cambio si sube al menos ${minGain(o.examSize)} aciertos en
+Que \`agent-core\` etiquete mejor registros de negocio que **nunca ha visto**. Al terminar, el juez genera un examen
+nuevo con una semilla aleatoria (4 escenarios, unas ${o.examSize} filas, perfil *held-out*), corre la versión actual
+y la tuya en procesos aislados sin llaves, y solo adopta tu cambio si sube al menos ${minGain(o.examSize)} aciertos en
 total y ningún escenario baja. Memorizar registros no sirve: el examen no existe todavía.
 
 ## La hipótesis de esta corrida
@@ -161,11 +160,13 @@ for (const t of tasks) {
 console.log("TOTAL " + correct + "/" + total);
 `;
 
-export function prepare(o: { out: string; idea: string; practice: BenchResult | null; model: string }) {
+/** `core` is the user's current core (their active version, or the platform's packages/agent-core). */
+export function prepare(o: { out: string; idea: string; practice: BenchResult | null; model: string; core?: string }) {
+  const from = o.core ?? join(ROOT, CORE_DIR);
   rmSync(o.out, { recursive: true, force: true });
   mkdirSync(join(o.out, "tools"), { recursive: true });
-  copyCore(join(ROOT, CORE_DIR), join(o.out, "agent-core"));
-  const src = readFileSync(join(ROOT, CORE_DIR, "src/index.js"), "utf8");
+  copyCore(from, join(o.out, "agent-core"));
+  const src = readFileSync(join(from, "src/index.js"), "utf8");
   const coreVersion = /CORE_VERSION\s*=\s*"([^"]+)"/.exec(src)?.[1] ?? "?";
   const strategy = /STRATEGY\s*=\s*\n?\s*"([^"]+)"/.exec(src)?.[1] ?? "—";
   writeFileSync(join(o.out, "practice.json"), JSON.stringify(practiceTasks()));
@@ -177,33 +178,17 @@ export function prepare(o: { out: string; idea: string; practice: BenchResult | 
   writeFileSync(join(o.out, "AGENTS.md"), "Lee BRIEF.md: ahí está tu tarea, tus reglas y cómo probar. Solo se conserva agent-core/ y CHANGES.md.\n");
 }
 
-/** Puts the workshop's core back into the repo (replacing packages/agent-core). Returns the files it wrote. */
-export function apply(from: string): string[] {
-  const src = join(from, "agent-core");
-  if (!existsSync(join(src, "src/index.js"))) throw new Error("The workshop has no agent-core/src/index.js");
-  const dest = join(ROOT, CORE_DIR);
-  rmSync(join(dest, "src"), { recursive: true, force: true });
-  rmSync(join(dest, "test"), { recursive: true, force: true });
-  return copyCore(src, dest);
-}
-
 function main() {
   const a = args();
   if (a._ === "prepare") {
     if (!a.out) throw new Error("--out <dir>");
     const practice = a.practice && existsSync(a.practice) ? (JSON.parse(readFileSync(a.practice, "utf8")) as BenchResult) : null;
     const idea = a.idea && existsSync(a.idea) ? readFileSync(a.idea, "utf8") : "";
-    prepare({ out: resolve(a.out), idea, practice, model: a.model ?? practice?.model ?? process.env.META_MODEL ?? "muse-spark-1.1" });
+    prepare({ out: resolve(a.out), idea, practice, model: a.model ?? practice?.model ?? process.env.META_MODEL ?? "muse-spark-1.1", ...(a.core ? { core: resolve(a.core) } : {}) });
     console.log(`workshop ready in ${a.out}`);
     return;
   }
-  if (a._ === "apply") {
-    if (!a.from) throw new Error("--from <dir>");
-    const files = apply(resolve(a.from));
-    console.log(`applied ${files.length} files to ${CORE_DIR}`);
-    return;
-  }
-  throw new Error("usage: workshop.ts prepare|apply …");
+  throw new Error("usage: workshop.ts prepare --out <dir> [--core <dir>] [--idea idea.md] [--practice practice.json]");
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) main();

@@ -1,11 +1,11 @@
-# agent-gate: judges every PR that changes the agent's own code (packages/agent-core) and merges the ones that
-# earn it. The rules, the exam and the scorer always come from main (the base of the PR), never from the PR.
+# agent-gate: judges every PR that changes the platform's core (packages/agent-core, the v0 every new user starts
+# from). Users' own versions don't go through PRs: they live in the app's database (evolve.yml, docs/EVOLVE.md).
+# The rules, the exam and the scorer always come from main (the base of the PR), never from the PR.
 #
 #   check   pnpm check on the PR, like ci (no secrets)
 #   judge   paths + static scan of the PR's core + a fresh exam (new random seed) for main's core and the PR's,
-#           each in a worker without keys → comment on the PR with the table and the decision
-#   merge   only if judge says "merge" (opened by evolve, only the core, improves, breaks nothing) and check passed;
-#           then tags the merge as agent-vN
+#           each in a sandboxed process without keys → comment on the PR with the table and the decision.
+#           Needs the repo secret META_API_KEY to examine; without it a person reviews. A person merges.
 name: agent-gate
 
 on:
@@ -102,7 +102,7 @@ jobs:
         run: |
           clean=$(node -e 'console.log(require(process.argv[1]).problems.length===0)' "$RUNNER_TEMP/scan.json")
           if [ "$clean" != "true" ]; then echo "The scan failed: no exam."; exit 0; fi
-          test -n "$META_API_KEY" || { echo "::error::Secret META_API_KEY is missing (docs/EVOLVE.md)"; exit 1; }
+          if [ -z "$META_API_KEY" ]; then echo "::notice::No META_API_KEY secret: the gate can't examine this PR, a person reviews it"; exit 0; fi
           seed=$(od -An -N4 -tu4 /dev/urandom | tr -d ' ')
           pnpm evolve:bench --core packages/agent-core --set fresh --seed "$seed" --out "$RUNNER_TEMP/base.json" &
           pnpm evolve:bench --core "$RUNNER_TEMP/head/packages/agent-core" --set fresh --seed "$seed" --out "$RUNNER_TEMP/head.json" &
@@ -141,23 +141,3 @@ jobs:
             ${{ runner.temp }}/*.json
             ${{ runner.temp }}/report.md
           if-no-files-found: ignore
-
-  merge:
-    needs: [check, judge]
-    if: needs.judge.outputs.decision == 'merge'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Merge and tag agent-vN
-        env:
-          GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
-          REPO: ${{ github.repository }}
-          PR: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          test -n "$GH_TOKEN" || { echo "::error::Secret AGENT_GH_TOKEN is missing (docs/EVOLVE.md)"; exit 1; }
-          gh pr merge "$PR" --repo "$REPO" --squash --delete-branch --match-head-commit "$HEAD_SHA"
-          sha=$(gh pr view "$PR" --repo "$REPO" --json mergeCommit --jq .mergeCommit.oid)
-          n=$(gh api "repos/$REPO/git/matching-refs/tags/agent-v" --jq '[.[].ref | sub("refs/tags/agent-v"; "") | tonumber? ] | max // 0')
-          next=$((n + 1))
-          gh api "repos/$REPO/git/refs" -f ref="refs/tags/agent-v$next" -f sha="$sha" > /dev/null
-          gh pr comment "$PR" --repo "$REPO" --body "Fusionado por el gate como \`agent-v$next\`."

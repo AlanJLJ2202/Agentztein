@@ -1,52 +1,51 @@
-# evolve: Agentztein changes its own code with Meta's models.
+# evolve: one user's Agentztein changes its own code, with that user's own Meta key.
 #
-#   issue labeled "evolve" (opened by the app: Muse Wonder's hypothesis, or yours)
-#   · or Actions → evolve → Run workflow
-#   · or daily, if the repo variable EVOLVE_SCHEDULE is "on"
-#     → build:   measures the current core on the practice set, prepares a workshop with only the core, and
-#                Muse Code (`muse exec`) changes it; Forja (Muse with function calling) takes over if Muse Code
-#                can't run. The job has the Meta key and nothing that can write to GitHub.
-#     → publish: a fresh runner applies the patch (only packages/agent-core), checks it against the rules from
-#                main and opens the PR with AGENT_GH_TOKEN. The PR goes to agent-gate, which judges and merges.
+# The app starts it (workflow_dispatch from /api/evolve) with a run id, the run's one-time token and the app's URL.
+#   1. asks the app for the run (/api/evolve-ci): the user's key (masked), models, spending cap, hypothesis and
+#      their current core (their active version, or the platform's packages/agent-core)
+#   2. measures that core on the practice set and prepares a workshop with only the core
+#   3. Muse Code (`muse exec`) changes it, as an unprivileged user that can't read the repo or the runner's files;
+#      Forja (Muse + function calling) takes over if Muse Code can't run
+#   4. the judge gives the current core and the new one a fresh exam (random seed, held-out profile), each in a
+#      sandboxed child process without the key, and sends everything back: the app re-checks the code and the
+#      verdict and, if it passes, makes it the user's active core
 #
-# Setup: docs/EVOLVE.md.
+# Setup: docs/EVOLVE.md (the only repo secret is EVOLVE_CI_SECRET).
 name: evolve
+run-name: "evolve · run ${{ inputs.run_id }}"
 
 on:
-  issues:
-    types: [labeled]
   workflow_dispatch:
     inputs:
-      idea:
-        description: "Qué debería intentar (opcional)"
-        required: false
-      builder:
-        description: "Quién programa"
-        type: choice
-        options: [muse-code, forja]
-        default: muse-code
-  schedule:
-    - cron: "41 16 * * *"
+      run_id:
+        description: "Run id (from the app)"
+        required: true
+      token:
+        description: "The run's one-time token (from the app)"
+        required: true
+      app_url:
+        description: "The app's URL (https)"
+        required: true
 
 concurrency:
-  group: evolve
+  group: evolve-${{ inputs.run_id }}
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  build:
-    if: >-
-      (github.event_name == 'issues' && github.event.label.name == 'evolve' && github.event.issue.state == 'open') ||
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && vars.EVOLVE_SCHEDULE == 'on')
+  evolve:
     runs-on: ubuntu-latest
-    timeout-minutes: 70
-    outputs:
-      changed: ${{ steps.patch.outputs.changed }}
-      builder: ${{ steps.who.outputs.builder }}
+    timeout-minutes: 75
+    env:
+      EVOLVE_RUN_ID: ${{ inputs.run_id }}
+      EVOLVE_RUN_TOKEN: ${{ inputs.token }}
+      EVOLVE_APP_URL: ${{ inputs.app_url }}
+      RUN: ${{ github.workspace }}/../_evolve
     steps:
+      - name: Hide the run token
+        run: echo "::add-mask::$EVOLVE_RUN_TOKEN"
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -57,47 +56,45 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      - name: The idea for this run
+      - name: Get the run from the app (the user's key stays in a file only the runner can read)
+        id: run
         env:
-          ISSUE_TITLE: ${{ github.event.issue.title }}
-          ISSUE_BODY: ${{ github.event.issue.body }}
-          INPUT_IDEA: ${{ inputs.idea }}
+          EVOLVE_CI_SECRET: ${{ secrets.EVOLVE_CI_SECRET }}
         run: |
-          {
-            if [ -n "$ISSUE_TITLE" ]; then printf '**%s**\n\n%s\n' "$ISSUE_TITLE" "$ISSUE_BODY"; else printf '%s\n' "$INPUT_IDEA"; fi
-          } > "$RUNNER_TEMP/idea.md"
-          cat "$RUNNER_TEMP/idea.md"
+          test -n "$EVOLVE_CI_SECRET" || { echo "::error::Secret EVOLVE_CI_SECRET is missing (docs/EVOLVE.md)"; exit 1; }
+          mkdir -p "$RUN" && chmod 700 "$RUN"
+          pnpm -s evolve:ci start --out "$RUN"
+          cat "$RUN/idea.md"
+
+      - name: Spending caps
+        id: caps
+        run: node -e 'const m=Number(process.argv[1])||1; console.log(`bench=${(m*0.15).toFixed(3)}\nforja=${(m*0.55).toFixed(3)}`)' "${{ steps.run.outputs.max_usd }}" >> "$GITHUB_OUTPUT"
 
       - name: Measure the current core on the practice set
         env:
-          META_API_KEY: ${{ secrets.META_API_KEY }}
-          META_MODEL: ${{ vars.META_MODEL }}
+          META_MODEL: ${{ steps.run.outputs.executor }}
         run: |
-          test -n "$META_API_KEY" || { echo "::error::Secret META_API_KEY is missing (docs/EVOLVE.md)"; exit 1; }
-          pnpm evolve:bench --core packages/agent-core --set practice --mistakes --out "$RUNNER_TEMP/practice.json"
+          META_API_KEY="$(cat "$RUN/key")" pnpm evolve:bench --core "$RUN/base-core" --set practice --mistakes --max-usd "${{ steps.caps.outputs.bench }}" --out "$RUN/practice.json"
 
       - name: Prepare the workshop (only the core goes in)
-        run: pnpm evolve:workshop prepare --out /tmp/workshop --idea "$RUNNER_TEMP/idea.md" --practice "$RUNNER_TEMP/practice.json"
+        run: |
+          pnpm -s evolve:ci stage --stage building
+          pnpm evolve:workshop prepare --out /tmp/workshop --core "$RUN/base-core" --idea "$RUN/idea.md" --practice "$RUN/practice.json" --model "${{ steps.run.outputs.executor }}"
+        env:
+          EVOLVE_CI_SECRET: ${{ secrets.EVOLVE_CI_SECRET }}
 
       - name: Lock the builder out of the repo
         run: |
-          # The builder (Muse Code, or the code Forja writes and tests) runs as "builder", a user without sudo
-          # that can read and write the workshop and nothing of the runner's home: not the repo, not the bench's
-          # answers, not the scenario generators, not the runner's files.
+          # The builder (Muse Code, or the code Forja writes and tests) runs as "builder": no sudo, it can read and
+          # write the workshop and nothing of the runner's home (not the repo, not the key file, not the CI secret).
           sudo useradd -m -s /bin/bash builder
           chmod 700 "$HOME"
           chmod -R a+rwX /tmp/workshop
           sudo -u builder test ! -r "$GITHUB_WORKSPACE/package.json" && echo "builder can't read the repo ✓"
 
-      - name: Who builds
-        id: who
-        env:
-          WANTED: ${{ inputs.builder || vars.EVOLVE_BUILDER || 'muse-code' }}
-        run: echo "builder=$WANTED" >> "$GITHUB_OUTPUT"
-
       - name: Install Muse Code (as builder)
         id: muse
-        if: steps.who.outputs.builder == 'muse-code'
+        if: steps.run.outputs.builder == 'muse-code'
         continue-on-error: true
         env:
           MUSE_INSTALL_URL: ${{ vars.MUSE_INSTALL_URL || 'https://dev.meta.ai/install.sh' }}
@@ -110,144 +107,69 @@ jobs:
           sudo -u builder -H env -i PATH="$(dirname "$(command -v node)"):/usr/local/bin:/usr/bin:/bin" HOME=/home/builder sh /tmp/muse-install.sh
           sudo -u builder -H env -i PATH="/home/builder/.local/bin:/usr/bin:/bin" HOME=/home/builder bash -c 'command -v muse && muse --version'
 
-      - name: Build with Muse Code (as builder)
+      - name: Build with Muse Code (as builder, with the user's key)
         id: musebuild
-        if: steps.who.outputs.builder == 'muse-code' && steps.muse.outcome == 'success'
+        if: steps.run.outputs.builder == 'muse-code' && steps.muse.outcome == 'success'
         continue-on-error: true
         env:
-          META_API_KEY: ${{ secrets.META_API_KEY }}
           MUSE_FLAGS: ${{ vars.MUSE_EXEC_FLAGS || '--yolo' }}
         run: |
           set -o pipefail
-          # The brief is the prompt. Muse Code gets the Meta key and the workshop; this job can't write to GitHub.
           sudo -u builder -H env -i PATH="/home/builder/.local/bin:$(dirname "$(command -v node)"):/usr/bin:/bin" HOME=/home/builder \
-            META_API_KEY="$META_API_KEY" MUSE_FLAGS="$MUSE_FLAGS" \
-            bash -c 'cd /tmp/workshop && timeout 45m muse exec $MUSE_FLAGS "$(cat BRIEF.md)"' 2>&1 | tee "$RUNNER_TEMP/muse.log"
+            META_API_KEY="$(cat "$RUN/key")" MUSE_FLAGS="$MUSE_FLAGS" \
+            bash -c 'cd /tmp/workshop && timeout 40m muse exec $MUSE_FLAGS "$(cat BRIEF.md)"' 2>&1 | tail -n 200
           # it counts only if it changed the core
-          if diff -rq /tmp/workshop/agent-core packages/agent-core -x node_modules > /dev/null; then echo "::warning::Muse Code didn't change the core"; exit 1; fi
+          if diff -rq /tmp/workshop/agent-core "$RUN/base-core" -x node_modules > /dev/null; then echo "::warning::Muse Code didn't change the core"; exit 1; fi
+          echo "muse-code" > "$RUN/builder.txt"
 
-      - name: Build with Forja (Muse + function calling)
-        if: steps.who.outputs.builder == 'forja' || steps.muse.outcome != 'success' || steps.musebuild.outcome != 'success'
+      - name: Build with Forja (Muse + function calling, with the user's key)
+        if: steps.run.outputs.builder == 'forja' || steps.muse.outcome != 'success' || steps.musebuild.outcome != 'success'
         env:
-          META_API_KEY: ${{ secrets.META_API_KEY }}
-          META_MODEL: ${{ vars.META_MODEL }}
-          META_PLANNER_MODEL: ${{ vars.META_PLANNER_MODEL }}
+          META_MODEL: ${{ steps.run.outputs.executor }}
+          META_PLANNER_MODEL: ${{ steps.run.outputs.planner }}
           FORJA_RUN_AS: builder
         run: |
-          echo "forja" > "$RUNNER_TEMP/builder.txt"
-          pnpm evolve:forja --dir /tmp/workshop --max-turns 40 --max-usd 2
+          echo "forja" > "$RUN/builder.txt"
+          META_API_KEY="$(cat "$RUN/key")" pnpm evolve:forja --dir /tmp/workshop --max-turns 40 --max-usd "${{ steps.caps.outputs.forja }}" --usage-out "$RUN/forja.json"
 
-      - name: Bring the core back and make the patch
-        id: patch
+      - name: Check the new core (rules, and its own tests as builder)
         run: |
-          # Anything the builder may have touched outside the workshop is thrown away first.
-          git checkout -- . && git clean -fd -e node_modules
-          pnpm evolve:workshop apply --from /tmp/workshop
-          mkdir -p "$RUNNER_TEMP/out"
-          git add -A packages/agent-core
-          git diff --cached --binary -- packages/agent-core > "$RUNNER_TEMP/out/core.patch"
-          if [ -s "$RUNNER_TEMP/out/core.patch" ]; then echo "changed=true" >> "$GITHUB_OUTPUT"; else echo "changed=false" >> "$GITHUB_OUTPUT"; fi
-          cp /tmp/workshop/CHANGES.md "$RUNNER_TEMP/out/CHANGES.md" 2>/dev/null || echo "Cambio al núcleo" > "$RUNNER_TEMP/out/CHANGES.md"
-          cp "$RUNNER_TEMP/idea.md" "$RUNNER_TEMP/practice.json" "$RUNNER_TEMP/out/"
-          if [ -f "$RUNNER_TEMP/builder.txt" ]; then cp "$RUNNER_TEMP/builder.txt" "$RUNNER_TEMP/out/"; else echo "muse-code" > "$RUNNER_TEMP/out/builder.txt"; fi
-          git diff --cached --stat
+          if diff -rq /tmp/workshop/agent-core "$RUN/base-core" -x node_modules > /dev/null; then echo "::error::The builder didn't change the core"; exit 1; fi
+          pnpm -s evolve:gate scan --dir /tmp/workshop/agent-core --strict
+          tests=$(ls /tmp/workshop/agent-core/test/*.test.mjs 2>/dev/null || true)
+          if [ -n "$tests" ]; then
+            # shellcheck disable=SC2086
+            sudo -u builder env -i PATH="$(dirname "$(command -v node)"):/usr/bin:/bin" HOME=/home/builder bash -c "cd /tmp/workshop && node --test $tests"
+          fi
 
-      - name: Quick checks on the new core (no secrets here)
-        if: steps.patch.outputs.changed == 'true'
+      - name: Fresh exam, current core vs new core
+        env:
+          META_MODEL: ${{ steps.run.outputs.executor }}
+          EVOLVE_CI_SECRET: ${{ secrets.EVOLVE_CI_SECRET }}
         run: |
-          pnpm evolve:gate scan --dir packages/agent-core
-          pnpm lint
-          pnpm --filter @skillab/agent-core typecheck
-          pnpm test:core
+          pnpm -s evolve:ci stage --stage judging
+          seed=$(od -An -N4 -tu4 /dev/urandom | tr -d ' ')
+          export META_API_KEY="$(cat "$RUN/key")"
+          pnpm evolve:bench --core "$RUN/base-core" --set fresh --seed "$seed" --max-usd "${{ steps.caps.outputs.bench }}" --out "$RUN/base.json" &
+          pnpm evolve:bench --core /tmp/workshop/agent-core --set fresh --seed "$seed" --max-usd "${{ steps.caps.outputs.bench }}" --out "$RUN/head.json" &
+          wait
 
-      - uses: actions/upload-artifact@v4
+      - name: Send the result to the app (it re-checks and decides)
+        env:
+          EVOLVE_CI_SECRET: ${{ secrets.EVOLVE_CI_SECRET }}
+        run: |
+          pnpm -s evolve:ci finish --candidate /tmp/workshop/agent-core --base "$RUN/base.json" --head "$RUN/head.json" \
+            --practice "$RUN/practice.json" --changes /tmp/workshop/CHANGES.md --builder "$(cat "$RUN/builder.txt")" \
+            --usage "$RUN/practice.json,$RUN/base.json,$RUN/head.json,$RUN/forja.json"
+
+      - name: Tell the app it failed
+        if: failure()
+        env:
+          EVOLVE_CI_SECRET: ${{ secrets.EVOLVE_CI_SECRET }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          pnpm -s evolve:ci fail --stage ci --error "The run failed in GitHub Actions: $RUN_URL" || true
+
+      - name: Forget the key
         if: always()
-        with:
-          name: evolve-${{ github.run_id }}
-          path: ${{ runner.temp }}/out
-          if-no-files-found: ignore
-
-  publish:
-    needs: build
-    if: needs.build.outputs.changed == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      issues: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
-        with:
-          name: evolve-${{ github.run_id }}
-          path: ${{ runner.temp }}/out
-
-      - name: Apply the patch (only packages/agent-core) and check it with the rules from main
-        run: |
-          bad=$(git apply --numstat "$RUNNER_TEMP/out/core.patch" | awk '{print $3}' | grep -v '^packages/agent-core/' || true)
-          if [ -n "$bad" ]; then echo "::error::The patch touches files outside packages/agent-core: $bad"; exit 1; fi
-          git apply --index "$RUNNER_TEMP/out/core.patch"
-          pnpm evolve:gate scan --dir packages/agent-core
-
-      - name: Open the PR
-        env:
-          GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
-          REPO: ${{ github.repository }}
-          ISSUE: ${{ github.event.issue.number }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          test -n "$GH_TOKEN" || { echo "::error::Secret AGENT_GH_TOKEN is missing (docs/EVOLVE.md)"; exit 1; }
-          branch="evolve/${{ github.run_id }}"
-          builder=$(cat "$RUNNER_TEMP/out/builder.txt")
-          title=$(head -n 1 "$RUNNER_TEMP/out/CHANGES.md" | sed 's/^#* *//' | cut -c1-90)
-          [ -n "$title" ] || title="Cambio al núcleo"
-          git config user.name "Agentztein (Muse)"
-          git config user.email "agentztein-bot@users.noreply.github.com"
-          git -c core.hooksPath=/dev/null commit -m "evolve: $title" -m "Built by $builder with Meta's Muse models. Run: $RUN_URL"
-          git -c core.hooksPath=/dev/null push "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" "HEAD:refs/heads/$branch"
-          practice=$(node -e 'const r=require(process.argv[1]);console.log(`${r.correct}/${r.total} con ${r.model} (${r.core.version})`)' "$RUNNER_TEMP/out/practice.json")
-          {
-            echo "<!-- evolve:run=${{ github.run_id }} builder=$builder -->"
-            echo "**Cambio que Agentztein hizo a su propio código** · construido por \`$builder\` con modelos Muse de Meta · [corrida]($RUN_URL)"
-            echo
-            if [ -n "$ISSUE" ]; then echo "Closes #$ISSUE"; echo; fi
-            echo "Práctica antes del cambio: $practice"
-            echo
-            cat "$RUNNER_TEMP/out/CHANGES.md"
-            echo
-            echo "---"
-            echo "El workflow \`agent-gate\` lo examina con un examen nuevo y decide: se fusiona solo si mejora, no rompe nada y solo toca \`packages/agent-core\`."
-          } > "$RUNNER_TEMP/body.md"
-          gh label create evolve --repo "$REPO" --color 6d5ce8 --description "Agentztein changing its own code" 2>/dev/null || true
-          gh pr create --repo "$REPO" --base main --head "$branch" --title "evolve: $title" --body-file "$RUNNER_TEMP/body.md" --label evolve
-
-  report:
-    needs: [build, publish]
-    if: always() && github.event_name == 'issues'
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-    steps:
-      - name: Tell the issue how it went
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          ISSUE: ${{ github.event.issue.number }}
-          BUILD: ${{ needs.build.result }}
-          CHANGED: ${{ needs.build.outputs.changed }}
-          PUBLISH: ${{ needs.publish.result }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          if [ "$PUBLISH" = "success" ]; then msg="Listo: abrí el PR con el cambio. El gate lo está examinando."
-          elif [ "$BUILD" = "success" ] && [ "$CHANGED" != "true" ]; then msg="El constructor no cambió nada del núcleo en esta corrida."
-          else msg="La corrida falló (build: $BUILD, publish: $PUBLISH)."; fi
-          gh issue comment "$ISSUE" --repo "$REPO" --body "$msg [Ver la corrida]($RUN_URL)"
+        run: rm -f "$RUN/key"

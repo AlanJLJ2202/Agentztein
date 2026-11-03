@@ -4,14 +4,13 @@
 //   pnpm evolve:gate scan --dir <copy of the PR's agent-core>
 //   pnpm evolve:gate decide --files files.txt --scan scan.json [--base base.json --head head.json] --agent true --out report.md
 import { lstatSync, readdirSync, readFileSync, appendFileSync, writeFileSync } from "node:fs";
-import { join, posix, relative, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { judge, maxDrop, minGain, scanFile, scanFiles, type Verdict as CoreVerdict } from "../../api/_lib/core-rules.js";
 import type { BenchResult } from "./bench.js";
 import { args } from "./meta.js";
 
 export const CORE_DIR = "packages/agent-core/";
-const EXTENSIONS = /\.(js|mjs|json|md)$/;
-const MAX_CORE_BYTES = 250_000;
 
 // ── which paths a PR touches ────────────────────────────────────────────────────────────────────
 
@@ -20,58 +19,12 @@ export function classify(files: string[]) {
   return { core: clean.filter((f) => f.startsWith(CORE_DIR)), other: clean.filter((f) => !f.startsWith(CORE_DIR)) };
 }
 
-// ── what the core's source may contain ─────────────────────────────────────────────────────────
+// ── what the core's source may contain, and whether it got better: api/_lib/core-rules.js ──────
 
-/** Identifiers that would reach the network, files, processes, secrets or the host's globals. */
-const FORBIDDEN: [RegExp, string][] = [
-  [/\bprocess\b/, "process"],
-  [/\bfetch\b/, "fetch"],
-  [/\brequire\s*\(/, "require()"],
-  [/\bimport\s*\(/, "dynamic import()"],
-  [/\bimport\.meta\b/, "import.meta"],
-  [/\bglobalThis\b/, "globalThis"],
-  [/\beval\s*\(/, "eval()"],
-  [/\bFunction\s*\(/, "Function()"],
-  [/\bconstructor\s*\.\s*constructor\b/, "constructor.constructor"],
-  [/\b(XMLHttpRequest|WebSocket|EventSource|Deno|Bun|navigator|Worker|SharedArrayBuffer|Atomics)\b/, "host API"],
-  [/\b__proto__\b|\bObject\.(setPrototypeOf|defineProperty)\s*\(\s*(Object|Array|String|JSON|Promise|Function)\b/, "patching built-ins"],
-  [/\b[ib]_[0-9a-f]{12}\b/, "a bench record id (memorizing)"],
-];
-
-/** Code without comments, so a word in a comment doesn't trip the scan (strings stay). */
-function stripComments(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`\\])\/\/[^\n]*/g, "$1");
-}
-
-/** Static imports (`import … from "x"`, `export … from "x"`, `import "x"`). */
-function importsOf(src: string): string[] {
-  const out: string[] = [];
-  for (const m of src.matchAll(/\b(?:import|export)\s+(?:[^"'`;]*?\bfrom\s*)?["']([^"']+)["']/g)) out.push(m[1] ?? "");
-  return out;
-}
-
-/** Problems in one file of the core. `path` is relative to the package (e.g. "src/index.js"). */
-export function scanFile(path: string, src: string): string[] {
+/** Reads a copy of the core from disk as { path: text }, refusing links. */
+export function readCore(dir: string): { files: Record<string, string>; problems: string[] } {
+  const files: Record<string, string> = {};
   const problems: string[] = [];
-  if (!EXTENSIONS.test(path)) return [`${path}: only .js, .mjs, .json and .md files are allowed`];
-  if (!/\.(js|mjs)$/.test(path)) return problems;
-  const isTest = path.startsWith("test/");
-  const code = stripComments(src);
-  for (const [re, what] of FORBIDDEN) if (re.test(code)) problems.push(`${path}: uses ${what}`);
-  for (const spec of importsOf(code)) {
-    if (isTest && /^node:(test|assert)(\/strict)?$/.test(spec)) continue;
-    if (!spec.startsWith("./") && !spec.startsWith("../")) { problems.push(`${path}: imports "${spec}" (only files of this package)`); continue; }
-    const target = posix.normalize(posix.join(posix.dirname(path), spec));
-    if (target.startsWith("../") || target === "..") problems.push(`${path}: imports "${spec}", outside the package`);
-  }
-  return problems;
-}
-
-/** Scans a whole copy of the core. */
-export function scanDir(dir: string): { files: string[]; problems: string[]; bytes: number } {
-  const files: string[] = [];
-  const problems: string[] = [];
-  let bytes = 0;
   const walk = (d: string) => {
     for (const name of readdirSync(d)) {
       if (name === "node_modules") continue;
@@ -80,38 +33,22 @@ export function scanDir(dir: string): { files: string[]; problems: string[]; byt
       const st = lstatSync(full);
       if (st.isSymbolicLink()) { problems.push(`${rel}: symbolic links are not allowed`); continue; }
       if (st.isDirectory()) { walk(full); continue; }
-      files.push(rel);
-      bytes += st.size;
-      problems.push(...scanFile(rel, readFileSync(full, "utf8")));
+      files[rel] = readFileSync(full, "utf8");
     }
   };
   walk(dir);
-  if (!files.includes("src/index.js")) problems.push("src/index.js is missing");
-  if (bytes > MAX_CORE_BYTES) problems.push(`the core is ${bytes} bytes (max ${MAX_CORE_BYTES})`);
-  return { files, problems, bytes };
+  return { files, problems };
 }
 
-// ── did it get better? ──────────────────────────────────────────────────────────────────────────
-
-/** Points the new version must gain on the whole exam: 2, or 2% of it if that is more (noise between runs). */
-export const minGain = (total: number) => Math.max(2, Math.ceil(total * 0.02));
-/** Points one scenario may lose before it counts as broken: 1, or 3% of it. */
-export const maxDrop = (total: number) => Math.max(1, Math.ceil(total * 0.03));
-
-export type Verdict = { pass: boolean; reason: "improves" | "no-gain" | "regression" | "broken"; gain: number; needed: number; drops: { scenario: string; drop: number; allowed: number }[] };
-
-export function judge(base: BenchResult, head: BenchResult): Verdict {
-  const gain = head.correct - base.correct;
-  const needed = minGain(base.total);
-  const drops = Object.entries(base.scenarios)
-    .map(([id, b]) => ({ scenario: id, drop: b.correct - (head.scenarios[id]?.correct ?? 0), allowed: maxDrop(b.total) }))
-    .filter((d) => d.drop > d.allowed);
-  const broken = Object.values(head.scenarios).some((s) => s.error) && !Object.values(base.scenarios).some((s) => s.error);
-  if (broken) return { pass: false, reason: "broken", gain, needed, drops };
-  if (drops.length) return { pass: false, reason: "regression", gain, needed, drops };
-  if (gain < needed) return { pass: false, reason: "no-gain", gain, needed, drops };
-  return { pass: true, reason: "improves", gain, needed, drops };
+/** Scans a whole copy of the core. */
+export function scanDir(dir: string): { files: string[]; problems: string[]; bytes: number } {
+  const read = readCore(dir);
+  const r = scanFiles(read.files);
+  return { ...r, problems: [...read.problems, ...r.problems] };
 }
+
+export { judge, maxDrop, minGain, scanFile };
+export type Verdict = CoreVerdict;
 
 // ── what happens to the PR ──────────────────────────────────────────────────────────────────────
 
@@ -123,7 +60,7 @@ export function decide(o: { files: string[]; problems: string[]; verdict: Verdic
   const reasons: string[] = [];
   if (!core.length) return { decision: "skip", reasons: ["The PR doesn't touch packages/agent-core: the gate has nothing to judge."] };
   if (o.problems.length) return { decision: "reject", reasons: ["The core's code breaks the rules:", ...o.problems.map((p) => `- ${p}`)] };
-  if (!o.verdict) return { decision: "reject", reasons: ["The bench did not run."] };
+  if (!o.verdict) return { decision: "human", reasons: ["The bench did not run (no META_API_KEY in the repo's secrets): a person reviews it."] };
   if (o.verdict.reason === "regression" || o.verdict.reason === "broken") {
     return { decision: "reject", reasons: [o.verdict.reason === "broken" ? "The new core fails where the current one works." : "The new core makes a scenario worse."] };
   }
@@ -147,7 +84,7 @@ export function report(o: { decision: Decision; reasons: string[]; base: BenchRe
   const lines = ["<!-- agent-gate -->", `### ${title[o.decision]}`, "", ...o.reasons, ""];
   if (o.base && o.head) {
     lines.push(
-      `Fresh exam generated for this run (seed \`${o.head.seed}\`, held-out profile) · model \`${o.head.model}\` · cores run without keys in isolated workers.`,
+      `Fresh exam generated for this run (seed \`${o.head.seed}\`, held-out profile) · model \`${o.head.model}\` · cores run without keys in sandboxed processes.`,
       "",
       `| Scenario | main (${o.base.core.version || "?"}) | PR (${o.head.core.version || "?"}) | Δ |`,
       "|---|---|---|---|",
@@ -190,6 +127,7 @@ function main() {
     if (a.out) writeFileSync(a.out, JSON.stringify(r, null, 2));
     for (const p of r.problems) console.log(`✗ ${p}`);
     output("clean", String(r.problems.length === 0));
+    if (a.strict === "true" && r.problems.length) process.exitCode = 1;
     return;
   }
   if (cmd === "decide") {

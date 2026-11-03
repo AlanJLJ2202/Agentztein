@@ -126,6 +126,7 @@ async function main() {
   console.log(`Forja with ${model}`);
   const out = await forja({ dir: a.dir ?? ".", call, key, maxTurns: Number(a["max-turns"] ?? 40), log: (s) => console.log(s) });
   console.log(`${out.finished ? "finished" : "stopped"} after ${out.turns} turns · ${meter.calls} calls · $${meter.cost.toFixed(4)}`);
+  if (a["usage-out"]) writeFileSync(a["usage-out"], JSON.stringify({ usage: { input: meter.input, output: meter.output }, cost: meter.cost, model }));
   if (!out.finished) process.exitCode = 1;
 }
 

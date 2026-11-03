@@ -1,17 +1,16 @@
 // The judge's bench: runs one version of the agent's core on an exam and scores it.
 //   pnpm evolve:bench --core packages/agent-core --set fresh --seed 123456 --out base.json
 //   pnpm evolve:bench --core packages/agent-core --set practice --mistakes --out practice.json
-// Needs META_API_KEY. The core runs in a worker without the key (./core-worker.mjs); answers are scored here.
+// Needs META_API_KEY. Each core runs in a sandboxed child process without the key; answers are scored here.
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Worker } from "node:worker_threads";
 import { numbered, scoreAnswers } from "../../api/_lib/agent.js";
-import { cleanRequest } from "../../api/_lib/solver.js";
+import { materialize, runSandboxed } from "../../api/_lib/sandbox.js";
 import { DEFAULT_FRESH_BATCHES, freshExam, practiceExam, type ExamScenario } from "./exam.js";
+import { readCore } from "./gate.js";
 import { args, metaCaller, pickModel, takeKey, type Reply, type Req } from "./meta.js";
 
-const WORKER = fileURLToPath(new URL("./core-worker.mjs", import.meta.url));
 export const MAX_CALLS = 4;
 export const SCENARIO_TIMEOUT_MS = 6 * 60_000;
 
@@ -28,45 +27,18 @@ export type BenchResult = {
   total: number;
   calls: number;
   cost: number;
+  usage: { input: number; output: number; model: string };
 };
 
-type Outcome = { answers: Record<string, string>; calls: number; error: string | null; version: string; strategy: string };
-
-/** One task through one core version, in its own worker. */
-export function runInWorker(entry: string, task: unknown, call: (req: Req) => Promise<Reply>, { maxCalls = MAX_CALLS, timeoutMs = SCENARIO_TIMEOUT_MS } = {}): Promise<Outcome> {
-  return new Promise((done) => {
-    let calls = 0;
-    let finished = false;
-    const worker = new Worker(WORKER, { workerData: { entry, task, maxCalls }, env: {}, resourceLimits: { maxOldGenerationSizeMb: 512 } });
-    const finish = (o: Omit<Outcome, "calls">) => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
-      void worker.terminate();
-      done({ ...o, calls });
-    };
-    const timer = setTimeout(() => finish({ answers: {}, error: `timed out after ${Math.round(timeoutMs / 1000)} s`, version: "", strategy: "" }), timeoutMs);
-    worker.on("message", async (m: { type: string; id?: number; req?: unknown; out?: { answers?: unknown }; error?: string; version?: string; strategy?: string }) => {
-      if (m.type === "call") {
-        try {
-          if (calls >= maxCalls) throw new Error(`The core used up its ${maxCalls} model calls`);
-          calls++;
-          const r = cleanRequest(m.req);
-          const reply = await call({ ...r, effort: r.effort === undefined ? null : r.effort });
-          worker.postMessage({ type: "reply", id: m.id, reply });
-        } catch (err) {
-          worker.postMessage({ type: "reply", id: m.id, error: err instanceof Error ? err.message : String(err) });
-        }
-        return;
-      }
-      const raw = m.out?.answers && typeof m.out.answers === "object" ? (m.out.answers as Record<string, unknown>) : {};
-      const answers: Record<string, string> = {};
-      for (const [n, v] of Object.entries(raw)) if (typeof v === "string") answers[n] = v;
-      finish({ answers, error: m.type === "error" ? m.error ?? "failed" : null, version: m.version ?? "", strategy: m.strategy ?? "" });
-    });
-    worker.on("error", (err) => finish({ answers: {}, error: err.message, version: "", strategy: "" }));
-    worker.on("exit", (code) => finish({ answers: {}, error: `worker exited (${code})`, version: "", strategy: "" }));
-  });
+/** One task through one core version, in a sandboxed child process (api/_lib/sandbox.js). */
+export function runInSandbox(coreDir: string, task: unknown, call: (req: Req) => Promise<Reply>, { maxCalls = MAX_CALLS, timeoutMs = SCENARIO_TIMEOUT_MS } = {}) {
+  const { files, problems } = readCore(coreDir);
+  if (problems.length) return Promise.resolve({ answers: {}, calls: 0, error: problems.join("; "), version: "", strategy: "" });
+  let dir: string;
+  try { dir = materialize(files); } catch (err) {
+    return Promise.resolve({ answers: {}, calls: 0, error: err instanceof Error ? err.message : String(err), version: "", strategy: "" });
+  }
+  return runSandboxed(dir, task as Record<string, unknown>, async (r) => call({ ...r, effort: r.effort === undefined ? null : r.effort }), { maxCalls, timeoutMs });
 }
 
 /** Scores one core version on every scenario of an exam (scenarios run in parallel). */
@@ -81,8 +53,8 @@ export async function runBench(o: {
   maxCalls?: number;
   timeoutMs?: number;
   cost?: () => number;
+  usage?: () => { input: number; output: number };
 }): Promise<BenchResult> {
-  const entry = resolve(o.coreDir, "src/index.js");
   let version = "";
   let strategy = "";
   const scenarios: Record<string, ScenarioResult> = {};
@@ -90,7 +62,7 @@ export async function runBench(o: {
     o.exam.map(async (sc) => {
       const { rows, batches } = numbered(sc as never, [{ set: "exam", batches: sc.batches }]);
       const task = { scenario: { id: sc.id, title: sc.title, task: sc.task, labels: sc.labels, contexts: sc.contexts }, skills: [], batches };
-      const out = await runInWorker(entry, task, o.call, { maxCalls: o.maxCalls, timeoutMs: o.timeoutMs });
+      const out = await runInSandbox(o.coreDir, task, o.call, { maxCalls: o.maxCalls, timeoutMs: o.timeoutMs });
       version ||= out.version;
       strategy ||= out.strategy;
       const { scores, marked } = scoreAnswers(sc as never, rows, out.answers);
@@ -116,6 +88,7 @@ export async function runBench(o: {
     total: all.reduce((n, s) => n + s.total, 0),
     calls: all.reduce((n, s) => n + s.calls, 0),
     cost: o.cost ? Number(o.cost().toFixed(6)) : 0,
+    usage: { ...(o.usage ? o.usage() : { input: 0, output: 0 }), model: o.model },
   };
 }
 
@@ -128,7 +101,7 @@ async function main() {
   const exam = set === "fresh" ? freshExam(seed ?? 0, Number(a.batches ?? DEFAULT_FRESH_BATCHES)) : practiceExam();
   const model = await pickModel(key, "spark");
   const { call, meter } = metaCaller(key, model, { maxUsd: Number(a["max-usd"] ?? 1) });
-  const result = await runBench({ coreDir: a.core ?? "packages/agent-core", exam, call, set, seed, model, mistakes: a.mistakes === "true", cost: () => meter.cost });
+  const result = await runBench({ coreDir: a.core ?? "packages/agent-core", exam, call, set, seed, model, mistakes: a.mistakes === "true", cost: () => meter.cost, usage: () => ({ input: meter.input, output: meter.output }) });
   const text = JSON.stringify(result, null, 2);
   if (a.out) writeFileSync(a.out, text);
   console.log(`${result.core.version || "?"} · ${set}${seed !== null ? ` (seed ${seed})` : ""} · ${model}: ${result.correct}/${result.total} · ${result.calls} calls · $${result.cost.toFixed(4)}`);

@@ -1,10 +1,10 @@
-// The judge's bench and the builder's workshop, with a fake Meta: fresh exams, the core in a worker without keys,
+// The judge's bench and the builder's workshop, with a fake Meta: fresh exams, each core in a sandboxed process without keys,
 // the call limit, and Forja editing a copy of the core with function calling.
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { runBench, runInWorker } from "../../scripts/evolve/bench.js";
+import { runBench, runInSandbox } from "../../scripts/evolve/bench.js";
 import { freshExam, freshSeed, practiceExam } from "../../scripts/evolve/exam.js";
 import { forja, safePath } from "../../scripts/evolve/forja.js";
 import type { Reply, Req } from "../../scripts/evolve/meta.js";
@@ -61,26 +61,24 @@ describe("the bench", () => {
     expect(r.scenarios.manufactura?.mistakes?.length).toBeGreaterThan(0);
   });
 
-  it("gives the core no environment, enforces its call limit and survives a crash or a hang", async () => {
+  it("enforces the core's call limit and survives a crash, a hang or a core that breaks the rules", async () => {
     const dir = mkdtempSync(join(tmpdir(), "core-"));
     mkdirSync(join(dir, "src"));
     writeFileSync(join(dir, "src/index.js"), `export const CORE_VERSION = "core@x";
 export async function solve(task, tools) {
   if (task.scenario.id === "crash") throw new Error("boom");
   if (task.scenario.id === "hang") await new Promise(() => {});
-  const env = JSON.stringify(process.env);
-  for (let i = 0; i < 9; i++) { try { await tools.model({ user: "hola" }); } catch (e) { return { answers: { "1": env }, notes: e.message }; } }
+  for (let i = 0; i < 9; i++) { try { await tools.model({ user: "hola" }); } catch (e) { return { answers: { "1": "ok" }, notes: e.message }; } }
   return { answers: {} };
 }`);
-    const entry = join(dir, "src/index.js");
     let n = 0;
-    const out = await runInWorker(entry, { scenario: { id: "ok" } }, async () => { n++; return reply("x"); }, { maxCalls: 2 });
+    const out = await runInSandbox(dir, { scenario: { id: "ok" } }, async () => { n++; return reply("x"); }, { maxCalls: 2 });
     expect(n).toBe(2);
-    expect(out.calls).toBe(2);
-    expect(out.answers["1"]).toBe("{}");
-    expect(out.version).toBe("core@x");
-    expect((await runInWorker(entry, { scenario: { id: "crash" } }, async () => reply("x"))).error).toBe("boom");
-    expect((await runInWorker(entry, { scenario: { id: "hang" } }, async () => reply("x"), { timeoutMs: 300 })).error).toMatch(/timed out/);
+    expect(out).toMatchObject({ calls: 2, answers: { 1: "ok" }, version: "core@x", error: null });
+    expect((await runInSandbox(dir, { scenario: { id: "crash" } }, async () => reply("x"))).error).toBe("boom");
+    expect((await runInSandbox(dir, { scenario: { id: "hang" } }, async () => reply("x"), { timeoutMs: 1500 })).error).toMatch(/timed out/);
+    writeFileSync(join(dir, "src/index.js"), "export const k = process.env;");
+    expect((await runInSandbox(dir, { scenario: { id: "ok" } }, async () => reply("x"))).error).toMatch(/uses process/);
   });
 });
 

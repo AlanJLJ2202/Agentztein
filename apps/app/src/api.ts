@@ -105,16 +105,46 @@ export type AgentState = {
 };
 export type Exam = { scenario: string; bare: boolean; scores: Scores; answered: number; total: number; cost: number; model: string };
 
-export type GateSummary = { decision: "merge" | "human" | "reject" | "skip" | null; base: { correct: number; total: number } | null; head: { correct: number; total: number } | null; gain: number | null };
+export type ExamTotal = { correct: number; total: number };
+export type CoreVerdict = { pass: boolean; reason: "improves" | "no-gain" | "regression" | "broken" | "rules"; gain: number; needed: number; base?: ExamTotal; head?: ExamTotal; problems?: string[] };
+export type CoreVersion = {
+  id: string;
+  version: number;
+  coreVersion: string;
+  strategy: string;
+  changes: string;
+  parentId: string | null;
+  runId: string | null;
+  builder: "muse-code" | "forja";
+  status: "candidate" | "active" | "rejected" | "retired";
+  verdict: CoreVerdict | null;
+  changed: string[];
+  createdAt: string;
+};
+export type EvolveRun = {
+  id: string;
+  status: "queued" | "building" | "passed" | "rejected" | "failed";
+  builder: "muse-code" | "forja";
+  proposal: { title: string; hypothesis?: string; plan?: string; source?: string; by?: string };
+  costUsd: number;
+  maxUsd: number;
+  stage: string | null;
+  verdict: CoreVerdict | null;
+  base: ExamTotal | null;
+  head: ExamTotal | null;
+  error: string | null;
+  ciUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 export type EvolveState = {
-  core: { version: string; strategy: string };
+  platform: { version: string; strategy: string };
+  active: { id: string; version: number; coreVersion: string; strategy: string } | null;
+  cores: CoreVersion[];
+  runs: EvolveRun[];
   configured: boolean;
-  canDispatch: boolean;
-  missing?: string[];
-  repo?: string;
-  versions: { tag: string; sha: string }[];
-  prs: { number: number; title: string; url: string; state: "merged" | "open" | "closed"; createdAt: string; mergedAt: string | null; builder: string | null; gate: GateSummary | null }[];
-  ideas: { number: number; title: string; url: string; createdAt: string; comments: number }[];
+  missing: string[];
+  limits: { maxUsd: number; dailyRuns: number };
 };
 
 export class ApiError extends Error {
@@ -178,7 +208,8 @@ export function api(supabase: SupabaseClient) {
       }),
     emblem: (skillId: string) => call<{ image: string; cost: number }>("/api/media?kind=image", { method: "POST", body: JSON.stringify({ skillId }) }),
     evolve: () => call<EvolveState>("/api/evolve"),
-    evolveOp: (body: Record<string, unknown>) => call<{ issue: { number: number; url: string; title: string } }>("/api/evolve", { method: "POST", body: JSON.stringify(body) }),
+    evolveOp: (body: Record<string, unknown>) => call<{ run?: EvolveRun } & Partial<EvolveState>>("/api/evolve", { method: "POST", body: JSON.stringify(body) }),
+    coreFiles: (id: string) => call<{ core: CoreVersion; files: Record<string, string> }>(`/api/evolve?core=${encodeURIComponent(id)}`),
     limits: () => call<Budget>("/api/limits"),
     setLimit: (monthly: number) => call<Budget>("/api/limits", { method: "PUT", body: JSON.stringify({ monthly }) }),
   };

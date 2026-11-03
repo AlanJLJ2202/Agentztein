@@ -22,6 +22,8 @@ import { db } from "./_lib/db.js";
 import { budgetOf } from "./_lib/harness.js";
 import { harnessed, keyOf, MODEL_TIMEOUT_MS } from "./_lib/harnessed.js";
 import { HttpError, handle, json, readJson } from "./_lib/http.js";
+import { activeCore } from "./_lib/cores.js";
+import { materialize, runSandboxed } from "./_lib/sandbox.js";
 import { publicScenario, runCore } from "./_lib/solver.js";
 
 const RUNNING = ["baseline", "propose", "validate"];
@@ -85,22 +87,34 @@ async function takeExam(pool, userId, k, exam) {
   const deadline = Date.now() + MODEL_TIMEOUT_MS;
   let cost = 0;
   const task = { scenario: publicScenario(exam.sc), skills: exam.skills, batches };
+  /** @type {(req: any) => Promise<any>} */
+  const call = async (req) => {
+    const effort = req.effort === undefined ? exam.effort : effortFor(exam.model, req.effort, exam.effort ?? "medium");
+    const run = await harnessed(pool, userId, k, {
+      kind: exam.kind, model: exam.model, effort, system: req.system, prompt: req.user, messages: req.messages, tools: req.tools,
+      timeoutMs: Math.max(5_000, deadline - Date.now()),
+    });
+    cost += run.cost;
+    return run;
+  };
+  // the user's own evolved core, if they have one active, runs sandboxed; otherwise the platform's core (v0)
+  const own = await activeCore(pool, userId);
   let out;
+  let label = core.CORE_VERSION;
   try {
-    out = await runCore(core, task, async (req) => {
-      const effort = req.effort === undefined ? exam.effort : effortFor(exam.model, req.effort, exam.effort ?? "medium");
-      const run = await harnessed(pool, userId, k, {
-        kind: exam.kind, model: exam.model, effort, system: req.system, prompt: req.user, messages: req.messages, tools: req.tools,
-        timeoutMs: Math.max(5_000, deadline - Date.now()),
-      });
-      cost += run.cost;
-      return run;
-    }, { maxCalls: CORE_MAX_CALLS });
+    if (own) {
+      label = `v${own.version} · ${own.core_version}`;
+      const r = await runSandboxed(materialize(own.files), task, call, { maxCalls: CORE_MAX_CALLS, timeoutMs: MODEL_TIMEOUT_MS });
+      if (r.error) throw new Error(r.error);
+      out = r;
+    } else {
+      out = await runCore(core, task, call, { maxCalls: CORE_MAX_CALLS });
+    }
   } catch (err) {
     if (err instanceof HttpError) throw err;
-    throw new HttpError(502, `The agent's core failed: ${err instanceof Error ? err.message : "unknown error"}`, { reason: "core" });
+    throw new HttpError(502, `The agent's core (${label}) failed: ${err instanceof Error ? err.message : "unknown error"}`, { reason: "core" });
   }
-  return { ...scoreAnswers(exam.sc, rows, out.answers), rows, cost, calls: out.calls, core: core.CORE_VERSION };
+  return { ...scoreAnswers(exam.sc, rows, out.answers), rows, cost, calls: out.calls, core: label };
 }
 
 /** @param {string} model @param {unknown} wanted @param {string} fallback */

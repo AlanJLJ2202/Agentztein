@@ -1,17 +1,24 @@
-// The agent changing its own code, from the app's side: Meta function calling in the provider, the host that runs
-// the core, and /api/evolve (lineage from GitHub, Muse Wonder's hypothesis → an "evolve" issue).
+// Each user's agent changing its own code, from the app's side: Meta function calling in the provider, the host
+// that runs the core, /api/evolve (a run per user, with their own key) and /api/evolve-ci (what the workflow
+// fetches and reports). GitHub and Meta are a fake fetch; the workflow's calls are made here by hand.
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import * as core from "@skillab/agent-core";
 import { closeDb } from "../../api/_lib/db.js";
-import { builderOf, gateOf, githubConfig, isAdmin } from "../../api/_lib/github.js";
+import { githubConfig } from "../../api/_lib/github.js";
 import { complete } from "../../api/_lib/providers.js";
 import { cleanRequest, runCore } from "../../api/_lib/solver.js";
 import { freshDatabase, hasDatabase } from "../../packages/db/test/helpers.js";
+import { readCore } from "../../scripts/evolve/gate.js";
+import type * as AgentApi from "../../api/agent.js";
 import type * as EvolveApi from "../../api/evolve.js";
+import type * as EvolveCiApi from "../../api/evolve-ci.js";
 import type * as KeysApi from "../../api/keys.js";
+import pg from "pg";
 
 const SECRET = "x".repeat(40);
-const USER = { id: "8d7c2c1e-4f7e-4b8f-9d0a-0f4c1f6b9a11", email: "Alan@Example.com" };
+const CI_SECRET = "c".repeat(40);
+const USER = { id: "8d7c2c1e-4f7e-4b8f-9d0a-0f4c1f6b9a11", email: "alan@example.com" };
+const OTHER = { id: "1b2c3d4e-0000-4000-8000-000000000002", email: "ruth@example.com" };
 
 describe("Meta function calling", () => {
   it("offers tools, returns the calls and the assistant turn for the next step", async () => {
@@ -49,33 +56,36 @@ describe("the host of the agent's core", () => {
     await expect(runCore(greedy, task, async () => ({ text: "", toolCalls: [], message: {} }), { maxCalls: 2 })).rejects.toThrow(/2 model calls/);
     expect(n).toBe(1);
   });
-});
 
-describe("GitHub helpers", () => {
-  it("reads the config, the admins and the gate's comment", () => {
+  it("reads the GitHub config from AGENT_GH_REPO or Vercel's repo", () => {
     expect(githubConfig({ AGENT_GH_TOKEN: "t", VERCEL_GIT_REPO_OWNER: "o", VERCEL_GIT_REPO_SLUG: "r" })).toEqual({ token: "t", repo: "o/r" });
     expect(githubConfig({ AGENT_GH_TOKEN: "t", AGENT_GH_REPO: "bad repo" })).toBeNull();
-    expect(isAdmin("alan@example.com", { EVOLVE_ADMINS: " Alan@Example.com ,x@y.z" })).toBe(true);
-    expect(isAdmin("ruth@example.com", { EVOLVE_ADMINS: "alan@example.com" })).toBe(false);
-    expect(isAdmin("alan@example.com", {})).toBe(false);
-    const body = "<!-- agent-gate -->\n### ✅ Agent gate: passes, merging\n\n| **Total** | **110/180** (61.1%) | **123/180** (68.3%) | **+13** |";
-    expect(gateOf(body)).toEqual({ decision: "merge", base: { correct: 110, total: 180 }, head: { correct: 123, total: 180 }, gain: 13 });
-    expect(gateOf("hello")).toBeNull();
-    expect(builderOf("<!-- evolve:run=123 builder=muse-code -->\n…")).toBe("muse-code");
   });
 });
 
-describe.skipIf(!hasDatabase)("/api/evolve (Postgres)", () => {
+const bench = (scores: Record<string, [number, number]>, version = "core@1") => ({
+  core: { version }, seed: 99, model: "muse-spark-1.3",
+  scenarios: Object.fromEntries(Object.entries(scores).map(([id, [c, t]]) => [id, { correct: c, total: t, error: null }])),
+  usage: { input: 1000, output: 200 }, cost: 0.01,
+});
+
+describe.skipIf(!hasDatabase)("/api/evolve and /api/evolve-ci (Postgres)", () => {
   let close: (() => Promise<void>) | undefined;
+  let dbUrl = "";
   let evolve: typeof EvolveApi;
+  let ci: typeof EvolveCiApi;
   let keys: typeof KeysApi;
-  type Sent = { title?: string; labels?: string[]; body?: string };
-  const github: Array<{ method: string; url: string; body?: Sent }> = [];
+  let agent: typeof AgentApi;
+  let who = USER;
+  const dispatches: Array<{ url: string; body: { ref: string; inputs: { run_id: string; token: string; app_url: string } } }> = [];
   const chats: Array<{ model: string; messages: { content: string }[] }> = [];
+  const platform = readCore("packages/agent-core").files;
+  const improved = { ...platform, "src/index.js": (platform["src/index.js"] ?? "").replace('"core@1"', '"core@2"').replace("Una sola llamada", "Dos pasadas") };
 
   beforeAll(async () => {
     const fresh = await freshDatabase();
     close = fresh.close;
+    dbUrl = fresh.url;
     vi.stubEnv("DATABASE_URL", fresh.url);
     vi.stubEnv("DATABASE_SSL_CA", "");
     vi.stubEnv("SUPABASE_URL", "https://proj.supabase.co");
@@ -83,32 +93,29 @@ describe.skipIf(!hasDatabase)("/api/evolve (Postgres)", () => {
     vi.stubEnv("KEYS_ENCRYPTION_SECRET", SECRET);
     vi.stubEnv("AGENT_GH_TOKEN", "");
     vi.stubEnv("AGENT_GH_REPO", "AlanJLJ2202/Agentztein");
-    vi.stubEnv("EVOLVE_ADMINS", "alan@example.com");
+    vi.stubEnv("EVOLVE_CI_SECRET", "");
+    vi.stubEnv("EVOLVE_APP_URL", "https://agentztein.test");
+    vi.stubEnv("EVOLVE_DAILY_RUNS", "10");
     vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input instanceof Request ? input.url : input);
-      const method = init?.method ?? "GET";
-      if (url.endsWith("/auth/v1/user")) return Response.json(USER);
+      if (url.endsWith("/auth/v1/user")) return Response.json(who);
       if (url === "https://api.meta.ai/v1/models") return Response.json({ data: [{ id: "muse-spark-1.3" }, { id: "muse-wonder-1.0" }] });
       if (url === "https://api.meta.ai/v1/chat/completions") {
         const body = JSON.parse(String(init?.body));
         chats.push(body);
-        return Response.json({ choices: [{ message: { content: JSON.stringify({ title: "Calculadora para tolerancias", hypothesis: "Falla al restar medidas con decimales; una herramienta calc en JS lo hace exacto.", plan: "Agregar tools.calc", source: "errores de práctica" }) } }], usage: { prompt_tokens: 3000, completion_tokens: 400 } });
+        const planner = String(body.messages[0]?.content ?? "").includes("planificador");
+        const content = planner
+          ? JSON.stringify({ title: "Calculadora para tolerancias", hypothesis: "Falla al restar medidas con decimales; una herramienta calc en JS lo hace exacto.", plan: "Agregar tools.calc", source: "errores de práctica" })
+          : JSON.stringify({ answers: { 1: "aceptar" } });
+        return Response.json({ choices: [{ message: { content } }], usage: { prompt_tokens: 3000, completion_tokens: 400 } });
       }
-      if (url.startsWith("https://api.github.com/")) {
-        const body = typeof init?.body === "string" ? JSON.parse(init.body) : undefined;
-        github.push({ method, url, body });
-        const repo = "https://api.github.com/repos/AlanJLJ2202/Agentztein/";
-        if (url === `${repo}labels`) return Response.json({}, { status: 422 });
-        if (method === "POST" && url === `${repo}issues`) return Response.json({ number: 7, html_url: "https://github.com/AlanJLJ2202/Agentztein/issues/7", title: body?.title }, { status: 201 });
-        if (url.startsWith(`${repo}issues?labels=evolve&state=all`)) return Response.json([{ number: 9, pull_request: {} }, { number: 7, title: "Idea" }]);
-        if (url.startsWith(`${repo}issues?labels=evolve&state=open`)) return Response.json([{ number: 7, title: "Idea", html_url: "u7", created_at: "2026-11-03T00:00:00Z", comments: 1 }]);
-        if (url === `${repo}git/matching-refs/tags/agent-v`) return Response.json([{ ref: "refs/tags/agent-v1", object: { sha: "abcdef123" } }, { ref: "refs/tags/agent-v2", object: { sha: "1234567aa" } }]);
-        if (url === `${repo}pulls/9`) return Response.json({ number: 9, title: "evolve: votar", html_url: "u9", state: "closed", merged_at: "2026-11-03T10:00:00Z", created_at: "2026-11-03T09:00:00Z", body: "<!-- evolve:run=1 builder=muse-code -->" });
-        if (url.startsWith(`${repo}issues/9/comments`)) return Response.json([{ body: "<!-- agent-gate -->\n### ✅ Agent gate: passes, merging\n| **Total** | **100/180** (55.6%) | **112/180** (62.2%) | **+12** |" }]);
+      if (url === "https://api.github.com/repos/AlanJLJ2202/Agentztein/actions/workflows/evolve.yml/dispatches") {
+        dispatches.push({ url, body: JSON.parse(String(init?.body)) });
+        return new Response(null, { status: 204 });
       }
       return new Response("unexpected " + url, { status: 500 });
     });
-    [evolve, keys] = await Promise.all([import("../../api/evolve.js"), import("../../api/keys.js")]);
+    [evolve, ci, keys, agent] = await Promise.all([import("../../api/evolve.js"), import("../../api/evolve-ci.js"), import("../../api/keys.js"), import("../../api/agent.js")]);
   });
 
   afterAll(async () => {
@@ -118,57 +125,123 @@ describe.skipIf(!hasDatabase)("/api/evolve (Postgres)", () => {
     await close?.();
   });
 
-  const req = (method = "GET", body?: unknown) =>
-    new Request("https://agentztein.test/api/evolve", { method, headers: { authorization: "Bearer tok", "content-type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}) });
+  const req = (method = "GET", body?: unknown, path = "/api/evolve") =>
+    new Request("https://agentztein.test" + path, { method, headers: { authorization: "Bearer tok", "content-type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}) });
+  const post = async (body: unknown) => { const r = await evolve.POST(req("POST", body)); return { status: r.status, body: await r.json() }; };
+  const state = async () => (await evolve.GET(req())).json();
+  const ciCall = async (body: Record<string, unknown>, secret = CI_SECRET) => {
+    const r = await ci.POST(new Request("https://agentztein.test/api/evolve-ci", { method: "POST", headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" }, body: JSON.stringify(body) }));
+    return { status: r.status, body: await r.json() };
+  };
+  const saveKey = async () => {
+    const r = await keys.POST(new Request("https://agentztein.test/api/keys", { method: "POST", headers: { authorization: "Bearer tok", "content-type": "application/json" }, body: JSON.stringify({ provider: "meta", key: "mk-meta-good-key-00001" }) }));
+    expect(r.status).toBe(201);
+  };
 
-  it("says what is missing before GitHub is connected", async () => {
-    const res = await evolve.GET(req());
-    const body = await res.json();
-    expect(body).toMatchObject({ configured: false, canDispatch: false, missing: ["AGENT_GH_TOKEN"], core: { version: core.CORE_VERSION } });
-    expect((await evolve.POST(req("POST", { op: "dispatch", title: "Algo", idea: "x" }))).status).toBe(503);
-  });
-
-  it("shows the lineage: versions, PRs with the gate's verdict and ideas in progress", async () => {
+  it("says what the server still needs, by name", async () => {
+    const s = await state();
+    expect(s).toMatchObject({ configured: false, missing: ["AGENT_GH_TOKEN", "EVOLVE_CI_SECRET"], platform: { version: core.CORE_VERSION }, active: null, cores: [], runs: [] });
     vi.stubEnv("AGENT_GH_TOKEN", "ghp_test");
-    const body = await (await evolve.GET(req())).json();
-    expect(body.configured).toBe(true);
-    expect(body.canDispatch).toBe(true);
-    expect(body.versions).toEqual([{ tag: "agent-v2", sha: "1234567" }, { tag: "agent-v1", sha: "abcdef1" }]);
-    expect(body.prs).toEqual([expect.objectContaining({ number: 9, state: "merged", builder: "muse-code", gate: { decision: "merge", base: { correct: 100, total: 180 }, head: { correct: 112, total: 180 }, gain: 12 } })]);
-    expect(body.ideas).toEqual([expect.objectContaining({ number: 7, title: "Idea" })]);
-    expect(github.every((g) => g.url.startsWith("https://api.github.com/repos/AlanJLJ2202/Agentztein/"))).toBe(true);
+    vi.stubEnv("EVOLVE_CI_SECRET", CI_SECRET);
+    expect((await state()).configured).toBe(true);
   });
 
-  it("opens an evolve issue with a person's idea, only for admins", async () => {
-    const res = await evolve.POST(req("POST", { op: "dispatch", title: "Votar entre dos pasadas", idea: "Dos llamadas y desempate" }));
-    expect(res.status).toBe(200);
-    const issue = github.find((g) => g.method === "POST" && g.url.endsWith("/issues"));
-    expect(issue?.body).toMatchObject({ title: "Votar entre dos pasadas", labels: ["evolve"] });
-    expect(issue?.body?.body).toContain("Dos llamadas y desempate");
-    vi.stubEnv("EVOLVE_ADMINS", "someone@else.com");
-    expect((await evolve.POST(req("POST", { op: "dispatch", title: "Otra", idea: "x" }))).status).toBe(403);
-    vi.stubEnv("EVOLVE_ADMINS", "alan@example.com");
+  it("any user with their own key starts a run; CI gets that user's key once", async () => {
+    expect((await post({ op: "dispatch", title: "Votar entre dos pasadas" })).body.reason).toBe("no-key");
+    await saveKey();
+    const { status, body } = await post({ op: "dispatch", title: "Votar entre dos pasadas", idea: "Dos llamadas y desempate", builder: "forja" });
+    expect(status).toBe(200);
+    expect(body.run).toMatchObject({ status: "queued", builder: "forja", proposal: { title: "Votar entre dos pasadas" } });
+    const d = dispatches.at(-1);
+    expect(d?.body.ref).toBe("main");
+    expect(d?.body.inputs).toMatchObject({ run_id: body.run.id, app_url: "https://agentztein.test" });
+    expect((await post({ op: "dispatch", title: "Otra idea más" })).body.reason).toBe("busy");
+
+    const token = d?.body.inputs.token ?? "";
+    expect((await ciCall({ op: "start", runId: body.run.id, token }, "wrong".repeat(10))).status).toBe(401);
+    expect((await ciCall({ op: "start", runId: body.run.id, token: "nope" })).status).toBe(404);
+    const start = await ciCall({ op: "start", runId: body.run.id, token, ciUrl: "https://github.com/AlanJLJ2202/Agentztein/actions/runs/1" });
+    expect(start.status).toBe(200);
+    expect(start.body).toMatchObject({ key: "mk-meta-good-key-00001", executor: "muse-spark-1.3", planner: "muse-wonder-1.0", builder: "forja", base: null });
+    expect((await ciCall({ op: "start", runId: body.run.id, token })).status).toBe(409);
+    const db = new pg.Client({ connectionString: dbUrl });
+    await db.connect();
+    const { rows } = await db.query("SELECT token_hash, status FROM app.evolve_runs WHERE id = $1", [body.run.id]);
+    await db.end();
+    expect(rows[0].status).toBe("building");
+    expect(rows[0].token_hash).not.toContain(token);
   });
 
-  it("lets Muse Wonder propose the change, inside the harness, and files it", async () => {
-    expect((await (await evolve.POST(req("POST", { op: "propose" }))).json()).reason).toBe("no-key");
-    const saved = await keys.POST(new Request("https://agentztein.test/api/keys", {
-      method: "POST",
-      headers: { authorization: "Bearer tok", "content-type": "application/json" },
-      body: JSON.stringify({ provider: "meta", key: "mk-meta-good-key-00001" }),
-    }));
-    expect(saved.status).toBe(201);
-    github.length = 0;
-    const res = await evolve.POST(req("POST", { op: "propose", guidance: "piensa en las tolerancias" }));
-    const body = await res.json();
-    expect(res.status).toBe(200);
-    expect(body).toMatchObject({ model: "muse-wonder-1.0", issue: { number: 7 }, proposal: { title: "Calculadora para tolerancias" } });
-    expect(chats.at(-1)?.model).toBe("muse-wonder-1.0");
-    expect(chats.at(-1)?.messages[0]?.content).toContain("packages/agent-core");
-    expect(chats.at(-1)?.messages[1]?.content).toContain("piensa en las tolerancias");
-    expect(chats.at(-1)?.messages[1]?.content).toContain("evolve: votar → merged (gate: merge, +12)");
-    const issue = github.find((g) => g.method === "POST" && g.url.endsWith("/issues"));
-    expect(issue?.body?.body).toContain("**Hipótesis.** Falla al restar");
-    expect(issue?.body?.body).toContain("Muse Wonder (`muse-wonder-1.0`)");
+  it("a version that improves becomes the user's active core, and their exams run it sandboxed", async () => {
+    const run = (await state()).runs[0];
+    const token = dispatches.at(-1)?.body.inputs.token ?? "";
+    const base = bench({ manufactura: [50, 90], envios: [60, 90] });
+    const head = bench({ manufactura: [58, 90], envios: [61, 90] }, "core@2");
+    const fin = await ciCall({ op: "finish", runId: run.id, token, files: improved, changes: "Dos pasadas\n\nHipótesis…", builder: "forja", base, head, usage: { input: 5000, output: 900, cost: 0.03, model: "muse-spark-1.3" } });
+    expect(fin.body).toMatchObject({ status: "passed", verdict: { pass: true, gain: 9 }, core: { version: 1 } });
+    const s = await state();
+    expect(s.active).toMatchObject({ version: 1, coreVersion: "core@2", strategy: expect.stringContaining("Dos pasadas") });
+    expect(s.runs[0]).toMatchObject({ status: "passed", costUsd: 0.03, verdict: { pass: true } });
+    expect(s.cores[0]).toMatchObject({ version: 1, status: "active", builder: "forja", changes: expect.stringContaining("Dos pasadas") });
+    const code = await (await evolve.GET(req("GET", undefined, `/api/evolve?core=${s.cores[0].id}`))).json();
+    expect(code.files["src/index.js"]).toContain("core@2");
+
+    // the user's exam now runs their own core, in the sandbox
+    const exam = await agent.POST(req("POST", { op: "exam", scenario: "manufactura" }, "/api/agent"));
+    expect(exam.status).toBe(200);
+    expect((await exam.json()).core).toBe("v1 · core@2");
+
+    // another user still has the platform's core and can't see this one
+    who = OTHER;
+    expect((await state()).active).toBeNull();
+    expect((await evolve.GET(req("GET", undefined, `/api/evolve?core=${s.cores[0].id}`))).status).toBe(404);
+    who = USER;
+  });
+
+  it("Muse Wonder proposes the next change from the user's own core; a regression is rejected", async () => {
+    const { status, body } = await post({ op: "propose", guidance: "piensa en las tolerancias" });
+    expect(status).toBe(200);
+    expect(body).toMatchObject({ model: "muse-wonder-1.0", proposal: { title: "Calculadora para tolerancias" }, run: { status: "queued", builder: "muse-code" } });
+    const planner = chats.findLast((c) => c.model === "muse-wonder-1.0");
+    expect(planner?.messages[1]?.content).toContain("v1 (core@2)");
+    expect(planner?.messages[1]?.content).toContain("Votar entre dos pasadas → passed (+9)");
+    const token = dispatches.at(-1)?.body.inputs.token ?? "";
+    const start = await ciCall({ op: "start", runId: body.run.id, token });
+    expect(start.body.base).toMatchObject({ version: 1, files: { "src/index.js": expect.stringContaining("core@2") } });
+    const worse = { ...improved, "src/index.js": (improved["src/index.js"] ?? "").replace('"core@2"', '"core@3"') };
+    const fin = await ciCall({ op: "finish", runId: body.run.id, token, files: worse, builder: "muse-code", base: bench({ manufactura: [58, 90], envios: [61, 90] }), head: bench({ manufactura: [70, 90], envios: [50, 90] }) });
+    expect(fin.body).toMatchObject({ status: "rejected", verdict: { reason: "regression" } });
+    const s = await state();
+    expect(s.active.version).toBe(1);
+    expect(s.cores.map((c: { version: number; status: string }) => `${c.version}:${c.status}`)).toEqual(["2:rejected", "1:active"]);
+  });
+
+  it("refuses code that breaks the rules even if CI says it passed", async () => {
+    const { body } = await post({ op: "dispatch", title: "Atajo prohibido" });
+    const token = dispatches.at(-1)?.body.inputs.token ?? "";
+    await ciCall({ op: "start", runId: body.run.id, token });
+    const evil = { ...improved, "src/index.js": "export const k = process.env;\nexport async function solve() { return { answers: {} }; }" };
+    const fin = await ciCall({ op: "finish", runId: body.run.id, token, files: evil, base: bench({ a: [1, 10] }), head: bench({ a: [10, 10] }) });
+    expect(fin.body).toMatchObject({ status: "rejected", verdict: { reason: "rules" }, core: null });
+    expect((await state()).active.version).toBe(1);
+  });
+
+  it("the user can go back to the platform's core or to a version that passed", async () => {
+    let s = await state();
+    const v1 = s.cores.find((c: { version: number }) => c.version === 1);
+    const v2 = s.cores.find((c: { version: number }) => c.version === 2);
+    expect((await post({ op: "activate", coreId: v2.id })).status).toBe(409);
+    s = (await post({ op: "activate", coreId: null })).body;
+    expect(s.active).toBeNull();
+    s = (await post({ op: "activate", coreId: v1.id })).body;
+    expect(s.active.version).toBe(1);
+  });
+
+  it("logs what the runs spent in the user's harness", async () => {
+    const db = new pg.Client({ connectionString: dbUrl });
+    await db.connect();
+    const { rows } = await db.query("SELECT kind, count(*)::int AS n FROM app.harness_runs WHERE user_id = $1 GROUP BY kind ORDER BY kind", [USER.id]);
+    await db.end();
+    expect(rows).toEqual(expect.arrayContaining([{ kind: "evolve-ci", n: 3 }, { kind: "evolve", n: 1 }, { kind: "exam", n: 1 }]));
   });
 });

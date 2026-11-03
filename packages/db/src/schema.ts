@@ -391,3 +391,63 @@ export const agentJobs = app.table(
   },
   (t) => [index("agent_jobs_user").on(t.userId, t.createdAt)],
 );
+
+/**
+ * Each user's own version of the agent's core (packages/agent-core), written by the builder (Muse Code or Forja)
+ * in a run of the evolve workflow. `files` is the whole package (path → text). A version's code never changes
+ * (trigger in migration 0008); only its status moves. No row means the user runs the platform's core (v0).
+ * Only an "active" version answers the user's exams, always in a sandboxed child process (api/_lib/sandbox.js).
+ */
+export const agentCores = app.table(
+  "agent_cores",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    version: integer("version").notNull(),
+    files: jsonb("files").notNull(),
+    coreVersion: text("core_version").notNull(),
+    strategy: text("strategy").notNull(),
+    changes: text("changes").notNull().default(""),
+    parentId: uuid("parent_id"),
+    runId: uuid("run_id"),
+    builder: text("builder").notNull(),
+    status: text("status").notNull().default("candidate"),
+    verdict: jsonb("verdict"),
+    createdAt: createdAt(),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("agent_cores_version").on(t.userId, t.version),
+    index("agent_cores_user").on(t.userId, t.status),
+    check("agent_cores_status_chk", sql`${t.status} in ('candidate', 'active', 'rejected', 'retired')`),
+  ],
+);
+
+/**
+ * One run of the evolve workflow for one user: Muse Wonder's hypothesis, then GitHub Actions builds and judges it
+ * with that user's own Meta key, fetched once with the run's one-time token (only its hash is stored here).
+ */
+export const evolveRuns = app.table(
+  "evolve_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    status: text("status").notNull().default("queued"),
+    builder: text("builder").notNull(),
+    proposal: jsonb("proposal").notNull(),
+    baseCoreId: uuid("base_core_id"),
+    candidateCoreId: uuid("candidate_core_id"),
+    tokenHash: text("token_hash").notNull(),
+    keyFetchedAt: timestamp("key_fetched_at", { withTimezone: true }),
+    maxUsd: numeric("max_usd", { precision: 10, scale: 4 }).notNull(),
+    costUsd: numeric("cost_usd", { precision: 12, scale: 6 }).notNull().default("0"),
+    detail: jsonb("detail").notNull().default(sql`'{}'::jsonb`),
+    ciUrl: text("ci_url"),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("evolve_runs_user").on(t.userId, t.createdAt),
+    check("evolve_runs_status_chk", sql`${t.status} in ('queued', 'building', 'passed', 'rejected', 'failed')`),
+  ],
+);

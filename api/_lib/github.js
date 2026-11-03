@@ -1,9 +1,9 @@
-// GitHub for the self-change loop (ADR-026). The app only opens issues labeled "evolve" and reads what came of
-// them (PRs, the gate's verdict, the agent-vN tags). Writing code, judging and merging happen in GitHub Actions.
+// GitHub for the self-change loop (ADR-026): the app only starts the evolve workflow for one user's run
+// (workflow_dispatch). Building and judging happen in GitHub Actions, which reports back to /api/evolve-ci.
 import { HttpError } from "./http.js";
 
-export const EVOLVE_LABEL = "evolve";
 const API = "https://api.github.com";
+export const EVOLVE_WORKFLOW = "evolve.yml";
 
 /** The repo and token, if configured. AGENT_GH_REPO, else the repo Vercel deploys from. */
 export function githubConfig(env = process.env) {
@@ -12,12 +12,6 @@ export function githubConfig(env = process.env) {
   const repo = (env.AGENT_GH_REPO ?? fromVercel).trim();
   if (!token || !/^[\w.-]+\/[\w.-]+$/.test(repo)) return null;
   return { token, repo };
-}
-
-/** Who may spend the project's Meta key and open evolve issues: emails in EVOLVE_ADMINS (comma separated). */
-export function isAdmin(email, env = process.env) {
-  const admins = (env.EVOLVE_ADMINS ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-  return Boolean(email) && admins.includes(String(email).toLowerCase());
 }
 
 /**
@@ -44,27 +38,22 @@ export async function gh(cfg, path, { method = "GET", body, fetchImpl = fetch } 
   } catch {
     throw new HttpError(502, "Could not reach GitHub");
   }
-  if (res.status === 401 || res.status === 403) throw new HttpError(502, "GitHub rejected AGENT_GH_TOKEN (check its permissions)", { reason: "github-auth" });
-  if (res.status === 404) throw new HttpError(502, "GitHub can't find the repo (check AGENT_GH_REPO and the token's repository access)", { reason: "github-repo" });
+  if (res.status === 401 || res.status === 403) throw new HttpError(502, "GitHub rejected AGENT_GH_TOKEN (it needs Actions: read and write on the repo)", { reason: "github-auth" });
+  if (res.status === 404) throw new HttpError(502, "GitHub can't find the repo or the evolve workflow (check AGENT_GH_REPO, the token's repository access, and that evolve.yml is on main)", { reason: "github-repo" });
   if (!res.ok) throw new HttpError(502, `GitHub answered with an error (${res.status})`);
   return res.status === 204 ? null : res.json();
 }
 
-const GATE_TITLES = /** @type {const} */ ({ "✅": "merge", "🟡": "human", "⛔": "reject", "⚪": "skip" });
-
-/** The decision and the totals in the gate's PR comment, if there is one. @param {string | null | undefined} body */
-export function gateOf(body) {
-  if (!body || !body.startsWith("<!-- agent-gate -->")) return null;
-  const head = /###\s*(\S+)/.exec(body)?.[1] ?? "";
-  const decision = /** @type {Record<string, string>} */ (GATE_TITLES)[head] ?? null;
-  const total = /\|\s*\*\*Total\*\*\s*\|\s*\*\*(\d+)\/(\d+)\*\*[^|]*\|\s*\*\*(\d+)\/(\d+)\*\*[^|]*\|\s*\*\*([+-]?\d+)\*\*/.exec(body);
-  return {
-    decision,
-    base: total ? { correct: Number(total[1]), total: Number(total[2]) } : null,
-    head: total ? { correct: Number(total[3]), total: Number(total[4]) } : null,
-    gain: total ? Number(total[5]) : null,
-  };
+/**
+ * Starts the evolve workflow for one run. The inputs carry no secret but the run's one-time token.
+ * @param {{ token: string, repo: string }} cfg
+ * @param {{ runId: string, token: string, appUrl: string, ref?: string }} run
+ * @param {typeof fetch} [fetchImpl]
+ */
+export async function dispatchEvolve(cfg, run, fetchImpl = fetch) {
+  await gh(cfg, `actions/workflows/${EVOLVE_WORKFLOW}/dispatches`, {
+    method: "POST",
+    body: { ref: run.ref ?? "main", inputs: { run_id: run.runId, token: run.token, app_url: run.appUrl } },
+    fetchImpl,
+  });
 }
-
-/** The builder named in an evolve PR body (`<!-- evolve:run=… builder=… -->`). @param {string | null | undefined} body */
-export const builderOf = (body) => /<!-- evolve:run=\d+ builder=([\w-]+) -->/.exec(body ?? "")?.[1] ?? null;

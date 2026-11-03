@@ -1,114 +1,113 @@
-# Agentztein reescribe su propio código (ADR-026)
+# Cada agente reescribe su propio código (ADR-026)
 
-Agentztein ya no se mejora solo con skills de texto: **cambia su propio código**, y lo hace con los modelos de
-Meta en cada paso. El código que puede cambiar es `packages/agent-core`, el ejecutor que presenta los exámenes en la
-app. Todo lo demás (la app, el banco, el calificador, el arnés, los workflows) es el anfitrión y el juez, y el
-agente no lo toca.
+Cualquier persona que entra a la app y pega su llave de Meta tiene **su propio agente**, y ese agente puede
+**cambiar su propio código**, no solo escribirse skills de texto. Todo pasa con la llave de esa persona, dentro de
+su presupuesto, y con los modelos de Meta en cada paso.
+
+El código que cambia es el núcleo del agente: `packages/agent-core`, la función `solve(task, tools)` que presenta los
+exámenes. Cada usuario tiene su propia línea de versiones de ese núcleo en la base de datos (`app.agent_cores`). Quien
+todavía no tiene ninguna usa el de la plataforma (v0). El banco, el calificador, el arnés y los workflows son el
+anfitrión y el juez, y el agente no los toca.
 
 ```
-App (/app/#evolve, "Su código")                      GitHub Actions
-  Muse Wonder lee: estrategia actual del núcleo,
-  errores de práctica, ideas aprobadas del radar
-  y los intentos anteriores con su veredicto
+App · pestaña "Su código" (cualquier usuario con su llave)        GitHub Actions · evolve.yml
+  Muse Wonder (llave del usuario, dentro de su arnés) lee:
+  su núcleo actual, sus errores de práctica, las ideas
+  que aprobó en el radar y sus intentos anteriores
   → escribe UNA hipótesis de cambio de código
-  → abre un issue con la etiqueta "evolve"  ───────►  evolve.yml · build (solo la llave de Meta)
-                                                        1. mide el núcleo actual en el set de práctica
-                                                        2. arma un taller: copia del núcleo + práctica + BRIEF.md
-                                                        3. Muse Code (`muse exec`) lo cambia, como un usuario
-                                                           sin permisos que no puede leer el repo
-                                                           (si Muse Code no corre: Forja, Muse + function calling)
-                                                        4. trae de vuelta SOLO packages/agent-core → patch
-                                                      evolve.yml · publish (runner nuevo, token de GitHub)
-                                                        5. aplica el patch, lo revisa con las reglas de main
-                                                        6. abre el PR "evolve: …"
-                                                      agent-gate.yml (código del juez = el de main)
-                                                        · check: pnpm check del PR
-                                                        · judge: rutas + escaneo estático del núcleo +
-                                                          examen NUEVO (semilla aleatoria, perfil held-out)
-                                                          para el núcleo de main y el del PR, cada uno en un
-                                                          worker sin llaves → comentario con la tabla
-                                                        · merge: solo si "merge" → squash + tag agent-vN
-  La pantalla muestra versiones, intentos y veredictos ◄───────────────────────────────┘
+  → crea la corrida (token de un solo uso) y dispara  ──────────►  1. pide la corrida a /api/evolve-ci: la llave del
+    el workflow (workflow_dispatch)                                   usuario (enmascarada), su núcleo actual, la idea
+                                                                   2. mide ese núcleo en el set de práctica
+                                                                   3. taller con solo el núcleo; Muse Code (`muse exec`)
+                                                                      lo cambia como un usuario sin permisos
+                                                                      (si no corre: Forja, Muse + function calling)
+                                                                   4. examen NUEVO (semilla aleatoria, held-out) para
+                                                                      el núcleo actual y el nuevo, cada uno en el sandbox
+  /api/evolve-ci vuelve a revisar el código y el         ◄──────── 5. manda el código nuevo y los resultados
+  veredicto: si mejora y no rompe nada, esa versión
+  queda ACTIVA para ese usuario (y solo para él)
+  Sus exámenes en la app corren ya con su núcleo, en el sandbox
 ```
 
 ## Por qué es válido para el hackathon de Meta
 
-| Paso | Modelo |
+| Paso | Modelo | Llave |
+|---|---|---|
+| Decide qué cambiar | **Muse Wonder** | la del usuario |
+| Escribe el código | **Muse Code**, el agente de terminal de Meta (`muse exec`), o **Forja** (Muse con function calling) | la del usuario |
+| Presenta los exámenes | **Muse Spark** | la del usuario |
+
+## Cuándo se adopta una versión nueva
+
+La decide el servidor (`api/_lib/core-rules.js`), no CI ni el agente:
+
+| Caso | Resultado |
 |---|---|
-| Decide qué cambiar | **Muse Wonder** (`/api/evolve`, con la llave del usuario y dentro del arnés) |
-| Escribe el código | **Muse Code**, el agente de terminal de Meta (`muse exec`), o **Forja** (Muse Wonder/Spark con function calling) |
-| Presenta los exámenes | **Muse Spark**, tanto en la app como en el gate |
+| El código rompe las reglas (red, `process`, `import()`, `eval`, imports de fuera, ids memorizados…) | rechazada, ni siquiera se guarda |
+| Un escenario baja más de lo permitido, o el núcleo nuevo falla donde el actual no | rechazada |
+| Sube menos de 2 aciertos o del 2% del examen | rechazada |
+| Mejora y no rompe nada | **activa** para ese usuario |
 
-Cada PR dice qué constructor lo hizo (`builder=muse-code|forja`) y el comentario del gate dice qué modelo hizo el
-examen y cuánto costó.
+El usuario puede regresar a cualquier versión suya que haya pasado, o al núcleo de la plataforma. Las versiones no
+se borran ni se reescriben (trigger en la migración `0008`).
 
-## El gate: cuándo se fusiona solo
+### Aislamiento y contra las trampas
 
-| Caso | Decisión |
-|---|---|
-| El PR no toca `packages/agent-core` | `skip` (el gate no opina) |
-| El núcleo rompe las reglas (red, `process`, `import()`, `eval`, imports de fuera, ids memorizados…) | `reject` (el check falla) |
-| Un escenario baja más de lo permitido, o el núcleo nuevo falla donde el viejo no | `reject` |
-| Sube menos de lo necesario (2 aciertos o el 2% del examen) | `human` |
-| Toca archivos fuera de `packages/agent-core` | `human` |
-| No lo abrió el workflow `evolve` (rama `evolve/<run>`) | `human` |
-| Abierto por `evolve`, solo el núcleo, mejora y no rompe nada, y `pnpm check` pasa | **`merge`** + tag `agent-vN` |
+- **Cada núcleo corre en un sandbox.** En la app y en CI, el núcleo corre en un proceso hijo de Node con el
+  *permission model* (`api/_lib/sandbox.js`): solo puede leer su carpeta, su entorno está vacío y no puede lanzar
+  procesos ni workers. Para usar el modelo tiene que pedírselo al padre, que lo mide y lo cobra al arnés del usuario.
+  Las pruebas (`test/api/sandbox.test.ts`) corren código hostil que se saltó el escaneo y verifican que no puede leer
+  archivos, ni el entorno del padre, ni lanzar procesos.
+- **La llave viaja una sola vez.** CI la pide con el token de un solo uso de esa corrida (solo su hash vive en la DB)
+  y `EVOLVE_CI_SECRET`. Queda en un archivo que el constructor no puede leer y se borra al terminar.
+- **El examen no existe cuando el agente escribe el código.** Se genera en cada corrida con una semilla aleatoria, en
+  un rango que ningún otro set usa.
+- **El constructor no ve al juez.** Trabaja en `/tmp/workshop` como el usuario `builder` del runner, sin `sudo` y sin
+  acceso a la home del runner: no ve el repo, ni el banco, ni los generadores, ni la llave guardada.
 
-Las reglas (`scripts/evolve/gate.ts`), el examen (`scripts/evolve/exam.ts`) y el calificador (`api/_lib/agent.js`)
-siempre salen de `main`, no del PR. Y el token que abre los PRs no tiene permiso de *Workflows*, así que un PR no puede
-cambiar los workflows que lo juzgan.
+## Qué tienes que configurar (una vez, ~10 min)
 
-### Contra las trampas
+1. **Migración:** GitHub → Actions → `db-migrate` → *Run workflow* (`migrate`). Crea `app.agent_cores` y
+   `app.evolve_runs` (`0008`).
+2. **Un secreto compartido:** genera uno con `openssl rand -base64 48`. Ponlo como **`EVOLVE_CI_SECRET`** en GitHub
+   (Settings → Secrets and variables → Actions → *Secrets*) y en Vercel (Environment Variables). Es lo único que el
+   repo necesita: cada corrida usa la llave de Meta de su usuario.
+3. **Un token de GitHub para disparar el workflow:** un *fine-grained personal access token* con acceso solo a este
+   repo y **Actions: Read and write** (nada más). En Vercel: `AGENT_GH_TOKEN` = ese token y
+   `AGENT_GH_REPO` = `AlanJLJ2202/Agentztein`.
+4. **El workflow tiene que estar en `main`:** GitHub solo deja disparar `workflow_dispatch` de workflows que están en la
+   rama por defecto. Fusiona esta rama.
+5. **Opcional, en Vercel:** `EVOLVE_APP_URL`, la URL a la que CI reporta (por defecto el dominio de producción). Los
+   *previews* con Vercel Authentication no aceptarían la llamada de CI. `EVOLVE_MAX_USD` (tope por corrida, $2 por
+   defecto, nunca más de lo que le queda al usuario en el mes) y `EVOLVE_DAILY_RUNS` (3 por defecto: los minutos de
+   Actions son de la plataforma).
+6. **Opcional, variables del repo:** `MUSE_INSTALL_URL` (instalador de Muse Code; por defecto
+   `https://dev.meta.ai/install.sh`, **verifícalo en la doc oficial de Meta**), `MUSE_INSTALL_SHA256` y
+   `MUSE_EXEC_FLAGS` (por defecto `--yolo`; el aislamiento lo da el usuario `builder`).
+7. **Prueba:** entra a la app con cualquier cuenta que tenga su llave de Meta → pestaña **Su código** → *Que Muse Wonder
+   proponga un cambio* (elige Forja si Muse Code todavía no instala).
 
-- **El examen no existe cuando el agente escribe el código.** Se genera en cada corrida del gate con una semilla
-  aleatoria, en un rango de semillas que ningún otro set usa y con el perfil *held-out*. Memorizar registros no sirve.
-- **El constructor no ve el juez.** Trabaja en `/tmp/workshop` como el usuario `builder`, sin `sudo` y sin acceso a la
-  home del runner. Ahí solo hay una copia del núcleo, el set de práctica (con respuestas, como ya lo ve el
-  planificador) y el brief. No ve los generadores de escenarios, ni el banco, ni el gate.
-- **El núcleo corre aislado.** En el gate, cada versión corre en un `worker_thread` con `env: {}`: sin llave y sin
-  poder tocar los objetos globales del calificador. Solo puede salir por `tools.model`, con un límite de llamadas.
-- **Solo vuelve el núcleo.** El job `publish` rechaza cualquier patch que toque otra ruta.
+## Costo por corrida (con la llave del usuario)
 
-## Qué tienes que configurar (una vez, ~15 min)
+- Wonder propone: una llamada.
+- Práctica: 4 llamadas a Spark. Examen: unas 8 llamadas a Spark sobre ~360 registros. Centavos.
+- Forja: con tope (55% del tope de la corrida). **Muse Code cobra su propio uso a la llave del usuario y el arnés no lo
+  puede medir**; el registro solo incluye lo medido.
+- Todo lo medido queda en `app.harness_runs` (`evolve`, `evolve-ci`) y cuenta para su presupuesto mensual.
 
-1. **Secretos del repo** (GitHub → Settings → Secrets and variables → Actions → *Secrets*):
-   - `META_API_KEY`: una llave de la Meta Model API **solo para CI**, con límite de gasto (por ejemplo, $20).
-     La usan Muse Code, Forja y el gate.
-   - `AGENT_GH_TOKEN`: un *fine-grained personal access token* (GitHub → Settings → Developer settings →
-     Fine-grained tokens) con acceso **solo** a este repo. Permisos: *Contents: Read and write*, *Pull requests:
-     Read and write*, *Issues: Read and write*, *Metadata: Read*. **Sin** *Workflows*. Con este token los PRs sí
-     disparan `agent-gate` (con el `GITHUB_TOKEN` no se dispararía).
-2. **Variables del repo** (misma página, pestaña *Variables*; todas opcionales):
-   - `EVOLVE_SCHEDULE` = `on`: un ciclo diario solo (16:41 UTC).
-   - `EVOLVE_BUILDER` = `muse-code` (por defecto) o `forja`.
-   - `MUSE_INSTALL_URL`: instalador de Muse Code (por defecto `https://dev.meta.ai/install.sh`). **Verifícalo en la
-     doc oficial de Meta**; no lo pude confirmar desde aquí. Opcional: `MUSE_INSTALL_SHA256` para verificar el script.
-   - `MUSE_EXEC_FLAGS`: por defecto `--yolo` (sin aprobaciones ni sandbox propio de Muse Code; el aislamiento lo da
-     el usuario `builder`). Si tu versión usa otros flags: `--approval-mode never --disable-sandbox`.
-   - `META_MODEL` / `META_PLANNER_MODEL`: para fijar los modelos (por defecto, el Muse Spark/Wonder más nuevo que
-     liste la llave).
-3. **Settings → General → Pull Requests:** deja activado *Allow squash merging*.
-4. **Vercel → Environment Variables:**
-   - `AGENT_GH_TOKEN`: el mismo token (la app solo abre issues y lee PRs).
-   - `AGENT_GH_REPO` = `AlanJLJ2202/Agentztein` (o deja que se use el repo del que despliega Vercel).
-   - `EVOLVE_ADMINS`: tu correo (separa varios con comas). Solo esas cuentas pueden mandar al agente a cambiar su
-     código, porque eso gasta la llave del proyecto en CI.
-5. **Primera prueba:** Actions → **evolve** → *Run workflow* (builder `forja` si Muse Code aún no instala), o en la
-   app: pestaña **Su código** → *Que Muse Wonder proponga un cambio*.
+## El núcleo de la plataforma
 
-## Costo por ciclo (estimado)
-
-- Práctica antes de construir: 4 llamadas a Spark, unos centavos.
-- Construcción: Muse Code o Forja, con tope de $2 en Forja. Muse Code cobra según su plan.
-- Gate: unas 8 llamadas a Spark (4 escenarios × 2 versiones) sobre ~360 registros, unos centavos.
-- Actions: gratis en el plan de GitHub hasta tus minutos incluidos.
+Es el v0 con el que arranca todo usuario nuevo y cambia por PR. `agent-gate.yml` examina cada PR que lo toca con las
+mismas reglas y el mismo examen nuevo (si el repo tiene el secreto `META_API_KEY`) y deja un comentario; lo fusiona
+una persona.
 
 ## Riesgos que quedan (honestos)
 
-- **La llave de CI está en el proceso del constructor.** Un núcleo malicioso que lograra ofuscar su código más allá del
-  escaneo estático podría intentar usarla. Mitigación: una llave aparte con límite de gasto.
-- **El gate es estadísticamente modesto.** Un examen de ~360 registros y el umbral de +2% filtran ruido grueso, no
-  diferencias finas. Para afirmaciones fuertes hay que repetir con varias semillas.
-- **Muse Code en CI no está probado aquí.** La sesión que construyó esto no pudo abrir `dev.meta.ai`. Si el instalador
-  o los flags cambian, el workflow cae solo en Forja.
+- **El constructor tiene la llave del usuario.** Muse Code o Forja la necesitan para trabajar; con una guía maliciosa,
+  un usuario solo podría gastar su propia llave.
+- **El permission model de Node no bloquea la red.** Un núcleo podría abrir conexiones, pero dentro del sandbox no hay
+  ninguna llave, entorno ni archivo que mandar.
+- **El juez es estadísticamente modesto.** ~360 registros y un umbral de +2% filtran ruido grueso, no diferencias finas.
+- **Muse Code en CI no está probado aquí.** Esta sesión no pudo abrir `dev.meta.ai`. Si el instalador o los flags
+  cambian, la corrida cae sola en Forja.
 - Todo esto sigue siendo sobre los escenarios sintéticos del banco, no sobre SWE-bench u otros benchmarks públicos.
