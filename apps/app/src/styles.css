@@ -78,8 +78,7 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 
 /* Wordmark (same as the landing) */
 .word { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.25rem; letter-spacing: -.035em; text-decoration: none; color: var(--ink); }
-.word i { width: 13px; height: 19px; border-radius: 4px 4px 6px 6px; background: var(--meta); position: relative; }
-.word i::before { content: ""; position: absolute; left: -2px; right: -2px; top: -4px; height: 5px; border-radius: 2px; background: var(--ink); }
+.word img { display: block; height: 26px; width: auto; }
 
 /* Language switch */
 .lang { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--soft); }

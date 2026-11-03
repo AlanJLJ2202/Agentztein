@@ -136,7 +136,7 @@ export function SignIn({ supabase, google: gconf, lang, setLang }: { supabase: S
       </section>
       <section className="signin-box">
         <div className="row between">
-          <a className="word" href="/"><i aria-hidden="true" />Agentztein</a>
+          <a className="word" href="/"><img src="/img/logo.webp" alt="Agentztein" width={126} height={26} /></a>
           <LangSwitch lang={lang} setLang={setLang} />
         </div>
         <div className="signin-copy">

@@ -98,8 +98,7 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 .bar { position: sticky; top: 0; z-index: 50; background: rgba(255, 255, 255, .92); backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px); }
 .bar .wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
 .word { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.3rem; letter-spacing: -.035em; text-decoration: none; }
-.word i { width: 14px; height: 20px; border-radius: 4px 4px 6px 6px; background: var(--meta); position: relative; }
-.word i::before { content: ""; position: absolute; left: -2px; right: -2px; top: -4px; height: 5px; border-radius: 2px; background: var(--ink); }
+.word img { display: block; height: 28px; width: auto; }
 .links { display: flex; gap: 26px; margin-left: auto; }
 .links a { text-decoration: none; color: var(--muted); font-weight: 500; transition: color .2s var(--ease); }
 .links a:hover, .links a.on { color: var(--ink); }
@@ -781,7 +780,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 
 <header class="bar">
   <div class="wrap">
-    <a class="word" href="#inicio" aria-label="Agentztein, home" data-es-aria-label="Agentztein, inicio"><i aria-hidden="true"></i>Agentztein</a>
+    <a class="word" href="#inicio" aria-label="Agentztein, home" data-es-aria-label="Agentztein, inicio"><img src="img/logo.webp" alt="Agentztein" width="136" height="28"></a>
     <nav class="links" id="menu" aria-label="Sections" data-es-aria-label="Secciones">
       <a href="#como-funciona" data-es="Cómo funciona">How it works</a>
       <a href="#laboratorio" data-es="Laboratorio">The lab</a>

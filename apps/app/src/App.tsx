@@ -76,7 +76,7 @@ function Setup({ missing, lang, setLang }: { missing: string[]; lang: Lang; setL
     <main className="center">
       <div className="panel narrow">
         <div className="row between">
-          <a className="word" href="/"><i aria-hidden="true" />Agentztein</a>
+          <a className="word" href="/"><img src="/img/logo.webp" alt="Agentztein" width={126} height={26} /></a>
           <LangSwitch lang={lang} setLang={setLang} />
         </div>
         <h1 className="h2">{t(T.setupTitle)}</h1>
@@ -129,7 +129,7 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
     <>
       <header className="bar">
         <div className="wrap row">
-          <a className="word" href="/" aria-label="Agentztein"><i aria-hidden="true" />Agentztein</a>
+          <a className="word" href="/" aria-label="Agentztein"><img src="/img/logo.webp" alt="Agentztein" width={126} height={26} /></a>
           <nav className="tabs" aria-label={lang === "es" ? "Secciones" : "Sections"}>
             {TABS.map((id) => (
               <a key={id} href={`#${id}`} aria-current={tab === id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(id); }}>
