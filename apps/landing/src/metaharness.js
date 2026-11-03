@@ -55,7 +55,7 @@ if (card) {
   const approve = $("#hApprove");
   const btns = [...card.querySelectorAll(".scn")];
   const pos = nodes.map((n) => n.getAttribute("transform").match(/translate\(([\d.]+) ([\d.]+)\)/).slice(1).map(Number));
-  const START = [24, 352], AGENT = [352, 342];
+  const START = [360, 40], AGENT = [360, 330];
   const at = (el, [x, y]) => { el.style.transform = `translate(${x}px, ${y}px)`; };
   const MSG = [
     { en: "<b>Stopped at “Validated tests”.</b> Improving on tests it had already seen doesn't count: it is measured on a sealed exam it never sees.", es: "<b>Detenido en «Pruebas validadas».</b> Mejorar en pruebas que ya había visto no cuenta: se mide con un examen sellado que nunca ve." },

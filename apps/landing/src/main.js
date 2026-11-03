@@ -23,7 +23,7 @@ let hero3d = null;
 document.addEventListener("lang:change", (e) => {
   setLanguage(e.detail);
   sound.setLanguage(e.detail);
-  labKey = "";
+  cardKey = "";
   paintMusic();
   if (hero3d) hero3d.relabel();
   if (room) { room.relabel(); renderGuide(lastGuide); viewLabel(); }
@@ -83,23 +83,39 @@ function viewLabel() {
   if (fsTxt) fsTxt.textContent = tr(document.fullscreenElement ? UI.exitFull : UI.full);
 }
 
-/* The popup that sits on the exhibit you are near: title plus the first sentence of its explanation. */
-const labPop = $("#labPop");
-let labKey = "";
+/* The guide card IS the popup: it sits on the exhibit you are near (or looking at), big, with the keys that work there.
+   With nothing to point at, it rests in the corner and explains the room. */
+const guideCard = $("#card");
+const stageEl = $(".stage");
+const phone = matchMedia("(max-width: 760px)");
+let cardKey = "", cardW = 0, cardH = 0;
 function labAnchor(a) {
-  if (!labPop) return;
-  if (!a) { labPop.classList.remove("on"); labKey = ""; return; }
+  if (!guideCard || phone.matches) { guideCard?.classList.remove("anchored"); return; }
+  if (!a) { cardKey = ""; guideCard.classList.remove("anchored", "below"); guideCard.style.transform = ""; return; }
   const key = `${a.room}:${a.item}`;
-  if (key !== labKey) {
-    labKey = key;
-    const r = ROOMS[a.room], it = r.items[a.item];
-    if (!it) { labPop.classList.remove("on"); return; }
-    labPop.firstElementChild.textContent = tr(it.title);
-    labPop.lastElementChild.textContent = tr(it.text).split(/(?<=[.!?])\s/)[0];
-    labPop.style.setProperty("--c", hexColor(r.color));
-    labPop.classList.add("on");
+  if (key !== cardKey || !guideCard.classList.contains("anchored")) {
+    cardKey = key;
+    renderGuide({ room: a.room, item: a.item });
+    guideCard.classList.add("anchored");
+    cardW = guideCard.offsetWidth; cardH = guideCard.offsetHeight;
   }
-  labPop.style.transform = `translate(${a.x}px, ${a.y - 14}px) translate(-50%, -100%)`;
+  const W = stageEl.clientWidth, H = stageEl.clientHeight;
+  const left = Math.min(Math.max(12, a.x - cardW / 2), W - cardW - 12);
+  let top = a.y - cardH - 20, below = false;
+  if (top < 64) { top = Math.min(a.y + 24, H - cardH - 12); below = true; }
+  guideCard.classList.toggle("below", below);
+  guideCard.style.setProperty("--ax", `${Math.min(Math.max(22, a.x - left), cardW - 22)}px`);
+  guideCard.style.transform = `translate(${left}px, ${Math.max(10, top)}px)`;
+}
+
+/* A small caption over the room's agent while it works: what it is doing right now. */
+let workEl = null;
+function workCaption(w) {
+  if (!workEl) { workEl = document.createElement("div"); workEl.className = "workcap"; workEl.setAttribute("aria-hidden", "true"); stageEl.append(workEl); }
+  if (!w) { workEl.classList.remove("on"); return; }
+  if (workEl.textContent !== w.text) workEl.textContent = w.text;
+  workEl.classList.add("on");
+  workEl.style.transform = `translate(${w.x}px, ${w.y}px) translate(-50%, -100%)`;
 }
 
 function startRoom() {
@@ -119,6 +135,8 @@ function startRoom() {
       onView: (fp) => { $(".stage").classList.toggle("fp", fp); viewLabel(); },
       onRun: () => document.dispatchEvent(new CustomEvent("room:run")),
       onAnchor: labAnchor,
+      onWorker: workCaption,
+      onTour: (id) => { if (tourOn) sound.narrate(`tour-${id}`); },
     });
     root.classList.add("room-3d");
     viewLabel();
@@ -186,6 +204,29 @@ if (snd) {
     const wasOff = !sound.on;
     await sound.toggle();
     if (wasOff && sound.on) hero3d?.poke(); // let them hear it right away: another jolt and a line
+  });
+}
+
+/* R runs the example exercise and L opens the room's 3D lab, when the card offers them. */
+document.addEventListener("keydown", (e) => {
+  if (!room?.active || e.altKey || e.ctrlKey || e.metaKey || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || "")) return;
+  const btn = e.code === "KeyR" ? $("#runBtn") : e.code === "KeyL" ? $("#benchBtn") : null;
+  if (btn && !btn.hidden && !btn.disabled) { e.preventDefault(); btn.click(); }
+});
+
+/* The voice tour: off by default; when on, the agent says a few words about each room as you reach its main exhibit. */
+const tourBtn = $("#tourBtn");
+let tourOn = false;
+try { tourOn = localStorage.getItem("agz-tour") === "on"; } catch { /* private window */ }
+function paintTour() { if (tourBtn) tourBtn.setAttribute("aria-pressed", String(tourOn)); }
+if (tourBtn) {
+  paintTour();
+  tourBtn.addEventListener("click", async () => {
+    if (!sound.on) await sound.toggle();
+    tourOn = !tourOn; paintTour();
+    try { localStorage.setItem("agz-tour", tourOn ? "on" : "off"); } catch { /* private window */ }
+    if (!tourOn) sound.stopNarration();
+    else if (room) sound.narrate("tour-cuna");
   });
 }
 

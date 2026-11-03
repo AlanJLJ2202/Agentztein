@@ -122,9 +122,10 @@ const SYNTH = {
   pickup() { const t = ctx.currentTime; tone("square", 988, 988, t, 0.08, 0.14); tone("square", 1319, 1319, t + 0.08, 0.3, 0.14); },
   chip() { const t = ctx.currentTime; tone("triangle", 1500, 700, t, 0.05, 0.3); hiss(t, 0.04, { f0: 3500, q: 2, vol: 0.3 }); tone("sine", 440, 880, t + 0.06, 0.2, 0.2); },
   jet() { const t = ctx.currentTime; hiss(t, 0.7, { type: "lowpass", f0: 500, f1: 2600, q: 0.7, vol: 0.5, attack: 0.05 }); tone("sawtooth", 60, 180, t, 0.6, 0.1, 0.05); },
-  alarm() { const t = ctx.currentTime; for (let i = 0; i < 4; i++) { tone("square", 720, 720, t + i * 0.38, 0.17, 0.2); tone("square", 960, 960, t + i * 0.38 + 0.19, 0.17, 0.2); } },
+  engine() { const t = ctx.currentTime; tone("sawtooth", 55, 160, t, 1.4, 0.18, 0.05); tone("sawtooth", 57, 165, t, 1.4, 0.12, 0.05); hiss(t, 1.3, { type: "lowpass", f0: 400, f1: 900, vol: 0.2, attack: 0.1 }); },
+  alarm() { const t = ctx.currentTime; tone("sine", 659, 659, t, 0.5, 0.07, 0.04); tone("sine", 523, 523, t + 0.32, 0.7, 0.07, 0.04); },
   shield() { const t = ctx.currentTime; tone("sine", 180, 760, t, 1.1, 0.26, 0.1); tone("triangle", 184, 770, t, 1.1, 0.16, 0.1); tone("sine", 1500, 2400, t + 0.5, 0.6, 0.06); },
-  shieldhit() { const t = ctx.currentTime; hiss(t, 0.25, { type: "highpass", f0: 2500, vol: 0.55 }); tone("sine", 90, 40, t, 0.4, 0.55); tone("sawtooth", 600, 100, t, 0.3, 0.12); },
+  shieldhit() { const t = ctx.currentTime; hiss(t, 0.22, { type: "lowpass", f0: 900, vol: 0.12 }); tone("sine", 110, 55, t, 0.35, 0.16, 0.01); },
 };
 
 /* ---------- public ---------- */
@@ -152,6 +153,21 @@ async function say(id) {
   try { voiceSrc?.stop(); } catch { /* already over */ }
   voiceSrc = playBuffer(buf, { bus: voiceBus });
 }
+
+/** A longer explanation (the room tour). Uses the ElevenLabs voice and, if that isn't available, the browser's own. */
+async function narrate(id) {
+  if (!enabled || !ctx || !LINES[id]) return;
+  const asked = performance.now();
+  const buf = await lineClip(id);
+  if (!enabled) return;
+  try { voiceSrc?.stop(); } catch { /* already over */ }
+  try { window.speechSynthesis?.cancel(); } catch { /* none */ }
+  if (buf && performance.now() - asked < 8000) { voiceSrc = playBuffer(buf, { bus: voiceBus }); return; }
+  if (!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(LINES[id][lang]); u.lang = lang === "es" ? "es-MX" : "en-US"; u.rate = 1.02; u.volume = 0.9;
+  window.speechSynthesis.speak(u);
+}
+function stopNarration() { try { voiceSrc?.stop(); } catch { /* over */ } try { window.speechSynthesis?.cancel(); } catch { /* none */ } }
 
 function prefetch() {
   // after the first gesture, warm up the effects in the background so they're ready by the time they're needed
@@ -185,16 +201,27 @@ window.addEventListener("keydown", firstGesture, { capture: true });
 /** The jetpack's steady roar while it burns: level 0 (off) to 1 (full thrust). Called every frame. */
 let jetNode = null;
 function jetLoop(level) {
-  if (!enabled || !ctx || ctx.state !== "running") { if (jetNode) jetNode.g.gain.value = 0; return; }
+  if (!enabled || !ctx || ctx.state !== "running") { if (jetNode) { jetNode.g.gain.value = 0; jetNode.rg.gain.value = 0; jetNode.hg.gain.value = 0; } return; }
   if (!jetNode) {
     const src = ctx.createBufferSource(); src.buffer = noise(); src.loop = true;
     const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 600;
     const g = ctx.createGain(); g.gain.value = 0;
     src.connect(f); f.connect(g); g.connect(sfxBus); src.start();
-    jetNode = { g, f };
+    // a low rumble with a fast flutter, and a hissing top layer: the burner and the exhaust
+    const rum = ctx.createOscillator(); rum.type = "sawtooth"; rum.frequency.value = 52;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 23; const lg = ctx.createGain(); lg.gain.value = 9; lfo.connect(lg); lg.connect(rum.frequency);
+    const rg = ctx.createGain(); rg.gain.value = 0; const rf = ctx.createBiquadFilter(); rf.type = "lowpass"; rf.frequency.value = 180;
+    rum.connect(rf); rf.connect(rg); rg.connect(sfxBus); rum.start(); lfo.start();
+    const hs = ctx.createBufferSource(); hs.buffer = noise(); hs.loop = true; const hf = ctx.createBiquadFilter(); hf.type = "highpass"; hf.frequency.value = 3500;
+    const hg = ctx.createGain(); hg.gain.value = 0; hs.connect(hf); hf.connect(hg); hg.connect(sfxBus); hs.start();
+    jetNode = { g, f, rg, hg, rum };
   }
-  jetNode.g.gain.setTargetAtTime(level * 0.2, ctx.currentTime, 0.06);
-  jetNode.f.frequency.setTargetAtTime(500 + level * 1000, ctx.currentTime, 0.1);
+  const now = ctx.currentTime;
+  jetNode.g.gain.setTargetAtTime(level * 0.2, now, 0.06);
+  jetNode.f.frequency.setTargetAtTime(500 + level * 1000, now, 0.1);
+  jetNode.rg.gain.setTargetAtTime(level * 0.2, now, 0.08);
+  jetNode.rum.frequency.setTargetAtTime(45 + level * 30, now, 0.15);
+  jetNode.hg.gain.setTargetAtTime(level * 0.05, now, 0.06);
 }
 
 /** Lets other modules (the music) share the audio context and its master volume. */
@@ -204,6 +231,8 @@ export const sound = {
   jet: jetLoop,
   sfx,
   say,
+  narrate,
+  stopNarration,
   setLanguage(l) { lang = l === "es" ? "es" : "en"; },
   /** Footsteps: call while the agent walks; it paces itself. */
   step() { sfx("step", { rate: rand(0.92, 1.1), gain: rand(0.3, 0.42), every: 140 }); },

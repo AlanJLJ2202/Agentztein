@@ -185,8 +185,8 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 .card dd { margin: 2px 0 0; font-size: 1.0625rem; line-height: 1.4; }
 .swap { animation: soft .45s var(--ease); }
 @keyframes soft { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.pick { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; background: var(--soft); font-weight: 600; cursor: pointer; transition: background-color .2s var(--ease), color .2s var(--ease), transform .15s var(--ease); }
+.picker { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 16px; }
+.pick { all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; background: var(--soft); font-weight: 600; cursor: pointer; transition: background-color .2s var(--ease), color .2s var(--ease), transform .15s var(--ease); }
 .pick i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
 .pick:hover { background: var(--soft-2); }
 .pick:active { transform: scale(.97); }
@@ -233,7 +233,7 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
   .pad { right: 12px; bottom: 12px; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(2, 44px); }
   .pk { width: 44px; height: 44px; }
   .stage { height: 460px; }
-  .card { position: static; width: auto; margin-top: 12px; box-shadow: none; background: var(--soft); }
+
   .hint { left: 50%; right: auto; transform: translateX(-50%); white-space: nowrap; }
   .picker { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gut-l) * -1) calc(var(--gut-r) * -1); padding-inline: var(--gut-l) var(--gut-r); }
   .pick { flex: none; }
@@ -308,7 +308,8 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .foot .lockup .ev { color: #d6e6ff; }
 .foot .lockup .sep { background: rgba(255, 255, 255, .35); }
 .right { display: grid; gap: 28px; justify-items: start; }
-.name { font-weight: 800; font-size: clamp(3.4rem, -.2rem + 15vw, 15rem); letter-spacing: -.06em; line-height: .8; margin-top: clamp(56px, 7vw, 96px); padding-bottom: .12em; white-space: nowrap; color: rgba(255, 255, 255, .14); }
+.name { margin-top: clamp(32px, 6vw, 72px); }
+.name img { display: block; width: 100%; height: auto; opacity: .95; }
 .fine-foot { padding-block: 18px; font-size: .9375rem; background: #0050b8; color: #d6e6ff; }
 .fine-foot .wrap { display: flex; flex-wrap: wrap; gap: 6px 28px; }
 @media (max-width: 900px) { .foot { grid-template-columns: minmax(0, 1fr); } }
@@ -415,27 +416,36 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .sheet .dlg-live li::before { content: none; }
 
 /* ---------- The cycle: a ring of six phases around Agentztein ---------- */
-.terms { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 30px; }
-.term { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 9px; min-height: 44px; padding: 6px 16px 6px 8px; border-radius: 999px; background: #fff; border: 1px solid var(--soft-2); cursor: help; font-size: .9375rem; transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s; }
+.workcap { position: absolute; left: 0; top: 0; z-index: 3; padding: 8px 14px; border-radius: 999px; background: var(--ink); color: #fff; font-size: .875rem; font-weight: 700; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .25s var(--ease); box-shadow: 0 8px 24px rgba(10, 22, 32, .25); will-change: transform; }
+.workcap.on { opacity: 1; }
+.workcap::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: #3ccf6e; animation: ping 1.4s ease-out infinite; }
+.card.anchored { right: auto; bottom: auto; left: 0; top: 0; width: min(440px, calc(100% - 24px)); padding: 22px 26px 22px; will-change: transform; box-shadow: 0 18px 50px rgba(10, 22, 32, .28); }
+.card.anchored .who-name { font-size: 1.5rem; }
+.card.anchored dd { font-size: 1.125rem; }
+.card.anchored::after { content: ""; position: absolute; left: var(--ax, 50%); bottom: -7px; width: 16px; height: 16px; margin-left: -8px; background: #fff; transform: rotate(45deg); border-radius: 3px; }
+.card.anchored.below::after { bottom: auto; top: -7px; }
+.card .keys { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--soft-2); color: var(--muted); font-size: .8125rem; font-weight: 600; }
+.card .keys span { display: inline-flex; align-items: center; gap: 4px; }
+.card .keys i { font-style: normal; }
+.card .keys kbd { background: var(--soft); color: var(--ink); border: 1px solid var(--soft-2); padding: 3px 6px; border-radius: 6px; font: 700 .75rem/1 ui-monospace, monospace; }
+@media (max-width: 760px) { .card { position: absolute; left: 12px; right: 12px; bottom: 12px; width: auto; margin: 0; padding: 14px 16px; } .card.anchored { left: 12px; right: 12px; top: auto; bottom: 12px; transform: none !important; width: auto; } .card.anchored::after { display: none; } .card .keys, .card dl { display: none; } }
+
+.terms { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 0 30px; }
+.term { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 6px 16px 6px 8px; border-radius: 999px; background: #fff; border: 1px solid var(--soft-2); cursor: help; font-size: .9375rem; transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s; }
 .term:hover, .term:focus-visible, .term[aria-expanded="true"] { transform: translateY(-2px); border-color: var(--c); box-shadow: 0 8px 22px color-mix(in srgb, var(--c) 22%, transparent); }
 .term:focus-visible { outline: 3px solid var(--meta); outline-offset: 2px; }
 .term i { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--c) 16%, #fff); color: var(--c); font-style: normal; font-weight: 800; font-size: .875rem; }
 .term b { font-weight: 800; }
 .term span { color: var(--muted); }
 .term.today { background: var(--amber-bg); border-color: transparent; }
-@media (max-width: 640px) { .term span { display: none; } }
+@media (max-width: 900px) { .terms { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .term span { display: none; } }
 /* floating popups: they appear next to the thing they explain */
 .pop { position: fixed; left: 0; top: 0; z-index: 70; width: max-content; max-width: min(330px, calc(100vw - 16px)); padding: 14px 16px; border-radius: 16px; background: var(--ink); color: #e8eef3; font-size: .9375rem; line-height: 1.45; box-shadow: 0 18px 50px rgba(10, 22, 32, .35); opacity: 0; pointer-events: none; transform: translateY(6px) scale(.97); transition: opacity .18s var(--ease), transform .22s var(--ease); }
 .pop.on { opacity: 1; transform: none; }
 .pop b { display: block; margin-bottom: 4px; color: #fff; font-size: 1rem; }
 .pop::after { content: ""; position: absolute; left: var(--ax, 50%); bottom: -6px; width: 12px; height: 12px; margin-left: -6px; background: var(--ink); transform: rotate(45deg); border-radius: 2px; }
 .pop.below::after { bottom: auto; top: -6px; }
-.labpop { position: absolute; left: 0; top: 0; z-index: 3; width: max-content; max-width: 260px; padding: 12px 14px 12px 18px; border-radius: 16px; background: #fff; color: var(--ink); font-size: .875rem; line-height: 1.4; box-shadow: 0 14px 40px rgba(10, 22, 32, .22); pointer-events: none; opacity: 0; transition: opacity .25s var(--ease); will-change: transform; }
-.labpop.on { opacity: 1; }
-.labpop::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 5px; border-radius: 0 4px 4px 0; background: var(--c, var(--meta)); }
-.labpop::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; margin-left: -6px; background: #fff; transform: rotate(45deg); border-radius: 2px; }
-.labpop b { display: block; font-size: .9375rem; margin-bottom: 2px; }
-.labpop span { color: var(--muted); }
 /* the sound dock: sound, music and the beat */
 .snddock { position: fixed; left: 16px; bottom: 16px; z-index: 40; display: flex; gap: 8px; align-items: center; }
 .snddock .sndbtn { position: static; }
@@ -712,8 +722,8 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 
 /* The harness */
 .harness { background: linear-gradient(#fff, #f5f8fb); }
-.hbox { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: clamp(16px, 2.5vw, 32px); align-items: start; }
-.gates { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.hbox { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(16px, 2.5vw, 32px); align-items: stretch; }
+.gates { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-rows: repeat(5, 1fr); }
 .gate { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 2px 14px; align-items: start; padding: 14px 16px; border-radius: 18px; background: #fff; border: 2px solid transparent; transition: border-color .3s var(--ease), background-color .3s var(--ease); }
 .gate .ico { grid-row: 1 / span 2; width: 44px; height: 44px; padding: 10px; border-radius: 14px; background: var(--sky); color: var(--blue); }
 .gate b { font-size: 1.0625rem; }
@@ -733,51 +743,50 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .scn[aria-pressed="true"] { background: #fff; color: var(--ink); }
 .scn:focus-visible { outline: 3px solid var(--meta); }
 /* The harness as a dome: five layers around Agentztein. Green = protected, red = alert, amber = waiting for a person. */
-.dome-card { --dc: #3ccf6e; position: sticky; top: 96px; display: grid; gap: 14px; padding: 18px 18px 22px; border-radius: 28px; background: radial-gradient(120% 90% at 50% 100%, #12303a 0%, #0b1722 62%); color: #fff; overflow: hidden; transition: box-shadow .4s var(--ease); box-shadow: 0 0 0 1px rgba(60, 207, 110, .25), 0 20px 60px -20px rgba(60, 207, 110, .35); }
-.dome-card[data-state="alert"] { --dc: #ff4b3a; box-shadow: 0 0 0 2px rgba(255, 75, 58, .7), 0 0 80px -10px rgba(255, 75, 58, .6); animation: alarm .7s steps(1) 4; }
-.dome-card[data-state="wait"] { --dc: #ffb020; box-shadow: 0 0 0 1px rgba(255, 176, 32, .5), 0 20px 60px -20px rgba(255, 176, 32, .4); }
-@keyframes alarm { 0%, 100% { background-color: #0b1722; } 50% { background-color: #3a0f10; } }
+.dome-card { --dc: #2fae5f; position: relative; display: grid; gap: 14px; padding: 18px 18px 22px; border-radius: 28px; background: linear-gradient(#ffffff, #f2f7fa); color: var(--ink); overflow: hidden; border: 1px solid var(--soft-2); transition: background-color .4s var(--ease), border-color .4s var(--ease), box-shadow .4s var(--ease); box-shadow: 0 16px 50px rgba(28, 43, 51, .08); }
+.dome-card[data-state="alert"] { --dc: #d6513f; border-color: #f2b8b0; background: linear-gradient(#fffafa, #fff1ee); box-shadow: 0 16px 50px rgba(214, 81, 63, .14); }
+.dome-card[data-state="wait"] { --dc: #d9902a; border-color: #f3d9a8; background: linear-gradient(#fffdf8, #fff6e6); box-shadow: 0 16px 50px rgba(217, 144, 42, .14); }
 .dome-hud { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.dome-pill { display: inline-flex; align-items: center; gap: 9px; padding: 7px 14px 7px 12px; border-radius: 999px; background: color-mix(in srgb, var(--dc) 16%, #0b1722); border: 1px solid color-mix(in srgb, var(--dc) 55%, transparent); color: var(--dc); font-size: .8125rem; letter-spacing: .08em; font-weight: 800; transition: color .4s var(--ease), background-color .4s var(--ease); }
+.dome-pill { display: inline-flex; align-items: center; gap: 9px; padding: 7px 14px 7px 12px; border-radius: 999px; background: color-mix(in srgb, var(--dc) 12%, #fff); border: 1px solid color-mix(in srgb, var(--dc) 40%, transparent); color: var(--dc); font-size: .8125rem; letter-spacing: .08em; font-weight: 800; transition: color .4s var(--ease), background-color .4s var(--ease); }
 .dome-pill i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; animation: ping 1.8s ease-out infinite; }
 .dome-card[data-state="alert"] .dome-pill i { animation-duration: .5s; }
-.dome-count { color: #9fb3c2; font-size: .8125rem; font-weight: 600; }
+.dome-count { color: var(--muted); font-size: .8125rem; font-weight: 600; }
 .dome-svg { width: 100%; height: auto; display: block; color: var(--dc); transition: color .4s var(--ease); }
 .dome-svg .dome-fill { transition: opacity .4s; }
-.dome-svg .layer { fill: none; stroke: currentColor; stroke-opacity: .42; stroke-width: 2.5; transition: stroke .35s var(--ease), stroke-opacity .35s, stroke-width .35s; }
+.dome-svg .layer { fill: none; stroke: currentColor; stroke-opacity: .4; stroke-width: 2.5; transition: stroke .35s var(--ease), stroke-opacity .35s, stroke-width .35s; }
 .dome-svg .layer:first-child { stroke-opacity: .7; stroke-width: 3.5; }
-.dome-svg .layer.pass { stroke: #3ccf6e; stroke-opacity: .95; stroke-width: 4; }
-.dome-svg .layer.stop { stroke: #ff4b3a; stroke-opacity: 1; stroke-width: 7; filter: drop-shadow(0 0 8px #ff4b3a); animation: layerAlarm .45s ease-in-out infinite alternate; }
-.dome-svg .layer.wait { stroke: #ffb020; stroke-opacity: 1; stroke-width: 6; filter: drop-shadow(0 0 7px #ffb020); }
-@keyframes layerAlarm { from { stroke-opacity: 1; } to { stroke-opacity: .35; } }
-.dome-svg .scan { fill: none; stroke: #fff; stroke-opacity: .85; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 5 95; animation: scan 5s linear infinite; filter: drop-shadow(0 0 6px currentColor); }
+.dome-svg .layer.pass { stroke: #2fae5f; stroke-opacity: .95; stroke-width: 4; }
+.dome-svg .layer.stop { stroke: #d6513f; stroke-opacity: 1; stroke-width: 6; animation: layerAlarm 1.4s ease-in-out infinite alternate; }
+.dome-svg .layer.wait { stroke: #d9902a; stroke-opacity: 1; stroke-width: 5; }
+@keyframes layerAlarm { from { stroke-opacity: 1; } to { stroke-opacity: .55; } }
+.dome-svg .scan { fill: none; stroke: currentColor; stroke-opacity: .7; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 5 95; animation: scan 7s linear infinite; }
 @keyframes scan { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
-.dome-svg .route { fill: none; stroke: #ffffff; stroke-opacity: .22; stroke-width: 3; stroke-dasharray: 3 9; stroke-linecap: round; stroke-linejoin: round; }
+.dome-svg .route { fill: none; stroke: #1c2b33; stroke-opacity: .25; stroke-width: 3; stroke-dasharray: 3 9; stroke-linecap: round; stroke-linejoin: round; }
 .dome-svg .dnode { transition: opacity .3s; }
 .dome-svg .dn-halo { fill: currentColor; fill-opacity: .12; transition: fill .3s, fill-opacity .3s; }
-.dome-svg .dn-body { fill: #0f1d26; stroke: currentColor; stroke-width: 2.5; stroke-opacity: .85; transition: fill .3s, stroke .3s; }
+.dome-svg .dn-body { fill: #fff; stroke: currentColor; stroke-width: 2.5; stroke-opacity: .85; transition: fill .3s, stroke .3s; }
 .dome-svg .dn-ico { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.dome-svg .dnode.pass .dn-body { fill: #3ccf6e; stroke: #3ccf6e; } .dome-svg .dnode.pass .dn-ico { stroke: #06240f; } .dome-svg .dnode.pass .dn-halo { fill: #3ccf6e; fill-opacity: .25; }
-.dome-svg .dnode.stop .dn-body { fill: #ff4b3a; stroke: #ff4b3a; } .dome-svg .dnode.stop .dn-ico { stroke: #fff; } .dome-svg .dnode.stop .dn-halo { fill: #ff4b3a; fill-opacity: .35; animation: layerAlarm .45s ease-in-out infinite alternate; }
-.dome-svg .dnode.wait .dn-body { fill: #ffb020; stroke: #ffb020; } .dome-svg .dnode.wait .dn-ico { stroke: #3a2400; } .dome-svg .dnode.wait .dn-halo { fill: #ffb020; fill-opacity: .35; }
+.dome-svg .dnode.pass .dn-body { fill: #2fae5f; stroke: #2fae5f; } .dome-svg .dnode.pass .dn-ico { stroke: #fff; } .dome-svg .dnode.pass .dn-halo { fill: #2fae5f; fill-opacity: .2; }
+.dome-svg .dnode.stop .dn-body { fill: #d6513f; stroke: #d6513f; } .dome-svg .dnode.stop .dn-ico { stroke: #fff; } .dome-svg .dnode.stop .dn-halo { fill: #d6513f; fill-opacity: .22; }
+.dome-svg .dnode.wait .dn-body { fill: #d9902a; stroke: #d9902a; } .dome-svg .dnode.wait .dn-ico { stroke: #fff; } .dome-svg .dnode.wait .dn-halo { fill: #d9902a; fill-opacity: .22; }
 .dome-svg .agent-bob { animation: bob 3.2s ease-in-out infinite; transform-box: fill-box; }
 @keyframes bob { 50% { transform: translateY(-3px); } }
-.dome-svg .ag { transition: opacity .35s; filter: drop-shadow(0 0 12px color-mix(in srgb, var(--dc) 55%, transparent)); }
+.dome-svg .ag { transition: opacity .35s; filter: drop-shadow(0 8px 10px rgba(28, 43, 51, .18)); }
 .dome-svg .ag-alert { opacity: 0; }
 .dome-card[data-state="alert"] .dome-svg .ag-ok { opacity: 0; }
-.dome-card[data-state="alert"] .dome-svg .ag-alert { opacity: 1; animation: shake .12s linear 6; }
+.dome-card[data-state="alert"] .dome-svg .ag-alert { opacity: 1; }
 @keyframes shake { 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
-.dome-card[data-state="alert"] .dome-svg .orb { transform: translate(24px, 352px); transition: transform .5s var(--ease), opacity .35s; opacity: 0; }
+.dome-card[data-state="alert"] .dome-svg .orb { transform: translate(360px, 40px); transition: transform .5s var(--ease), opacity .35s; opacity: 0; }
 .dome-svg .orb.on { opacity: 1; }
 .dome-svg .o-glow { fill: #4aa8ff; fill-opacity: .28; transition: fill .3s; animation: pulse 1s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
 .dome-svg .o-core { fill: #7cc2ff; transition: fill .3s; }
 @keyframes pulse { to { transform: scale(1.35); } }
-.dome-svg .orb.bad .o-glow, .dome-svg .orb.bad .o-core { fill: #ff4b3a; }
-.dome-svg .orb.good .o-glow, .dome-svg .orb.good .o-core { fill: #3ccf6e; }
-.dome-svg .burst { fill: none; stroke: #ff4b3a; stroke-width: 4; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.dome-svg .orb.bad .o-glow, .dome-svg .orb.bad .o-core { fill: #d6513f; }
+.dome-svg .orb.good .o-glow, .dome-svg .orb.good .o-core { fill: #2fae5f; }
+.dome-svg .burst { fill: none; stroke: #d6513f; stroke-width: 4; opacity: 0; transform-box: fill-box; transform-origin: center; }
 .dome-svg .burst.go { animation: burst .8s ease-out; }
 @keyframes burst { 0% { opacity: 1; transform: scale(.6); } 100% { opacity: 0; transform: scale(7); } }
-.dome-svg .dtag { fill: #fff; font: 800 22px var(--font); paint-order: stroke; stroke: #0b1722; stroke-width: 5px; opacity: 0; transition: opacity .3s; }
+.dome-svg .dtag { fill: var(--ink); font: 800 22px var(--font); paint-order: stroke; stroke: #fff; stroke-width: 5px; opacity: 0; transition: opacity .3s; }
 .dome-svg .dtag.on { opacity: 1; }
 .dome-card .try-t { margin-top: 2px; }
 @media (prefers-reduced-motion: reduce) { .dome-card, .dome-svg *, .dome-pill i { animation: none !important; } }
@@ -794,6 +803,11 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .sndbtn.nudge { animation: nudge 2.4s ease-in-out 3; }
 @keyframes nudge { 50% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(0, 129, 251, .22); } }
 @media (max-width: 640px) { .sndbtn:not(.mini) span { display: none; } .sndbtn { padding: 0 12px; } }
+.dome-card .scn { background: var(--soft); color: var(--ink); }
+.dome-card .scn:hover { background: var(--soft-2); }
+.dome-card .scn[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.dome-card .verdict { color: var(--muted); }
+.dome-card .verdict b { color: var(--ink); }
 .verdict { min-height: 3em; color: #d4dee6; line-height: 1.45; }
 .verdict b { color: #fff; }
 #hApprove[hidden] { display: none; }
@@ -1016,7 +1030,6 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         <img class="still" src="img/room.webp" width="1600" height="1000" alt="Agentztein's lab in 3D: a white room with the Meta logo on the wall, a whiteboard of frontier benchmarks, a Muse Spark screen, the cradle between two Tesla coils and six tables, one per benchmark, each with its object." data-es-alt="El laboratorio de Agentztein en 3D: un cuarto blanco con el logo de Meta en la pared, un pizarrón con los benchmarks de frontera, una pantalla de Muse Spark, la cuna entre dos bobinas de Tesla y seis mesas, una por benchmark, cada una con su objeto." loading="lazy" />
         <canvas id="room3d" tabindex="0" aria-label="3D lab: a building with one room per benchmark. Tap the floor, a door or an exhibit to walk there, or use the arrows and W, A, S, D. Press V for first person and E to interact. The card below explains what you are looking at." data-es-aria-label="Laboratorio en 3D: un edificio con un cuarto por benchmark. Toca el piso, una puerta o una exhibición para ir, o usa las flechas y W, A, S, D. Presiona V para primera persona y E para interactuar. La tarjeta de abajo explica lo que estás viendo."></canvas>
         <div class="bubble" id="roomBubble" aria-live="polite"><span></span></div>
-        <div class="labpop" id="labPop" aria-hidden="true"><b></b><span></span></div>
         <div class="flash" id="roomFlash" aria-hidden="true"></div>
         <span class="hint" id="roomHint">Tap the floor or a door · arrows to walk · V for first person</span>
         <button class="viewbtn" id="viewBtn" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg><span id="viewTxt">First person</span></button>
@@ -1035,7 +1048,6 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
           <ol id="exLog" aria-live="polite"></ol>
           <p class="ex-end" id="exEnd"></p>
         </section>
-      </div>
       <div class="card" id="card" aria-live="polite">
         <p class="who-name"><span class="dot" id="cDot"></span><span id="cName" data-es="Su laboratorio">Its lab</span></p>
         <dl>
@@ -1044,11 +1056,12 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         </dl>
         <div class="card-acts">
           <button class="btn run" id="actBtn" type="button" hidden><span data-es="Interactuar">Interact</span> <kbd>E</kbd></button>
-          <button class="btn run" id="runBtn" hidden><span id="runTxt">Run an exercise</span>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor"/></svg>
+          <button class="btn run" id="runBtn" hidden><span id="runTxt">Run an exercise</span> <kbd>R</kbd>
           </button>
-          <button class="btn ghost run" id="benchBtn" type="button" hidden><span data-es="Abrir su laboratorio 3D">Open its 3D lab</span></button>
+          <button class="btn ghost run" id="benchBtn" type="button" hidden><span data-es="Abrir su laboratorio 3D">Open its 3D lab</span> <kbd>L</kbd></button>
         </div>
+        <p class="keys" aria-hidden="true"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <i data-es="mover">move</i></span><span><kbd>Shift</kbd> <i data-es="correr">run</i></span><span><kbd>Space</kbd> <i data-es="jetpack">jetpack</i></span><span><kbd>V</kbd> <i data-es="vista">view</i></span></p>
+      </div>
       </div>
     </div>
     <div class="picker" role="group" aria-label="Send Agentztein to a station" data-es-aria-label="Enviar a Agentztein a una estación">
@@ -1126,26 +1139,26 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
           <span class="dome-pill" id="hPill"><i></i><b id="hPillTxt">SECURE</b></span>
           <span class="dome-count" id="hCount">5-layer dome</span>
         </div>
-        <svg class="dome-svg" id="dome" viewBox="0 0 640 440" role="img" aria-label="Agentztein protected by a dome of five checks. A proposed change travels inward and is stopped by the first check it fails." data-es-aria-label="Agentztein protegido por una cúpula de cinco controles. Un cambio propuesto viaja hacia adentro y lo detiene el primer control que no pasa.">
+        <svg class="dome-svg" id="dome" viewBox="0 0 720 470" role="img" aria-label="Agentztein protected by a dome of five checks. A proposed change travels inward and is stopped by the first check it fails." data-es-aria-label="Agentztein protegido por una cúpula de cinco controles. Un cambio propuesto viaja hacia adentro y lo detiene el primer control que no pasa.">
           <defs>
             <radialGradient id="domeGlow" cx="50%" cy="100%" r="100%"><stop offset="0" stop-color="currentColor" stop-opacity=".02"/><stop offset=".72" stop-color="currentColor" stop-opacity=".1"/><stop offset="1" stop-color="currentColor" stop-opacity=".38"/></radialGradient>
-            <radialGradient id="groundGlow"><stop offset="0" stop-color="currentColor" stop-opacity=".55"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
-            <pattern id="hgrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity=".05"/></pattern>
+            <radialGradient id="groundGlow"><stop offset="0" stop-color="currentColor" stop-opacity=".28"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
+            <pattern id="hgrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#1c2b33" stroke-opacity=".05"/></pattern>
           </defs>
-          <rect width="640" height="440" fill="url(#hgrid)"/>
-          <ellipse class="ground" cx="320" cy="392" rx="300" ry="26" fill="url(#groundGlow)"/>
-          <path class="dome-fill" d="M58 390 A262 262 0 0 1 582 390Z" fill="url(#domeGlow)"/>
-          <g class="layers"><path class="layer" data-g="0" d="M58 390 A262 262 0 0 1 582 390"/><path class="layer" data-g="1" d="M94 390 A226 226 0 0 1 546 390"/><path class="layer" data-g="2" d="M130 390 A190 190 0 0 1 510 390"/><path class="layer" data-g="3" d="M166 390 A154 154 0 0 1 474 390"/><path class="layer" data-g="4" d="M202 390 A118 118 0 0 1 438 390"/></g>
-          <path class="scan" d="M58 390 A262 262 0 0 1 582 390" pathLength="100"/>
-          <path class="route" d="M24 352 L89 267 L200 198 L320 200 L402 259 L424 335 L352 342"/>
+          <rect width="720" height="470" fill="url(#hgrid)"/>
+          <ellipse class="ground" cx="360" cy="422" rx="340" ry="28" fill="url(#groundGlow)"/>
+          <path class="dome-fill" d="M20 420 A340 340 0 0 1 700 420Z" fill="url(#domeGlow)"/>
+          <g class="layers"><path class="layer" data-g="0" d="M20 420 A340 340 0 0 1 700 420"/><path class="layer" data-g="1" d="M68 420 A292 292 0 0 1 652 420"/><path class="layer" data-g="2" d="M116 420 A244 244 0 0 1 604 420"/><path class="layer" data-g="3" d="M164 420 A196 196 0 0 1 556 420"/><path class="layer" data-g="4" d="M210 420 A150 150 0 0 1 510 420"/></g>
+          <path class="scan" d="M20 420 A340 340 0 0 1 700 420" pathLength="100"/>
+          <path class="route" d="M360 40 L360 310"/>
           <g class="agent"><g class="agent-bob">
-            <image class="ag ag-ok" href="img/agent-ok.webp" x="268" y="236" width="104" height="157" preserveAspectRatio="xMidYMax meet"/>
-            <image class="ag ag-alert" href="img/agent-alert.webp" x="268" y="236" width="104" height="157" preserveAspectRatio="xMidYMax meet"/>
+            <image class="ag ag-ok" href="img/agent-ok.webp" x="316" y="290" width="88" height="132" preserveAspectRatio="xMidYMax meet"/>
+            <image class="ag ag-alert" href="img/agent-alert.webp" x="316" y="290" width="88" height="132" preserveAspectRatio="xMidYMax meet"/>
           </g></g>
-          <g class="nodes"><g class="dnode" data-g="0" transform="translate(89 267)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><path d="M12 3 19.5 6v6c0 4.4-3.2 8.1-7.5 9-4.3-.9-7.5-4.6-7.5-9V6z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></g></g><g class="dnode" data-g="1" transform="translate(200 198)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></g></g><g class="dnode" data-g="2" transform="translate(320 200)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><path d="M3.5 7.5h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-14z"/><path d="M3.5 7.5 15 4v3.5"/><circle cx="16" cy="13.5" r="1"/></g></g><g class="dnode" data-g="3" transform="translate(402 259)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.2M12 17h.01"/></g></g><g class="dnode" data-g="4" transform="translate(424 335)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="m16 11 2 2 4-4.2"/></g></g></g>
+          <g class="nodes"><g class="dnode" data-g="0" transform="translate(360 80)"><circle class="dn-halo" r="27"/><circle class="dn-body" r="19"/><g class="dn-ico" transform="translate(-11 -11) scale(.92)"><path d="M12 3 19.5 6v6c0 4.4-3.2 8.1-7.5 9-4.3-.9-7.5-4.6-7.5-9V6z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></g></g><g class="dnode" data-g="1" transform="translate(360 128)"><circle class="dn-halo" r="27"/><circle class="dn-body" r="19"/><g class="dn-ico" transform="translate(-11 -11) scale(.92)"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></g></g><g class="dnode" data-g="2" transform="translate(360 176)"><circle class="dn-halo" r="27"/><circle class="dn-body" r="19"/><g class="dn-ico" transform="translate(-11 -11) scale(.92)"><path d="M3.5 7.5h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-14z"/><path d="M3.5 7.5 15 4v3.5"/><circle cx="16" cy="13.5" r="1"/></g></g><g class="dnode" data-g="3" transform="translate(360 224)"><circle class="dn-halo" r="27"/><circle class="dn-body" r="19"/><g class="dn-ico" transform="translate(-11 -11) scale(.92)"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.2M12 17h.01"/></g></g><g class="dnode" data-g="4" transform="translate(360 270)"><circle class="dn-halo" r="27"/><circle class="dn-body" r="19"/><g class="dn-ico" transform="translate(-11 -11) scale(.92)"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="m16 11 2 2 4-4.2"/></g></g></g></g>
           <g id="hBurst"><circle class="burst" r="10"/></g>
           <g class="orb" id="hOrb"><circle class="o-glow" r="19"/><circle class="o-core" r="9"/></g>
-          <text class="dtag" id="hTag" x="320" y="62" text-anchor="middle"></text>
+          <text class="dtag" id="hTag" x="360" y="62" text-anchor="middle"></text>
         </svg>
         <p class="try-t" data-es="Intenta saltarte el arnés">Try to get past the harness</p>
         <div class="scns" role="group" aria-label="Scenarios" data-es-aria-label="Escenarios"><button type="button" class="scn" data-stop="0" aria-pressed="false"><span data-es="«¡Mejoré!» …en pruebas que ya conocía">“I improved!” …on tests it already knew</span></button><button type="button" class="scn" data-stop="1" aria-pressed="false"><span data-es="Usar búsqueda web en un juego nuevo">Use web search inside a brand-new game</span></button><button type="button" class="scn" data-stop="2" aria-pressed="false"><span data-es="Una corrida que podría costar más que tu presupuesto">A run that could cost more than your budget</span></button><button type="button" class="scn" data-stop="3" aria-pressed="false"><span data-es="Una página le pide borrar archivos">A web page tells it to delete files</span></button><button type="button" class="scn" data-stop="4" aria-pressed="false"><span data-es="Quedarse una habilidad nueva">Keep a new skill</span></button></div>
@@ -1194,7 +1207,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         <span class="lockup"><svg class="meta-logo white" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#metalogo"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Global AI Developer Hackathon 2026</span></span>
       </div>
     </div>
-    <div class="name" aria-hidden="true">Agentztein</div>
+    <div class="name"><img src="img/logo-light.webp" alt="Agentztein" width="1665" height="344" loading="lazy"></div>
   </div>
   <div class="fine-foot"><div class="wrap">
     <span data-es="Hecho en el Bajío, México">Made in the Bajío, Mexico</span>
@@ -1207,6 +1220,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 </footer>
 
 <div class="snddock"><button class="sndbtn" id="sndBtn" type="button" aria-pressed="false" aria-label="Sound" data-es-aria-label="Sonido"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path class="w" d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/><path class="x" d="m16 9.5 5 5M21 9.5l-5 5"/></svg><span id="sndTxt" data-es="Sonido">Sound</span></button>
+<button class="sndbtn" id="tourBtn" type="button" aria-pressed="false" aria-label="Voice guide" data-es-aria-label="Guía por voz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3z"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/></svg><span data-es="Guía">Guide</span></button>
 <button class="sndbtn" id="musBtn" type="button" aria-pressed="false" aria-label="Music" data-es-aria-label="Música"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg><span data-es="Música">Music</span></button>
 <button class="sndbtn mini" id="beatBtn" type="button" hidden aria-label="Next beat" data-es-aria-label="Siguiente beat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h3l2-6 4 12 2-6h5"/></svg><span id="beatTxt">Lab Chill</span></button>
 </div>

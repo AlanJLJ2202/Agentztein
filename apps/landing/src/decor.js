@@ -87,13 +87,6 @@ function plant(x, z, scale = 1) {
   g.position.set(x, 0, z); g.scale.setScalar(scale);
   return g;
 }
-function bench(x, z, ry, color) {
-  const g = new THREE.Group();
-  g.add(at(box(1.5, 0.12, 0.44, 0xffffff), 0, 0.42, 0));
-  [-0.62, 0.62].forEach((lx) => g.add(at(box(0.1, 0.4, 0.38, color), lx, 0.2, 0)));
-  g.position.set(x, 0, z); g.rotation.y = ry;
-  return g;
-}
 function shelf(books) {
   const g = new THREE.Group();
   g.add(at(box(2.0, 1.9, 0.4, 0xf1e6d6), 0, 0.95, 0));
@@ -255,8 +248,7 @@ DRESS.cuna = (g, { color, ceil, updates }) => {
   beam.position.set(0, 1.45, -4.3); g.add(beam);
   const logoHalo = halo(blue, 5.2, 0.35); logoHalo.position.set(0, 3.5, -5.5); g.add(logoHalo);
   // benches and plants
-  g.add(bench(-2.4, 5.3, 0, color), bench(2.4, 5.3, 0, color));
-  [[-5.2, 5.2], [5.2, 5.2], [-5.3, -0.2], [5.3, -0.2], [-1.9, -5.3], [1.9, -5.3]].forEach(([x, z], i) => g.add(plant(x, z, i < 4 ? 1.4 : 1.1)));
+  [[-5.3, 5.3], [5.3, 5.3], [-5.3, -5.3], [5.3, -5.3], [-1.9, -5.3], [1.9, -5.3]].forEach(([x, z], i) => g.add(plant(x, z, i < 4 ? 1.4 : 1.1)));
   // the dashboards on the south wall: bars, a line and the harness status
   const dash = (x, title, kind) => screen(1.9, 1.1, 512, (c, W, H, t) => {
     c.fillStyle = "#0f1d26"; c.fillRect(0, 0, W, H);
@@ -267,9 +259,8 @@ DRESS.cuna = (g, { color, ceil, updates }) => {
   }, { x, y: 1.9, z: 5.86, ry: Math.PI });
   [dash(-3.2, "SKILLS / WEEK", "bars"), dash(0, "SCORE", "line"), dash(3.2, "HARNESS", "status")].forEach((s) => { g.add(s); updates.push(s.userData.tick); });
   // east and west walls: tall light panels
-  [-5.86].forEach((x) => [-1.0, 0, 1.0].forEach((z, i) => g.add(at(slab(0.05, 1.6 + (i === 1 ? 0.5 : 0), 0.1, lit(blue, 1.2)), x, 1.5, z))));
   // an aquarium on the east wall, with fish
-  const aq = aquarium(); aq.g.position.set(5.5, 0, 0); aq.g.rotation.y = -Math.PI / 2; g.add(aq.g); updates.push(aq.update);
+  const aq = aquarium(); aq.g.position.set(-5.5, 0, -4.95); aq.g.rotation.y = Math.PI / 2; aq.g.scale.setScalar(0.8); g.add(aq.g); updates.push(aq.update);
   // the ceiling you see from inside
   [[-3, 0], [3, 0], [0, 3], [0, -3]].forEach(([x, z]) => { const p = pendant(0xdff0ff, 2.5); p.position.set(x, 0, z); ceil.add(p); });
   updates.push((t) => { rings.forEach((r, i) => { r.rotation.x = t * (0.6 + i * 0.25) + i; r.rotation.y = t * (0.4 - i * 0.2); r.position.y = [0.7, 1.35, 2.0][i] + Math.sin(t * 1.4 + i) * 0.06; }); beam.material.opacity = 0.08 + Math.sin(t * 2) * 0.03; });

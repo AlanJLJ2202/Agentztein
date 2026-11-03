@@ -19,9 +19,10 @@ export const SFX = {
   chip: { prompt: "A small electronic chip snapping into place with a satisfying click and a soft power-on tone", seconds: 0.9 },
   chirps: { prompt: "Soft futuristic computer data chirps and quiet beeps, a screen processing information, gentle, low volume, no music", seconds: 2 },
   jet: { prompt: "Jetpack ignition: a short powerful whoosh of compressed air and a rising rocket thruster burst, sci-fi", seconds: 1.5 },
-  alarm: { prompt: "Sci-fi security alarm, two urgent siren pulses, short, no voice", seconds: 2 },
+  engine: { prompt: "A car engine starting and revving up, then settling to an idle, mechanical, close", seconds: 3 },
+  alarm: { prompt: "A soft, calm two-note notification chime, gentle and low volume, warm bell tone, no siren, no buzzer", seconds: 2 },
   shield: { prompt: "Energy force field dome activating, rising electric hum with a shimmering sweep", seconds: 1.5 },
-  shieldhit: { prompt: "Energy shield deflecting an impact, electric zap with a low thud", seconds: 1 },
+  shieldhit: { prompt: "A soft muted bump of an energy shield, gentle, low volume, no loud zap", seconds: 1 },
 };
 
 /** @typedef {{ en: string, es: string }} Line */
@@ -49,6 +50,13 @@ export const LINES = {
   "welcome-web": { en: "Welcome to the detective's library.", es: "Bienvenido a la biblioteca del detective." },
   "welcome-research": { en: "Welcome to the science lab.", es: "Bienvenido al laboratorio científico." },
   "welcome-horizon": { en: "Welcome to the time horizon room.", es: "Bienvenido a la sala del horizonte de tiempo." },
+  "tour-cuna": { en: "This is the central workshop. Every tool I can reach for is here, and the engine shows my anatomy: each cylinder lights up only when I really have that skill installed.", es: "Este es el taller central. Aquí están todas las herramientas a mi alcance, y el motor muestra mi anatomía: cada cilindro se enciende solo cuando de verdad tengo esa habilidad instalada." },
+  "tour-swe": { en: "Software repair shop. I get a real bug report, find the file, write the fix, and hidden tests tell me whether it worked.", es: "Taller de reparación de software. Recibo un reporte real de un error, encuentro el archivo, escribo el arreglo y unas pruebas ocultas me dicen si funcionó." },
+  "tour-terminal": { en: "Machine room. I type commands inside an isolated container, and at the end a script checks the machine ended up as asked, within a time limit.", es: "Sala de máquinas. Escribo comandos dentro de un contenedor aislado y al final un script revisa que la máquina quedó como se pidió, dentro de un límite de tiempo." },
+  "tour-arc": { en: "Game room with no instructions. I have to discover the rules by moving and watching. The fewer steps compared with a person, the better my score.", es: "Sala de juegos sin instrucciones. Tengo que descubrir las reglas moviéndome y observando. Mientras menos pasos que una persona, mejor mi puntaje." },
+  "tour-web": { en: "Detective's library. I follow clues across web pages to find one answer that is very hard to find but easy to check.", es: "Biblioteca del detective. Sigo pistas por páginas web para encontrar una respuesta muy difícil de hallar, pero fácil de comprobar." },
+  "tour-research": { en: "Science lab. Here I do AI research: I compete in machine learning contests and try to reproduce scientific papers.", es: "Laboratorio científico. Aquí hago investigación de IA: compito en concursos de machine learning e intento reproducir artículos científicos." },
+  "tour-horizon": { en: "Time observatory. This measures how long a task I can finish on my own before I start to fail.", es: "Observatorio del tiempo. Aquí se mide qué tan larga puede ser una tarea que termine solo antes de empezar a fallar." },
   "h-blocked": { en: "Blocked. Nothing gets past the harness.", es: "Bloqueado. Nada pasa del arnés." },
   "h-wait": { en: "Four checks passed. Now a person decides.", es: "Cuatro controles superados. Ahora decide una persona." },
   "h-ok": { en: "Approved by a person. Safe to learn.", es: "Aprobado por una persona. Seguro para aprender." },

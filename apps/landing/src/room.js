@@ -7,10 +7,12 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import {
   C, makeAgent, pose, setArms, makeCoil, makeBolt, makeChip, makeBadge, setupRenderer, addLights, paintScreen,
-  makeMetaLogo, tr, canvasTex, rr, windowPanel, FONT, gait, LEG_DROP,
+  makeMetaLogo, tr, canvasTex, rr, windowPanel, FONT, gait, LEG_DROP, SKILLS,
 } from "./agent.js";
 import { ROOMS } from "./museum.js";
 import { decorate } from "./decor.js";
+import { buildWorkshop } from "./workshop.js";
+import { createJetFx } from "./jetfx.js";
 import { sound } from "./sound.js";
 import { LINES } from "../../../api/_data/audio-catalog.js";
 
@@ -210,9 +212,12 @@ function addPod(g, id, built, relabels, extra) {
   paintScreen(sleeper.userData.screenTex, "off", 0);
   g.add(sleeper);
   plaque(g, at[0] - 1.05, at[1] + 1.25, built.exhibits.length + 1, room.items.pod.title, room.color, relabels, -0.5);
+  const worker = makeAgent({ legs: true });
+  worker.scale.setScalar(0.7); worker.userData.power = 1; worker.visible = false; g.add(worker);
+  for (let i = 0; i < 20; i++) pose(worker, "idle", 0, 0.1);
   const main = built.exhibits[0];
   built.exhibits.push({ key: "pod", at, stand: [at[0] - 1.0, at[1] + 1.7], solid: 0.65, hits: [glass, base, cap], act: () => extra.runExercise?.(id) });
-  extra.pods[id] = { pod, glass, mist, sleeper, home, front: new THREE.Vector3(main.stand[0], 0.14, main.stand[1] - 0.4), look: new THREE.Vector3(main.at[0], 0, main.at[1]), mood: "sleep", awake: false, busy: 0 };
+  extra.pods[id] = { pod, glass, mist, sleeper, worker, g, tok: 0, busy: false, next: 0, gaitPhase: 0, gaitAmt: 0, cap: null, reach: false, home, front: new THREE.Vector3(main.stand[0], 0.14, main.stand[1] - 0.4), look: new THREE.Vector3(main.at[0], 0, main.at[1]), mood: "sleep", awake: false };
 }
 
 /* A plaque in front of each exhibit: number + title. */
@@ -322,13 +327,21 @@ T.cuna = (g, { relabels, room, extra }) => {
   plaque(g, 0, -2.6, 1, room.items.coils.title, room.color, relabels);
   plaque(g, -2.7, 2.0, 2, room.items.brain.title, room.color, relabels, 0.55);
   plaque(g, 2.7, 2.0, 3, room.items.map.title, room.color, relabels, -0.55);
+  // the tools and the engine (anatomy) that fill the hall
+  const ws = buildWorkshop(g, {
+    THREE, box, glossy, std, plane, sign, anim, canvasTex, rr, FONT, tr, makeChip, SKILLS, sound, relabels,
+    getInstalled: () => extra.installed?.() ?? new Set(),
+    getEffort: () => LEVELS[lit],
+  });
   const hit = (w, h, d, parent, y = h / 2) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ visible: false })); m.position.y = y; parent.add(m); return m; };
   return {
     exhibits: [
       { key: "coils", at: [0, -4.3], stand: [0, -2.4], hits: [hit(4, 2.6, 1.4, cradle)], act: () => extra.zap?.() },
       { key: "brain", at: [-3.6, 2.4], stand: [-2.6, 1.4], solid: 0.5, hits: [hit(2, 2.5, 0.6, kiosk)], act: () => { for (let i = 0; i < 6; i++) anim(0.01, () => { lit = (lit + 1) % LEVELS.length; drawBrain(); }, i * 0.45); extra.think?.(); } },
       { key: "map", at: [3.6, 2.4], stand: [2.6, 1.4], solid: 0.5, hits: [hit(2, 2.5, 0.6, mapG)], act: () => extra.lightDoors?.() },
+      ...ws.exhibits,
     ],
+    update: ws.update,
   };
 };
 
@@ -448,6 +461,9 @@ T.arc = (g, { relabels, room, extra }) => {
   // breadth-first search gives the shortest route a person could take
   const bfs = (a, b) => { const q = [[...a, 0]], seen = new Set([a.join()]); while (q.length) { const [x, y, d] = q.shift(); if (x === b[0] && y === b[1]) return d; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = `${nx},${ny}`; if (nx < 0 || ny < 0 || nx >= N || ny >= N || walls.has(k) || seen.has(k)) continue; seen.add(k); q.push([nx, ny, d + 1]); } } return 99; };
   const BASE = bfs(start, key) + bfs(key, exit);
+  // the route a player would take: start → key → exit, as floor positions (the autonomous agent walks it)
+  const cellsPath = (a, b) => { const q = [[a]], seen = new Set([a.join()]); while (q.length) { const pth = q.shift(), [x, y] = pth[pth.length - 1]; if (x === b[0] && y === b[1]) return pth; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = `${nx},${ny}`; if (nx < 0 || ny < 0 || nx >= N || ny >= N || walls.has(k) || seen.has(k)) continue; seen.add(k); q.push([...pth, [nx, ny]]); } } return [a]; };
+  extra.arcRoute = () => [...cellsPath(start, key), ...cellsPath(key, exit).slice(1)].map(([c, r]) => pos(c, r));
   // scoreboard on the back wall
   const board = plane(2.4, 0.9, 900, () => {}, {});
   const drawBoard = () => {
@@ -633,7 +649,7 @@ const THEMES = T;
  *   onFrame?: (head: { x: number, y: number }) => void, onFlash?: () => void, onMove?: () => void,
  *   onGuide?: (g: { room: string, item?: string } | null) => void, onView?: (fp: boolean) => void, onRun?: (room: string) => void }} o
  */
-export function createRoom(canvas, { reduced = false, minimap = null, onArrive = () => {}, onSay = () => {}, onFrame = () => {}, onFlash = () => {}, onMove = () => {}, onGuide = () => {}, onView = () => {}, onRun = () => {}, onAnchor = () => {} } = {}) {
+export function createRoom(canvas, { reduced = false, minimap = null, onArrive = () => {}, onSay = () => {}, onFrame = () => {}, onFlash = () => {}, onMove = () => {}, onGuide = () => {}, onView = () => {}, onRun = () => {}, onAnchor = () => {}, onWorker = () => {}, onTour = () => {} } = {}) {
   const renderer = setupRenderer(canvas);
   const scene = new THREE.Scene();
   addLights(scene, renderer, { extent: 16, mapSize: 2048 });
@@ -644,11 +660,13 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   const agent = makeAgent({ legs: true });
   agent.scale.setScalar(SCALE);
   agent.rotation.order = "YXZ";
-  agent.position.set(0, HOVER_Y, 0.4);
+  agent.position.set(0, HOVER_Y, 2.4);
   agent.rotation.y = Math.PI;
   scene.add(agent);
   const u = agent.userData;
   u.power = 1;
+  const jetFx = createJetFx(scene);
+  const nozzleA = new THREE.Vector3(), nozzleB = new THREE.Vector3(), jetV = new THREE.Vector3(), prevPos = new THREE.Vector3();
   const bolts = [makeBolt(), makeBolt()];
   bolts.forEach((b) => { b.visible = false; scene.add(b); });
 
@@ -738,8 +756,12 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     return best;
   }
   let focus = null;
+  const toured = new Set();
   function updateGuide() {
     focus = (fp ? aimed() : null) ?? nearest();
+    // reaching a room's main exhibit (the engine in the workshop) once per visit: the page may narrate it
+    const mainKey = focus ? (focus.room === "cuna" ? "engine" : mainOf(focus.room)?.key) : null;
+    if (focus && focus.key === mainKey && !toured.has(focus.room)) { toured.add(focus.room); onTour(focus.room); }
     const key = focus ? focus.id : currentRoom;
     if (key === guideKey) return;
     guideKey = key;
@@ -849,40 +871,94 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   // ---- the example exercise: the room's frozen copy wakes up and acts it out at the main experiment ----
   const SLOTS = [[-0.52, 1.02], [0.52, 1.02], [-0.42, 0.42], [0.42, 0.42], [0, 0.42], [0, 1.3]];
   const installed = new Map();
+  extra.installed = () => new Set(installed.keys());
   const pods = extra.pods;
   let fresh = null, flight = null;
   const mainOf = (id) => exhibits.find((e) => e.room === id);
-  const step = (P, a, b, dur, delay) => anim(dur, (k) => { P.sleeper.position.lerpVectors(a, b, k); P.sleeper.rotation.y = Math.atan2(b.x - a.x, b.z - a.z); }, delay);
-  function setPod(P, mood, screen) { if (P.walking) P.pending = [mood, screen]; else { P.mood = mood; P.screen = screen; } }
-  function wakePod(id) {
+  function setPod(P, mood, screen) { P.mood = mood; P.screen = screen; }
+  /* ---------- missions: the room's agent leaves its pod and really works the room's exhibits ---------- */
+  const MISSIONS = {
+    swe: [
+      { ex: "ticket", cap: { en: "Reading the bug report", es: "Leyendo el reporte del error" }, hold: 2.4 },
+      { ex: "toolbox", cap: { en: "Finding the file and writing the fix", es: "Buscando el archivo y escribiendo el arreglo" }, hold: 2.4 },
+      { ex: "tests", cap: { en: "Running the hidden tests", es: "Corriendo las pruebas ocultas" }, hold: 3.4 },
+    ],
+    terminal: [
+      { ex: "term", cap: { en: "Typing commands and reading the answer", es: "Escribiendo comandos y leyendo la respuesta" }, hold: 3.8 },
+      { ex: "rack", cap: { en: "Running it inside the sealed box", es: "Corriéndolo dentro de la caja sellada" }, hold: 2.4 },
+      { ex: "clock", cap: { en: "Checking the time limit", es: "Revisando el límite de tiempo" }, hold: 2.6 },
+    ],
+    arc: [
+      { ex: "board", cap: { en: "Exploring: moving to see what changes", es: "Explorando: se mueve para ver qué cambia" }, tiles: true, hold: 0.5 },
+      { ex: "score", cap: { en: "Counting its steps against a person's", es: "Contando sus pasos contra los de una persona" }, hold: 2.2 },
+      { ex: "rules", cap: { en: "Guessing the hidden rules", es: "Adivinando las reglas ocultas" }, hold: 2.4 },
+    ],
+    web: [
+      { ex: "clues", cap: { en: "Linking the clues on the board", es: "Uniendo las pistas del tablero" }, hold: 3 },
+      { ex: "shelves", cap: { en: "Searching page after page", es: "Buscando página tras página" }, hold: 3.4 },
+      { ex: "answer", cap: { en: "Checking the answer is right", es: "Comprobando que la respuesta sea correcta" }, hold: 3 },
+    ],
+    research: [
+      { ex: "podium", cap: { en: "Reading the contest leaderboard", es: "Leyendo la tabla del concurso" }, hold: 3 },
+      { ex: "paper", cap: { en: "Reading the paper's method", es: "Leyendo el método del artículo" }, hold: 3 },
+      { ex: "rubric", cap: { en: "Grading itself against the rubric", es: "Calificándose con la rúbrica" }, hold: 3 },
+    ],
+    horizon: [
+      { ex: "line", cap: { en: "Measuring the 50% line", es: "Midiendo la línea del 50%" }, hold: 3.6 },
+      { ex: "sand", cap: { en: "Timing longer and longer tasks", es: "Cronometrando tareas cada vez más largas" }, hold: 3.4 },
+      { ex: "trend", cap: { en: "Plotting the trend", es: "Trazando la tendencia" }, hold: 2.8 },
+    ],
+  };
+  const WG = LEG_DROP * 0.7;
+  const hubAt = new THREE.Vector3(0, WG, 1.8);
+  function abortMission(id) {
     const P = pods[id];
-    if (!P || P.awake) return;
-    P.awake = true; P.walking = true; P.mood = "sleep"; P.screen = "pulse"; P.last = t;
-    const corner = new THREE.Vector3(P.home.x - 0.2, P.home.y, P.front.z);
-    const d = reduced ? 0 : 1;
-    anim(0.6 * d || 0.01, (k) => { P.glass.scale.y = Math.max(0.02, 1 - k); P.glass.position.y = 0.15 + 0.95 * (1 - k); P.mist.material.opacity = 0.45 * (1 - k); });
-    anim(0.7 * d || 0.01, (k) => { P.sleeper.userData.power = 0.04 + k * 0.96; }, 0.3 * d);
-    anim(0.01, () => { P.mood = "happy"; }, 0.9 * d);
-    step(P, P.home.clone(), corner, 0.7 * d || 0.01, 1.0 * d);
-    step(P, corner, P.front.clone(), 0.7 * d || 0.01, 1.7 * d);
-    anim(0.01, () => {
-      P.walking = false;
-      P.sleeper.rotation.y = Math.atan2(P.look.x - P.front.x, P.look.z - P.front.z);
-      const [m, sc] = P.pending ?? ["think", "pulse"]; P.pending = null; P.mood = m; P.screen = sc;
-    }, 2.45 * d);
+    if (!P || !P.busy) return;
+    P.tok++; P.busy = false; P.cap = null; P.reach = false; P.walking = false; P.tiles = false;
+    P.worker.visible = false; P.sleeper.visible = true;
+    P.glass.scale.y = 1; P.glass.position.y = 1.1; P.mist.material.opacity = 0.45;
   }
-  function sleepPod(id) {
-    const P = pods[id];
-    if (!P || !P.awake || P.walking) return;
-    P.walking = true; P.mood = "idle";
-    const corner = new THREE.Vector3(P.home.x - 0.2, P.home.y, P.front.z);
-    const d = reduced ? 0 : 1;
-    step(P, P.sleeper.position.clone(), corner, 0.7 * d || 0.01, 0);
-    step(P, corner, P.home.clone(), 0.7 * d || 0.01, 0.7 * d);
-    anim(0.01, () => { P.sleeper.rotation.y = Math.atan2(-P.home.x, -P.home.z); P.mood = "sleep"; }, 1.45 * d);
-    anim(0.7 * d || 0.01, (k) => { P.sleeper.userData.power = 1 - k * 0.96; }, 1.5 * d);
-    anim(0.6 * d || 0.01, (k) => { P.glass.scale.y = Math.max(0.02, k); P.glass.position.y = 0.15 + 0.95 * k; P.mist.material.opacity = 0.45 * k; }, 1.6 * d);
-    anim(0.01, () => { P.awake = false; P.walking = false; P.screen = "off"; paintScreen(P.sleeper.userData.screenTex, "off", 0); }, 2.3 * d);
+  function startMission(id) {
+    const P = pods[id], steps = MISSIONS[id];
+    if (!P || !steps || P.busy) return;
+    P.busy = true;
+    const tok = ++P.tok, alive = () => P.tok === tok && P.busy;
+    const W = P.worker, spd = reduced ? 40 : 1.7;
+    const gnd = (x, z) => new THREE.Vector3(x, WG, z);
+    let T = 0;
+    anim(0.5, (k) => { if (!alive()) return; P.glass.scale.y = Math.max(0.02, 1 - k); P.glass.position.y = 0.15 + 0.95 * (1 - k); P.mist.material.opacity = 0.45 * (1 - k); }, T);
+    anim(0.01, () => { if (!alive()) return; P.sleeper.visible = false; W.visible = true; W.position.copy(gnd(P.home.x, P.home.z)); W.rotation.y = Math.atan2(-P.home.x, -P.home.z); P.mood = "happy"; P.screen = "pulse"; sound.sfx("awake", { gain: 0.5 }); }, T + 0.6);
+    T += 1.0;
+    let here = gnd(P.home.x - 0.2, P.home.z);
+    const walk = (to, speed = spd) => {
+      const from = here.clone(), dur = Math.max(0.15, from.distanceTo(to) / speed), s0 = T;
+      anim(dur, (k) => { if (!alive()) return; W.position.lerpVectors(from, to, k); }, s0);
+      anim(0.01, () => { if (!alive()) return; P.walking = true; W.rotation.y = Math.atan2(to.x - from.x, to.z - from.z); }, s0);
+      T += dur; here = to.clone();
+    };
+    steps.forEach((st) => {
+      const ex = exhibits.find((e) => e.room === id && e.key === st.ex);
+      if (!ex) return;
+      const stand = gnd(ex.stand[0], ex.stand[1]);
+      walk(gnd(here.x, Math.max(here.z, 1.0))); walk(hubAt); walk(stand);
+      anim(0.01, () => { if (!alive()) return; P.walking = false; W.rotation.y = Math.atan2(ex.at[0] - stand.x, ex.at[1] - stand.z); P.cap = st.cap; P.mood = "think"; P.screen = "test"; P.reach = !st.tiles; }, T);
+      if (st.tiles && extra.arcRoute) {
+        anim(0.01, () => { if (alive()) ex.act(); }, T);
+        T += 0.3;
+        anim(0.01, () => { if (alive()) P.tiles = true; }, T);
+        extra.arcRoute().forEach(([x, z]) => walk(gnd(x, z), reduced ? 40 : 1.1));
+        anim(0.01, () => { if (alive()) { P.tiles = false; P.walking = false; P.mood = "happy"; } }, T);
+        T += 1.0;
+      } else {
+        anim(0.01, () => { if (alive()) ex.act(); }, T + 0.5);
+        T += st.hold ?? 2.6;
+      }
+      anim(0.01, () => { if (!alive()) return; P.cap = null; P.reach = false; P.mood = "happy"; }, T);
+    });
+    walk(hubAt); walk(gnd(P.home.x - 0.2, P.front.z)); walk(gnd(P.home.x, P.home.z), 1.2);
+    anim(0.01, () => { if (!alive()) return; P.walking = false; W.visible = false; P.sleeper.visible = true; P.mood = "sleep"; }, T);
+    anim(0.5, (k) => { if (!alive()) return; P.glass.scale.y = Math.max(0.02, k); P.glass.position.y = 0.15 + 0.95 * k; P.mist.material.opacity = 0.45 * k; }, T);
+    anim(0.01, () => { if (P.tok === tok) { P.busy = false; P.next = t + 7; } }, T + 0.6);
   }
   function clearExercise() { if (fresh && !flight) fresh.removeFromParent(); if (!flight) fresh = null; screenMode = null; alertUntil = 0; }
   function react(kind) {
@@ -891,7 +967,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     const main = mainOf(currentRoom);
     const P = pods[currentRoom];
     if (P) P.last = t;
-    if (kind === "run") { sound.sfx("interact"); if (P?.awake && !P.walking) setPod(P, "think", "pulse"); else wakePod(currentRoom); }
+    if (kind === "run") { sound.sfx("interact"); if (P) { if (P.busy) setPod(P, "think", "pulse"); else startMission(currentRoom); } }
     if (kind === "fail") sound.sfx("fail");
     if (kind === "fail" && P) setPod(P, "alert", "alert");
     if (kind === "think" && P) setPod(P, "think", "sync");
@@ -913,15 +989,25 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   let podPaint = 0;
   function tickPods(tt, dt) {
     podPaint += dt;
+    let cap = null;
     for (const [id, P] of Object.entries(pods)) {
-      if (P.awake && !P.walking && t - P.last > 10) sleepPod(id);
-      if (!P.awake && P.mood === "sleep" && P.sleeper.userData.power < 0.05) continue; // asleep: nothing to animate
-      pose(P.sleeper, P.mood, tt, dt);
-      const up = t < (P.cheer ?? 0);
-      const sw = P.walking ? Math.sin(tt * 9) * 0.35 : 0;
-      setArms(P.sleeper, up ? -2.5 : -0.16, up ? 2.5 : P.mood === "think" ? 1.1 : 0.16, sw, -sw);
-      if (podPaint > 0.08 && P.awake) paintScreen(P.sleeper.userData.screenTex, P.screen, tt);
+      // the room you are in gets its agent to work, a few seconds after you arrive and again every so often
+      if (id === currentRoom && visible) { if (!P.busy && t > P.next && P.next > 0) startMission(id); } else if (P.busy) abortMission(id);
+      const W = P.worker;
+      if (!W.visible) continue;
+      P.gaitAmt += ((P.walking ? 1 : 0) - P.gaitAmt) * Math.min(1, dt * 8);
+      if (P.gaitAmt > 0.04) P.gaitPhase += dt * 8.5;
+      gait(W, P.gaitPhase, P.gaitAmt, tt);
+      pose(W, P.mood, tt, dt);
+      const sw = Math.sin(P.gaitPhase) * 0.5 * P.gaitAmt;
+      if (P.reach) setArms(W, -0.2, 0.16, -1.15 + Math.sin(tt * 7) * 0.12, -0.9 + Math.sin(tt * 7 + 1.5) * 0.14);
+      else setArms(W, -0.16, 0.16, sw, -sw);
+      W.position.y = WG + Math.abs(Math.cos(P.gaitPhase)) * 0.03 * P.gaitAmt;
+      if (P.tiles && extra.arcStep) extra.arcStep(W.position.x, W.position.z);
+      if (podPaint > 0.08) paintScreen(W.userData.screenTex, P.screen ?? "pulse", tt);
+      if (id === currentRoom && P.cap) { tmp.set(W.position.x, WG + 2.45, W.position.z); P.g.localToWorld(tmp); cap = { room: id, text: P.cap, v: tmp.clone() }; }
     }
+    if (cap) { cap.v.project(camera); onWorker(cap.v.z < 1 ? { x: (cap.v.x * 0.5 + 0.5) * canvas.clientWidth, y: (-cap.v.y * 0.5 + 0.5) * canvas.clientHeight, text: tr(cap.text) } : null); } else onWorker(null);
     if (podPaint > 0.08) podPaint = 0;
   }
 
@@ -1026,10 +1112,18 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     const jt = u.jet;
     if (jt) jt.flames.forEach((f, i) => { const k = jetOn * (0.85 + 0.3 * Math.sin(tt * 40 + i * 2)); f.scale.set(1 + jetOn * 0.2, Math.max(0.001, k * 1.3), 1 + jetOn * 0.2); });
     gait(agent, gaitPhase, gaitAmt * (1 - air), tt, air);
+    // fire, smoke and dust from the nozzles; the body shakes a little under thrust
+    if (jt) {
+      agent.updateMatrixWorld(true);
+      jt.flames[0].getWorldPosition(nozzleA); jt.flames[1].getWorldPosition(nozzleB);
+      jetV.set((agent.position.x - prevPos.x) / Math.max(dt, 1e-3), 0, (agent.position.z - prevPos.z) / Math.max(dt, 1e-3)); prevPos.copy(agent.position);
+      jetFx.emit(dt, [nozzleA, nozzleB], jetOn > 0.05 ? jetOn : 0, jetV, alt, agent.position);
+    }
+    jetFx.update(dt);
     const lean = (fp ? 0 : 0.12) * gaitAmt + 0.18 * Math.min(1, alt / 0.6) * Math.min(1, sp / 2);
     agent.rotation.x += (lean - agent.rotation.x) * Math.min(1, dt * 6);
     agent.position.y = HOVER_Y + alt + Math.abs(Math.cos(gaitPhase)) * 0.045 * gaitAmt * (1 - air) + Math.sin(tt * 1.7) * 0.006 * (1 - gaitAmt);
-    agent.rotation.z = Math.sin(gaitPhase) * 0.035 * gaitAmt; // a little roll with each stride
+    agent.rotation.z = Math.sin(gaitPhase) * 0.035 * gaitAmt + Math.sin(tt * 55) * 0.012 * jetOn; // a little roll with each stride, and a tremor under thrust
 
     // screens, arcades, the clock and the flasks make small sounds when you are close to them
     for (const e of B.emitters) {
@@ -1042,10 +1136,11 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     // which room are we in
     const here = roomAt(agent.position.x, agent.position.z);
     if (here && here !== currentRoom) {
+      toured.delete(currentRoom);
       currentRoom = here;
       onArrive(here);
       sound.sfx("door");
-      if (here !== "cuna") line(`welcome-${here}`);
+      if (here !== "cuna") { line(`welcome-${here}`); if (pods[here]) pods[here].next = t + 3; }
       guideKey = "";
     }
     if (currentRoom === "arc" && extra.arcStep) {
@@ -1104,7 +1199,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     // camera
     if (fp) {
       camera.fov += (72 - camera.fov) * Math.min(1, dt * 6);
-      camera.position.set(agent.position.x, EYE + alt + Math.abs(Math.cos(gaitPhase)) * 0.05 * gaitAmt, agent.position.z);
+      camera.position.set(agent.position.x + (Math.random() - 0.5) * 0.02 * jetOn, EYE + alt + Math.abs(Math.cos(gaitPhase)) * 0.05 * gaitAmt + (Math.random() - 0.5) * 0.02 * jetOn, agent.position.z);
       tmp.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).add(camera.position);
       camera.lookAt(tmp);
     } else {
@@ -1145,6 +1240,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     setView,
     get fp() { return fp; },
     get locked() { return locked; },
+    get active() { return active(); },
     interact: () => interact(),
     exhibit: (room, key) => exhibits.find((e) => e.room === room && e.key === key),
     focusCanvas: () => { engaged = true; canvas.focus({ preventScroll: true }); },

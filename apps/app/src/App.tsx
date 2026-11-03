@@ -8,9 +8,10 @@ import { initialLang, LangContext, saveLang, T, useT, type Lang } from "./i18n.j
 import { Overview } from "./Overview.js";
 import { Radar } from "./Radar.js";
 import { SignIn } from "./SignIn.js";
+import { Workshop } from "./Workshop.js";
 
-export type Tab = "overview" | "brain" | "radar" | "agent";
-const TABS: Tab[] = ["overview", "brain", "radar", "agent"];
+export type Tab = "overview" | "brain" | "radar" | "agent" | "workshop";
+const TABS: Tab[] = ["overview", "brain", "radar", "agent", "workshop"];
 const tabFromHash = (): Tab => {
   const h = location.hash.slice(1);
   return (TABS as string[]).includes(h) ? (h as Tab) : "overview";
@@ -153,6 +154,7 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
         {tab === "overview" && <Overview name={name.split(" ")[0] ?? ""} keys={keys} notesCount={notesCount} go={go} client={client} onKeys={setKeys} onNotes={setNotesCount} />}
         {tab === "brain" && <Brain client={client} keys={keys} onKeys={setKeys} go={go} />}
         {tab === "agent" && <Agent client={client} go={go} lang={lang} />}
+        {tab === "workshop" && <Workshop client={client} go={go} />}
         {tab === "radar" && <Radar client={client} keys={keys} onKeys={setKeys} onNotes={setNotesCount} go={go} lang={lang} />}
       </main>
     </>
