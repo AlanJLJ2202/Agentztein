@@ -1,3 +1,5 @@
+import { DB_HINTS, dbProblem } from "./dberror.js";
+
 // Small helpers for the Web-standard handlers Vercel runs from /api (files under _lib are not routes).
 
 export class HttpError extends Error {
@@ -37,6 +39,8 @@ export const handle = (fn) => async (/** @type {Request} */ request) => {
   } catch (err) {
     if (err instanceof HttpError) return json({ error: err.message, ...err.extra }, err.status);
     console.error(err);
+    const problem = dbProblem(err);
+    if (problem) return json({ error: DB_HINTS[problem], reason: "database", detail: problem }, 503);
     return json({ error: "Something went wrong on our side" }, 500);
   }
 };

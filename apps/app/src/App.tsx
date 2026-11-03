@@ -1,7 +1,7 @@
 // The signed-in side of Agentztein: Google sign-in through Supabase Auth, then the user's own lab.
 import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
-import { api, getConfig, type Api, type Config, type SavedKey } from "./api.js";
+import { api, dbText, getConfig, type Api, type Config, type SavedKey } from "./api.js";
 import { Agent } from "./Agent.js";
 import { Brain } from "./Brain.js";
 import { initialLang, LangContext, saveLang, T, useT, type Lang } from "./i18n.js";
@@ -146,9 +146,14 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
         </div>
       </header>
       <main className="wrap page">
-        {!config.ready && (
+        {config.missing.length > 0 && (
           <p className="notice" role="status">
             {t(T.setupTitle)}: {config.missing.map((m) => <code key={m}>{m}</code>)}
+          </p>
+        )}
+        {config.database && config.database.status !== "ok" && config.database.status !== "missing" && (
+          <p className="notice" role="alert">
+            <b>{t(T.db.title)}.</b> {dbText(config.database.status)}
           </p>
         )}
         {tab === "overview" && <Overview name={name.split(" ")[0] ?? ""} keys={keys} notesCount={notesCount} go={go} client={client} onKeys={setKeys} onNotes={setNotesCount} />}

@@ -1,5 +1,6 @@
 // Talks to the functions in /api with the user's Supabase session.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { T } from "./i18n.js";
 
 export type GoogleStatus = "ok" | "not-configured" | "disabled" | "mismatch" | "no-client-id" | "unknown";
 export type Config = {
@@ -8,7 +9,16 @@ export type Config = {
   ready: boolean;
   missing: string[];
   google?: { clientId: string | null; status: GoogleStatus; enabled: boolean | null; button: boolean };
+  database?: { status: "ok" | DbProblem; hint?: string };
 };
+export type DbProblem = "missing" | "url" | "ssl" | "unreachable" | "auth" | "schema";
+
+/** The server's database diagnosis in the page's language. */
+export function dbText(problem: string | undefined): string | null {
+  const texts = T.db as unknown as Record<string, { en: string; es: string }>;
+  if (!problem || !texts[problem] || problem === "title") return null;
+  return texts[problem][document.documentElement.lang === "es" ? "es" : "en"];
+}
 export type ProviderInfo = { id: string; label: string; keysUrl: string };
 export type SavedKey = { provider: string; hint: string; model: string | null; models: string[]; verifiedAt: string | null; updatedAt: string };
 export type Verdict = "experiment" | "watch" | "skip";
@@ -125,7 +135,10 @@ export function api(supabase: SupabaseClient) {
       headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}), ...init.headers },
     });
     const body = (await res.json().catch(() => ({}))) as { error?: string; reason?: string } & Record<string, unknown>;
-    if (!res.ok) throw new ApiError(body.error ?? `Error ${res.status}`, res.status, body.reason, body);
+    if (!res.ok) {
+      const db = body.reason === "database" ? dbText(String(body.detail ?? "")) : null;
+      throw new ApiError(db ?? body.error ?? `Error ${res.status}`, res.status, body.reason, body);
+    }
     return body as T;
   }
   return {

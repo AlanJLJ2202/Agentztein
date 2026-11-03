@@ -188,5 +188,14 @@ export const T = {
     needsYou: { en: "Needs your approval before going to the lab.", es: "Necesita tu aprobación antes de ir al laboratorio." },
     overBudget: { en: "Stopped by the harness: this run could go over your monthly budget.", es: "Detenido por el arnés: esta corrida podría pasarse de tu presupuesto mensual." },
   },
+  db: {
+    title: { en: "The database isn't reachable", es: "No se puede usar la base de datos" },
+    missing: { en: "DATABASE_URL is not set in Vercel.", es: "Falta DATABASE_URL en Vercel." },
+    url: { en: "DATABASE_URL is malformed. If the password has symbols (@, #, /, ?), URL-encode them or reset it to letters and digits.", es: "DATABASE_URL está mal formada. Si la contraseña tiene símbolos (@, #, /, ?), codifícalos o cámbiala por letras y números." },
+    ssl: { en: "Vercel doesn't trust Supabase's certificate: set DATABASE_SSL_CA in Vercel to the full contents of Supabase's CA certificate (Database Settings → SSL), with the BEGIN/END lines, and redeploy.", es: "Vercel no confía en el certificado de Supabase: pon en Vercel DATABASE_SSL_CA con el contenido completo del certificado CA de Supabase (Database Settings → SSL), con las líneas BEGIN/END, y vuelve a desplegar." },
+    unreachable: { en: "Vercel can't reach the database. Use the Transaction pooler string (…pooler.supabase.com:6543), not the direct connection, and redeploy.", es: "Vercel no alcanza la base de datos. Usa la cadena del Transaction pooler (…pooler.supabase.com:6543), no la conexión directa, y vuelve a desplegar." },
+    auth: { en: "The database rejected the user or password in DATABASE_URL. With the pooler the user is postgres.<project-ref>.", es: "La base rechazó el usuario o la contraseña de DATABASE_URL. Con el pooler el usuario es postgres.<ref-del-proyecto>." },
+    schema: { en: "The database has no app tables: run GitHub → Actions → db-migrate against the same database Vercel uses.", es: "La base no tiene las tablas de la app: corre GitHub → Actions → db-migrate contra la misma base que usa Vercel." },
+  },
   hnNote: { en: "Not affiliated with Y Combinator or Hacker News.", es: "Sin afiliación con Y Combinator ni con Hacker News." },
 } as const;
