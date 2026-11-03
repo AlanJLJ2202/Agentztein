@@ -293,3 +293,19 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
   exhibición principal y vuelve a dormir (también por inactividad). Primera persona: A/D ya no están
   invertidas, arrastrar funciona como Street View y un clic camina hasta lo que se toca. El laboratorio se
   ajusta al alto de la pantalla y tiene botón de pantalla completa.
+
+## ADR-023 — El arnés (guardarraíles) y la familia completa de Meta en la landing
+- **Contexto (3 nov 2026):** Alan pidió una sección de arnés: validar las pruebas, que el agente no se salga
+  del camino, no gaste de más, no tome decisiones riesgosas y que lo crítico pase por una persona. También
+  corrigió que la Meta Model API ofrece cinco familias (Muse Wonder, Muse Spark, Muse Image, Muse Voice
+  Transcribe, SAM 3.1) más modelos de pesos abiertos (Muse Glimmer, Muse Spark Open); el hackathon cierra el
+  4 nov 2026 a las 9:00 p. m. ET.
+- **Decisión:**
+  - Landing: sección "El arnés" con cinco controles y una demo ("Intenta saltarte el arnés"). Se marca qué
+    ya funciona en la app (presupuesto, aprobación humana, registro) y qué es diseño del protocolo.
+  - App y API (migración `0006`): presupuesto mensual por usuario (`app.user_limits`, $5 por defecto);
+    antes de cada corrida se calcula el peor caso con los precios del catálogo y, si se pasa, no se llama a
+    Meta. Cada llamada queda en `app.harness_runs` (append-only por trigger) con tokens reales y costo.
+    Las ideas "experimentar" del radar esperan la decisión de la persona (`decision`, `decided_at`).
+  - Landing de Meta: las siete piezas con su papel (planifica, ejecuta, crea imágenes, escucha, ubica
+    objetos, corre en tu equipo), iconos SVG (sin emojis) y la imagen fija que sigue el scroll.

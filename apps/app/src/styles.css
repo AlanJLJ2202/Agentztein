@@ -238,3 +238,15 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 .effort-pick button { all: unset; box-sizing: border-box; text-align: center; padding: 8px 2px; border-radius: 9px; font: 700 .75rem/1 ui-monospace, monospace; color: var(--muted); cursor: pointer; }
 .effort-pick button[aria-checked="true"] { background: var(--blue); color: #fff; }
 .effort-pick button:focus-visible { outline: 3px solid var(--meta); }
+
+/* Harness */
+.harness-card { border-color: #d9e7ff; }
+.spend { display: grid; gap: 6px; }
+.spend-bar { height: 10px; border-radius: 999px; background: var(--soft); overflow: hidden; }
+.spend-bar i { display: block; height: 100%; border-radius: inherit; background: var(--ok); }
+.spend-bar i.hot { background: var(--amber); }
+.decide { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--violet-bg); }
+.decide .muted { flex-basis: 100%; }
+.decided { justify-self: start; font-size: .8125rem; font-weight: 800; padding: 4px 10px; border-radius: 999px; }
+.decided.approved { background: var(--ok-bg); color: var(--ok); }
+.decided.rejected { background: var(--soft); color: var(--muted); }

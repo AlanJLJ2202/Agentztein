@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { LangSwitch } from "./App.js";
 import { T, useT, type Lang } from "./i18n.js";
-import { GoogleG, HnMark } from "./Logos.js";
+import { Check, GoogleG, HnMark } from "./Logos.js";
 
 type Mode = "signin" | "signup" | "verify" | "forgot" | "reset";
 const A = T.auth;
@@ -143,7 +143,7 @@ export function SignIn({ supabase, lang, setLang }: { supabase: SupabaseClient; 
               <p className="lead">{t(T.signInLead)}</p>
               <ul className="checks">
                 {T.signInBullets[lang].map((b, i) => (
-                  <li key={b}>{i === 1 ? <HnMark size={18} /> : <span className="tick" aria-hidden="true">✓</span>}{b}</li>
+                  <li key={b}>{i === 1 ? <HnMark size={18} /> : <span className="tick" aria-hidden="true"><Check size={11} /></span>}{b}</li>
                 ))}
               </ul>
               <button type="button" className="google" onClick={() => void google()} disabled={busy}>

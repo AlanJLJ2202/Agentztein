@@ -1,7 +1,7 @@
 // The research radar: what Hacker News is discussing this week, and what Agentztein decided about it.
 import { CAPABILITIES, EFFORTS, familyOf, fetchAiStories, type Story } from "@skillab/research";
 import { useEffect, useState } from "react";
-import { ApiError, type Api, type Note, type SavedKey, type Verdict } from "./api.js";
+import { ApiError, type Api, type Budget, type Note, type SavedKey, type Verdict } from "./api.js";
 import type { Tab } from "./App.js";
 import { T, useT, type Lang } from "./i18n.js";
 import { HnMark } from "./Logos.js";
@@ -33,6 +33,14 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
   const [error, setError] = useState("");
   const [lastRun, setLastRun] = useState<{ read: number; model?: string } | null>(null);
   const [effort, setEffort] = useState<string>("low");
+  const [budget, setBudget] = useState<Budget | null>(null);
+  useEffect(() => { client.limits().then(setBudget).catch(() => undefined); }, [client]);
+  const decide = async (id: string, decision: "approved" | "rejected") => {
+    try {
+      const r = await client.decide(id, decision);
+      setNotes((prev) => (prev ?? []).map((n) => (n.id === id ? r.note : n)));
+    } catch (err) { setError((err as Error).message); }
+  };
 
   useEffect(() => {
     const ctl = new AbortController();
@@ -57,8 +65,9 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
       setNotes(merged);
       onNotes(merged.length);
       setLastRun({ read: r.read, ...(r.model ? { model: r.model } : {}) });
+      if (r.budget) setBudget(r.budget);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t(T.liveError));
+      setError(err instanceof ApiError ? (err.reason === "budget" ? t(T.harness.overBudget) : err.message) : t(T.liveError));
     } finally {
       setBusy(false);
     }
@@ -105,6 +114,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
                 {busy && <span className="spin light" aria-hidden="true" />}
                 {busy ? t(T.triaging) : t(T.triage)}
               </button>
+              {budget && <p className="muted small">${budget.spent.toFixed(4)} / ${budget.monthly.toFixed(2)} {t(T.harness.spent)}</p>}
               {lastRun && <p className="muted small">{lastRun.read} {t(T.read)}{lastRun.model ? ` · ${lastRun.model}` : ""}</p>}
             </>
           ) : (
@@ -148,6 +158,17 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
                     {n.cost && <div><dt>{t(T.cost)}</dt><dd>{n.cost}</dd></div>}
                     {n.why && <div><dt>{t(T.why)}</dt><dd>{n.why}</dd></div>}
                   </dl>
+                  {n.verdict === "experiment" && (
+                    n.decision ? (
+                      <p className={`decided ${n.decision}`}>{n.decision === "approved" ? t(T.harness.approved) : t(T.harness.rejected)}</p>
+                    ) : (
+                      <div className="decide">
+                        <span className="muted small">{t(T.harness.needsYou)}</span>
+                        <button type="button" className="btn small" onClick={() => void decide(n.id, "approved")}>{t(T.harness.approve)}</button>
+                        <button type="button" className="btn small ghost" onClick={() => void decide(n.id, "rejected")}>{t(T.harness.reject)}</button>
+                      </div>
+                    )
+                  )}
                   <p className="meta">
                     {n.points ?? 0} {t(T.points)} · {n.discussionUrl && <a href={n.discussionUrl} target="_blank" rel="noreferrer">{t(T.discussion)}</a>} · {t(T.judgedBy)} {n.model} · {ago(n.assessedAt, lang)}
                   </p>

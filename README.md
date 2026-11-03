@@ -80,7 +80,8 @@ Todo se opera desde el navegador (ADR-015):
 5. **Vercel → Settings → Environment Variables:** `SUPABASE_URL`, `SUPABASE_ANON_KEY` (públicas),
    `DATABASE_URL` (Transaction pooler, puerto 6543), `DATABASE_SSL_CA` y `KEYS_ENCRYPTION_SECRET`
    (32+ caracteres aleatorios, p. ej. `openssl rand -base64 48`). Si falta alguna, `/app/` dice cuál.
-6. Correr `db-migrate` para crear el esquema `app` (migración `0005`). No se expone por la Data API de Supabase.
+6. Correr `db-migrate` para crear el esquema `app` (migraciones `0005` y `0006`: llaves, notas, presupuesto y
+   registro del arnés). No se expone por la Data API de Supabase.
 
 **Solo modelos de Meta.** Cada usuario pega su llave de la **Meta Model API** (`https://api.meta.ai/v1`,
 compatible con OpenAI; se crea en dev.meta.ai). Es la que reemplazó a la Llama API (retirada el 6 jul 2026) y

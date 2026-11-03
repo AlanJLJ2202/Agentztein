@@ -304,11 +304,41 @@ export const researchNotes = app.table(
     why: text("why").notNull(),
     provider: text("provider").notNull(),
     model: text("model").notNull(),
+    /** The person's call on the idea: nothing goes to the lab without it. */
+    decision: text("decision"),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.source, t.externalId] }),
+    check("research_notes_decision_chk", sql`${t.decision} is null or ${t.decision} in ('approved', 'rejected')`),
     index("research_notes_user_created").on(t.userId, t.createdAt),
     check("research_notes_verdict_chk", sql`${t.verdict} in ('experiment', 'watch', 'skip')`),
   ],
+);
+
+/** The harness: each user's spending limit. */
+export const userLimits = app.table("user_limits", {
+  userId: uuid("user_id").primaryKey(),
+  monthlyBudgetUsd: numeric("monthly_budget_usd", { precision: 10, scale: 2 }).notNull().default("5"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** The harness log: every model call with its tokens and cost. Append-only (trigger in migration 0006). */
+export const harnessRuns = app.table(
+  "harness_runs",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: uuid("user_id").notNull(),
+    kind: text("kind").notNull(),
+    provider: text("provider").notNull(),
+    model: text("model").notNull(),
+    effort: text("effort"),
+    inputTokens: integer("input_tokens").notNull(),
+    outputTokens: integer("output_tokens").notNull(),
+    costUsd: numeric("cost_usd", { precision: 12, scale: 6 }).notNull(),
+    outcome: text("outcome").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("harness_runs_user_created").on(t.userId, t.createdAt)],
 );

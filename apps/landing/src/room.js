@@ -376,7 +376,7 @@ T.swe = (g, { relabels, room }) => {
 
 T.terminal = (g, { relabels, room }) => {
   const m = mural(g, room, (c, W) => { c.fillStyle = "#1c2b33"; rr(c, W - 300, 50, 240, 150, 18); c.fill(); c.fillStyle = "#3ccf6e"; c.font = `700 40px monospace`; c.fillText("$ _", W - 270, 140); });
-  const LINES = [["$ make", "#e6edf3"], ["fatal: openssl/ssl.h: no such file", "#ff9b87"], ["$ apt-get install -y libssl-dev", "#e6edf3"], ["$ make && ./server --port 8080", "#e6edf3"], ["listening on :8080", "#7ee2a8"], ["$ bash tests.sh  ✓ 5/5", "#7ee2a8"]];
+  const LINES = [["$ make", "#e6edf3"], ["fatal: openssl/ssl.h: no such file", "#ff9b87"], ["$ apt-get install -y libssl-dev", "#e6edf3"], ["$ make && ./server --port 8080", "#e6edf3"], ["listening on :8080", "#7ee2a8"], ["$ bash tests.sh  PASS 5/5", "#7ee2a8"]];
   let shown = 1;
   const term = windowPanel(2.6, 1.4, true, () => {});
   const tf = term.children[1];

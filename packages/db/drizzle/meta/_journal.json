@@ -43,6 +43,13 @@
       "when": 1793648905129,
       "tag": "0005_app_users",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793665995503,
+      "tag": "0006_harness",
+      "breakpoints": true
     }
   ]
 }

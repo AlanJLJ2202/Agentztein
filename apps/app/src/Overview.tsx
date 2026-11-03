@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import type { Api, SavedKey } from "./api.js";
 import type { Tab } from "./App.js";
 import { T, useT } from "./i18n.js";
+import { Check } from "./Logos.js";
 
 type Props = {
   name: string;
@@ -38,7 +39,7 @@ export function Overview({ name, keys, notesCount, go, client, onKeys, onNotes }
           const to = target[i];
           return (
             <li key={i} className={st}>
-              <span className="num" aria-hidden="true">{st === "done" ? "✓" : i + 1}</span>
+              <span className="num" aria-hidden="true">{st === "done" ? <Check size={16} /> : i + 1}</span>
               <div>
                 <h2>{t(s.t)}</h2>
                 <p>{t(s.d)}</p>

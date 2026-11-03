@@ -374,7 +374,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .sheet p { color: var(--muted); font-size: 1.0625rem; line-height: 1.5; }
 .sheet:not(.bsheet) ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
 .sheet:not(.bsheet) li { position: relative; padding: 10px 14px 10px 36px; border-radius: 14px; background: var(--soft); line-height: 1.4; }
-.sheet:not(.bsheet) li::before { content: "✓"; position: absolute; left: 13px; top: 10px; font-weight: 800; color: var(--ok); }
+.sheet:not(.bsheet) li::before { content: ""; position: absolute; left: 15px; top: 14px; width: 6px; height: 11px; border: solid var(--ok); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
 .sheet-nav { display: flex; gap: 10px; margin-top: 12px; }
 .sheet-nav .btn[disabled] { opacity: .4; pointer-events: none; }
 .sheet .x { all: unset; position: absolute; right: 14px; top: 14px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .9); font-size: 1.5rem; cursor: pointer; }
@@ -651,21 +651,73 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 @media (min-width: 761px) { .card { max-height: calc(100% - 140px); overflow: auto; } }
 @media (max-width: 760px) { .stage { height: min(520px, calc(100svh - 140px)); } .fsbtn { top: 12px; right: 12px; } }
 
-/* Meta's family and senses */
+/* Meta's family, with the picture pinned while you scroll */
+.mcol .lead { margin-top: 20px; }
 .family { list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 8px; }
-.family li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 14px 16px; border-radius: 16px; background: #fff; border-left: 5px solid var(--m); }
+.family li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 2px 14px; align-items: start; padding: 14px 16px; border-radius: 18px; background: #fff; border: 2px solid transparent; transition: border-color .3s var(--ease), transform .3s var(--ease), box-shadow .3s var(--ease); }
+.family li.focus { border-color: var(--m); transform: translateX(6px); box-shadow: 0 10px 30px rgba(28, 43, 51, .08); }
+.family .ico { grid-row: 1 / span 3; width: 44px; height: 44px; padding: 10px; border-radius: 14px; background: color-mix(in srgb, var(--m) 14%, #fff); color: var(--m); }
+.ico { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .family b { font-size: 1.0625rem; }
-.family span { grid-column: 1; color: var(--muted); font-size: .9375rem; line-height: 1.4; }
-.family em { grid-column: 2; grid-row: 1 / span 2; align-self: center; font: 700 .8125rem/1 ui-monospace, monospace; font-style: normal; color: var(--ink); background: var(--soft); padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
-.senses { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.senses li { display: grid; gap: 2px; padding: 12px 14px; border-radius: 16px; background: #fff; }
-.senses i { font-style: normal; font-size: 1.2rem; }
-.senses b { font-size: .9375rem; }
-.senses span { font-size: .8125rem; color: var(--muted); line-height: 1.35; }
-.senses .no { background: rgba(255, 255, 255, .55); }
-.senses .no b { color: var(--muted); }
+.family .mverb { grid-column: 2; font-size: .8125rem; font-weight: 800; color: var(--m); text-transform: uppercase; letter-spacing: .04em; }
+.family .mtxt { grid-column: 2; color: var(--muted); font-size: .9375rem; line-height: 1.4; }
+.family em { grid-column: 3; grid-row: 1; font: 700 .75rem/1 ui-monospace, monospace; font-style: normal; color: var(--ink); background: var(--soft); padding: 6px 9px; border-radius: 999px; white-space: nowrap; }
+.effort { transition: box-shadow .3s var(--ease); }
+.effort.focus { box-shadow: 0 0 0 2px var(--blue); }
 .mfine { margin-top: 14px; }
-@media (max-width: 560px) { .senses { grid-template-columns: minmax(0, 1fr); } }
+.brain { align-items: start; }
+.art-col { position: relative; align-self: stretch; }
+.brain .meta-art { position: sticky; top: 96px; isolation: isolate; transform: rotate(calc((var(--p, .5) - .5) * 5deg)) scale(calc(.97 + var(--p, .5) * .05)); transition: transform .2s linear; }
+.meta-art img { transform: translateY(calc((var(--p, .5) - .5) * -36px)) scale(1.04); transition: transform .2s linear; }
+.art-ring { position: absolute; inset: 10px; border-radius: calc(var(--r) - 8px); box-shadow: inset 0 0 0 3px var(--m); opacity: .9; pointer-events: none; transition: box-shadow .4s var(--ease); }
+.art-chip { position: absolute; left: 18px; bottom: 18px; display: flex; align-items: center; gap: 12px; padding: 10px 16px 10px 10px; border-radius: 18px; background: rgba(255, 255, 255, .95); box-shadow: 0 10px 30px rgba(28, 43, 51, .14); }
+.art-chip .art-ico { width: 40px; height: 40px; padding: 9px; border-radius: 12px; background: var(--m); color: #fff; transition: background-color .4s var(--ease); }
+.art-chip .art-ico svg { width: 100%; height: 100%; }
+.art-chip b { display: block; font-size: 1.0625rem; }
+.art-chip small { display: block; color: var(--muted); font-weight: 600; }
+.art-chip.swap { animation: soft .45s var(--ease); }
+.art-dots { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.art-dots li { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, .9); box-shadow: inset 0 0 0 2px var(--m); transition: transform .3s var(--ease), background-color .3s var(--ease); }
+.art-dots li.on { background: var(--m); transform: scale(1.4); }
+.mchip { display: none; }
+@media (max-width: 900px) { .art-col { order: -1; } .brain .meta-art { position: relative; top: 0; transform: none; max-width: 520px; } .meta-art img { transform: none; } .family li.focus { transform: none; } }
+
+/* The harness */
+.harness { background: linear-gradient(#fff, #f5f8fb); }
+.hbox { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: clamp(16px, 2.5vw, 32px); align-items: start; }
+.gates { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.gate { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 2px 14px; align-items: start; padding: 14px 16px; border-radius: 18px; background: #fff; border: 2px solid transparent; transition: border-color .3s var(--ease), background-color .3s var(--ease); }
+.gate .ico { grid-row: 1 / span 2; width: 44px; height: 44px; padding: 10px; border-radius: 14px; background: var(--sky); color: var(--blue); }
+.gate b { font-size: 1.0625rem; }
+.gate span { grid-column: 2; color: var(--muted); font-size: .9375rem; line-height: 1.4; }
+.gate em { grid-column: 3; grid-row: 1; font-style: normal; font-size: .75rem; font-weight: 800; padding: 4px 9px; border-radius: 999px; background: var(--soft); color: var(--muted); white-space: nowrap; }
+.gate em.live { background: var(--ok-bg); color: var(--ok); }
+.gate.stop { border-color: var(--bad); background: #fff7f5; }
+.gate.stop .ico { background: var(--bad-bg); color: var(--bad); }
+.gate.wait { border-color: var(--amber); background: #fffaf0; }
+.gate.wait .ico { background: var(--amber-bg); color: var(--amber); }
+.gate.pass .ico { background: var(--ok-bg); color: var(--ok); }
+.try { position: sticky; top: 96px; display: grid; gap: 14px; padding: 22px; border-radius: 24px; background: var(--ink); color: #fff; }
+.try-t { font-weight: 800; font-size: 1.125rem; }
+.scns { display: grid; gap: 6px; }
+.scn { all: unset; box-sizing: border-box; padding: 10px 14px; border-radius: 14px; background: rgba(255, 255, 255, .08); font-weight: 600; font-size: .9375rem; line-height: 1.3; cursor: pointer; transition: background-color .2s var(--ease); }
+.scn:hover { background: rgba(255, 255, 255, .14); }
+.scn[aria-pressed="true"] { background: #fff; color: var(--ink); }
+.scn:focus-visible { outline: 3px solid var(--meta); }
+.track { position: relative; height: 56px; margin: 6px 0; }
+.track .line { position: absolute; left: 4%; right: 4%; top: 50%; height: 3px; margin-top: -1.5px; border-radius: 3px; background: rgba(255, 255, 255, .18); }
+.track .tick { position: absolute; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; padding: 8px; border-radius: 12px; background: #26394a; color: #9fb3c2; transition: background-color .3s var(--ease), color .3s var(--ease); }
+.track .tick .ico, .track .end .ico { width: 100%; height: 100%; }
+.track .tick.pass { background: var(--ok); color: #fff; }
+.track .tick.stop { background: var(--bad); color: #fff; }
+.track .tick.wait { background: var(--amber); color: #fff; }
+.track .end { position: absolute; right: 0; top: 50%; width: 36px; height: 36px; margin-top: -18px; padding: 8px; border-radius: 50%; background: #26394a; color: #9fb3c2; }
+.track .end.pass { background: var(--ok); color: #fff; }
+.track .token { position: absolute; top: 50%; left: 0; width: 18px; height: 18px; margin-top: -9px; border-radius: 50%; background: #4aa8ff; box-shadow: 0 0 0 5px rgba(74, 168, 255, .25); transition: left .6s var(--ease); }
+.verdict { min-height: 3em; color: #d4dee6; line-height: 1.45; }
+.verdict b { color: #fff; }
+#hApprove[hidden] { display: none; }
+@media (max-width: 1000px) { .hbox { grid-template-columns: minmax(0, 1fr); } .try { position: static; } }
 </style>
 </head>
 <body>
@@ -682,6 +734,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
       <a href="#como-funciona" data-es="Cómo funciona">How it works</a>
       <a href="#laboratorio" data-es="Laboratorio">The lab</a>
       <a href="#meta" data-es="Con Meta">Muse by Meta</a>
+      <a href="#arnes" data-es="Arnés">Harness</a>
       <a href="#avance" data-es="Avance">Progress</a>
       <a class="btn menu-cta" href="/app/" data-es="Entrar">Sign in</a>
     </nav>
@@ -926,35 +979,68 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 
 <section class="meta-sec" id="meta">
   <div class="wrap brain">
-    <div class="ent">
-      <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#metalogo"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Muse</span></span>
+    <div class="ent mcol">
+      <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#metalogo"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Muse · SAM</span></span>
       <h2 data-es="El cerebro lo pone Meta">The brain is Meta's</h2>
-      <p class="lead" data-es="Agentztein piensa con los modelos Muse de Meta, y tú eliges cuál: el más capaz para lo difícil o uno más ligero para el día a día. No los modificamos: lo que crece son las piezas que se va cosiendo.">Agentztein thinks with Meta's Muse models, and you choose which: the most capable for hard work or a lighter one for every day. We don't modify them: what grows are the pieces it keeps sewing on.</p>
-      <ul class="family">
-        <li style="--m:#6d5ce8"><b>Muse Wonder</b><span data-es="El más capaz: tareas largas de agente y benchmarks difíciles. Siempre razona a fondo.">The most capable: long agent tasks and hard benchmarks. Always reasons at full depth.</span><em>$4 / $20</em></li>
-        <li style="--m:#0081fb"><b>Muse Spark</b><span data-es="Equilibrado: pensar a diario, investigar y ordenar noticias, con niveles de esfuerzo.">Balanced: everyday thinking, research and sorting the news, with effort levels.</span><em>$1.25 / $4.25</em></li>
-        <li style="--m:#2ec4b6"><b>Muse Glimmer · Spark Open</b><span data-es="Pesos abiertos: Glimmer es ligero (30B) y corre en tu computadora; Spark Open está afinado para código.">Open weights: Glimmer is light (30B) and runs on your own computer; Spark Open is tuned for code.</span><em data-es="abiertos">open</em></li>
-      </ul>
-      <ul class="senses">
-        <li class="yes"><i aria-hidden="true">👁</i><b data-es="Ve">Sees</b><span data-es="imágenes, video y PDF (Spark y Wonder)">images, video and PDF (Spark and Wonder)</span></li>
-        <li class="yes"><i aria-hidden="true">👂</i><b data-es="Escucha">Listens</b><span data-es="Muse Voice Transcribe: de voz a texto, en vivo">Muse Voice Transcribe: speech to text, live</span></li>
-        <li class="no"><i aria-hidden="true">🔈</i><b data-es="Aún no habla">Doesn't speak yet</b><span data-es="Meta no ofrece texto a voz en su API todavía">Meta doesn't offer text-to-speech in its API yet</span></li>
-      </ul>
-      <div class="effort">
+      <p class="lead" data-es="Agentztein se arma con los modelos de Meta: uno piensa, otro ejecuta, otros ven, escuchan y crean. No los modificamos: lo que crece son las piezas que se va cosiendo.">Agentztein is built from Meta's models: one thinks, another runs, others see, listen and create. We don't modify them: what grows are the pieces it keeps sewing on.</p>
+      <ol class="family">
+        <li data-focus="wonder" data-verb-en="Plans and decides" data-verb-es="Planifica y decide" style="--m:#6d5ce8"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4A2.5 2.5 0 0 0 7 6.5V7a3 3 0 0 0-2 5.2A3 3 0 0 0 7 17v.5a2.5 2.5 0 0 0 5 0v-11A2.5 2.5 0 0 0 9.5 4zM14.5 4A2.5 2.5 0 0 1 17 6.5V7a3 3 0 0 1 2 5.2A3 3 0 0 1 17 17v.5a2.5 2.5 0 0 1-5 0"/></svg><b>Muse Wonder</b><span class="mverb" data-es="Planifica y decide">Plans and decides</span><span class="mtxt" data-es="El más capaz: planifica tareas largas y toma las decisiones difíciles. Siempre razona a fondo.">The most capable: plans long tasks and makes the hard decisions. Always reasons at full depth.</span><em>$4 / $20</em></li>
+        <li data-focus="spark" data-verb-en="Runs the agent" data-verb-es="Ejecuta al agente" style="--m:#0081fb"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg><b>Muse Spark</b><span class="mverb" data-es="Ejecuta al agente">Runs the agent</span><span class="mtxt" data-es="El trabajo diario con herramientas, código e investigación, con niveles de esfuerzo. Ve imágenes, video y PDF.">Everyday work with tools, code and research, with effort levels. Sees images, video and PDF.</span><em>$1.25 / $4.25</em></li>
+        <li data-focus="image" data-verb-en="Creates images" data-verb-es="Crea imágenes" style="--m:#ff8f70"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="9.5" r="1.6"/><path d="m4 17 5-5 4 4 2.5-2.5L20 18"/></svg><b>Muse Image</b><span class="mverb" data-es="Crea imágenes">Creates images</span><span class="mtxt" data-es="Genera y edita imágenes: material visual para experimentos y reportes.">Generates and edits images: visual material for experiments and reports.</span></li>
+        <li data-focus="voice" data-verb-en="Listens" data-verb-es="Escucha" style="--m:#3ccf6e"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg><b>Muse Voice Transcribe</b><span class="mverb" data-es="Escucha">Listens</span><span class="mtxt" data-es="Convierte voz en texto, en vivo o de grabaciones: háblale a Agentztein.">Turns speech into text, live or from recordings: talk to Agentztein.</span><em>$3 / 1000 min</em></li>
+        <li data-focus="sam" data-verb-en="Finds objects" data-verb-es="Ubica objetos" style="--m:#ffb53d"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><circle cx="12" cy="12" r="3.6"/></svg><b>SAM 3.1</b><span class="mverb" data-es="Ubica objetos">Finds objects</span><span class="mtxt" data-es="Segmenta y sigue objetos en imágenes y video: entender el espacio.">Segments and tracks objects in images and video: spatial understanding.</span></li>
+        <li data-focus="local" data-verb-en="Runs on your machine" data-verb-es="Corre en tu equipo" style="--m:#2ec4b6"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2.5 19.5h19"/></svg><b>Muse Glimmer · Spark Open</b><span class="mverb" data-es="Corre en tu equipo">Runs on your machine</span><span class="mtxt" data-es="Pesos abiertos: Glimmer es ligero (30B) para experimentos locales; Spark Open es grande y listo para agentes.">Open weights: Glimmer is light (30B) for local experiments; Spark Open is large and agent-ready.</span></li>
+      </ol>
+      <div class="effort" data-focus="effort" data-verb-en="Effort levels" data-verb-es="Niveles de esfuerzo" style="--m:#0081fb">
         <p class="eff-t" data-es="Niveles de esfuerzo de Muse Spark">Muse Spark's effort levels</p>
         <p class="eff-d" data-es="Más esfuerzo es pensar más a fondo, con más tiempo y costo. Tú lo eliges en cada corrida.">More effort means deeper thinking, with more time and cost. You choose it on every run.</p>
         <ol class="dial" aria-label="Effort levels, from least to most" data-es-aria-label="Niveles de esfuerzo, de menos a más">
           <li style="--k:1"><b>minimal</b></li>
-          <li style="--k:2" class="on"><b>low</b><span data-es="ordenar noticias de Hacker News">sorting Hacker News stories</span></li>
+          <li style="--k:2" class="on"><b>low</b><span data-es="ordenar noticias">sorting the news</span></li>
           <li style="--k:3"><b>medium</b></li>
           <li style="--k:4"><b>high</b></li>
           <li style="--k:5" class="on"><b>xhigh</b><span data-es="un benchmark difícil">a hard benchmark</span></li>
         </ol>
       </div>
-      <p class="fine mfine" data-es="Precios en USD por millón de tokens (entrada / salida). Cada quien usa su propia llave de la Meta Model API (dev.meta.ai), en vista previa pública. Los modelos «-contributor» son más baratos, pero Meta puede entrenar con lo que les mandes.">Prices in USD per million tokens (input / output). Everyone uses their own Meta Model API key (dev.meta.ai), in public preview. “-contributor” models are cheaper, but Meta may train on what you send them.</p>
+      <p class="fine mfine" data-es="Todos por la Meta Model API (dev.meta.ai), en vista previa pública, con tu propia llave; precios en USD por millón de tokens (entrada / salida). Meta aún no ofrece texto a voz. Los modelos «-contributor» son más baratos, pero Meta puede entrenar con lo que les mandes.">All through the Meta Model API (dev.meta.ai), in public preview, with your own key; prices in USD per million tokens (input / output). Meta doesn't offer text-to-speech yet. “-contributor” models are cheaper, but Meta may train on what you send them.</p>
     </div>
-    <div class="art ent"><img src="img/muse.webp" width="900" height="900" alt="Agentztein's face: a plush hood with a cream face, button eyes, rosy cheeks, stitches, and a glass dome with a blue brain under the Meta logo." data-es-alt="La cara de Agentztein: una capucha de felpa con cara crema, ojos de botón, mejillas rosadas, costuras y una cúpula de vidrio con un cerebro azul bajo el logo de Meta." loading="lazy" />
-      <p class="mchip"><span class="dotm"></span>Meta Model API · Muse</p>
+    <div class="art-col">
+      <div class="art meta-art" id="metaArt" style="--m:#6d5ce8">
+        <img src="img/muse.webp" width="900" height="900" alt="Agentztein's face: a plush hood with a cream face, button eyes, rosy cheeks, stitches, and a glass dome with a blue brain under the Meta logo." data-es-alt="La cara de Agentztein: una capucha de felpa con cara crema, ojos de botón, mejillas rosadas, costuras y una cúpula de vidrio con un cerebro azul bajo el logo de Meta." loading="lazy" />
+        <span class="art-ring" aria-hidden="true"></span>
+        <p class="art-chip" aria-live="polite"><span class="art-ico" id="artIco"></span><span><b id="artName">Muse Wonder</b><small id="artVerb">Plans and decides</small></span></p>
+        <ol class="art-dots" aria-hidden="true"><li data-k="wonder" style="--m:#6d5ce8"></li><li data-k="spark" style="--m:#0081fb"></li><li data-k="image" style="--m:#ff8f70"></li><li data-k="voice" style="--m:#3ccf6e"></li><li data-k="sam" style="--m:#ffb53d"></li><li data-k="local" style="--m:#2ec4b6"></li><li data-k="effort" style="--m:#0081fb"></li></ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="harness" id="arnes">
+  <div class="wrap">
+    <div class="head ent">
+      <h2 data-es="El arnés">The harness</h2>
+      <p class="lead" data-es="Que se mejore solo no significa que haga lo que quiera. Todo lo que intenta pasa por cinco controles, y lo crítico siempre llega a una persona.">Improving on its own doesn't mean doing whatever it wants. Everything it tries goes through five checks, and anything critical always reaches a person.</p>
+    </div>
+    <div class="hbox ent">
+      <ol class="gates">
+          <li class="gate" data-g="0"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19.5 6v6c0 4.4-3.2 8.1-7.5 9-4.3-.9-7.5-4.6-7.5-9V6z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></svg><b data-es="Pruebas validadas">Validated tests</b><span data-es="Un examen sellado que nunca ve, criterios escritos antes y resultados con rangos.">A sealed exam it never sees, criteria written beforehand and results with ranges.</span><em class="" data-es="Diseño">Design</em></li>
+          <li class="gate" data-g="1"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></svg><b data-es="No se sale del camino">Stays on track</b><span data-es="Cada habilidad tiene alcance: fuera de él no se activa. Nunca toca el modelo ni el arnés.">Each skill has a scope: outside it, it doesn't switch on. It never touches the model or the harness.</span><em class="" data-es="Diseño">Design</em></li>
+          <li class="gate" data-g="2"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-14z"/><path d="M3.5 7.5 15 4v3.5"/><circle cx="16" cy="13.5" r="1"/></svg><b data-es="No gasta de más">Doesn't overspend</b><span data-es="Antes de llamar al modelo revisa el peor caso contra tu presupuesto mensual. Si podría pasarse, no corre.">Before calling the model it checks the worst case against your monthly budget. If it could go over, it doesn't run.</span><em class="live" data-es="Ya en la app">Live in the app</em></li>
+          <li class="gate" data-g="3"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.2M12 17h.01"/></svg><b data-es="Nada riesgoso">No risky moves</b><span data-es="Las páginas son datos, nunca órdenes. Todo corre en un contenedor aislado y se puede deshacer.">Web pages are data, never orders. Everything runs in an isolated container and can be undone.</span><em class="" data-es="Diseño">Design</em></li>
+          <li class="gate" data-g="4"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="m16 11 2 2 4-4.2"/></svg><b data-es="Lo crítico, por el humano">A person decides</b><span data-es="Cada habilidad nueva espera tu aprobación y cada llamada queda en un registro que no se edita.">Every new skill waits for your approval, and every call stays in a log that can't be edited.</span><em class="live" data-es="Ya en la app">Live in the app</em></li>
+      </ol>
+      <div class="try">
+        <p class="try-t" data-es="Intenta saltarte el arnés">Try to get past the harness</p>
+        <div class="scns" role="group" aria-label="Scenarios" data-es-aria-label="Escenarios"><button type="button" class="scn" data-stop="0" aria-pressed="false"><span data-es="«¡Mejoré!» …en pruebas que ya conocía">“I improved!” …on tests it already knew</span></button><button type="button" class="scn" data-stop="1" aria-pressed="false"><span data-es="Usar búsqueda web en un juego nuevo">Use web search inside a brand-new game</span></button><button type="button" class="scn" data-stop="2" aria-pressed="false"><span data-es="Una corrida que podría costar más que tu presupuesto">A run that could cost more than your budget</span></button><button type="button" class="scn" data-stop="3" aria-pressed="false"><span data-es="Una página le pide borrar archivos">A web page tells it to delete files</span></button><button type="button" class="scn" data-stop="4" aria-pressed="false"><span data-es="Quedarse una habilidad nueva">Keep a new skill</span></button></div>
+        <div class="track" aria-hidden="true">
+          <span class="line"></span>
+          <span class="tick" data-g="0" style="left:8%"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19.5 6v6c0 4.4-3.2 8.1-7.5 9-4.3-.9-7.5-4.6-7.5-9V6z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></svg></span><span class="tick" data-g="1" style="left:27%"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></svg></span><span class="tick" data-g="2" style="left:46%"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-14z"/><path d="M3.5 7.5 15 4v3.5"/><circle cx="16" cy="13.5" r="1"/></svg></span><span class="tick" data-g="3" style="left:65%"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.2M12 17h.01"/></svg></span><span class="tick" data-g="4" style="left:84%"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="m16 11 2 2 4-4.2"/></svg></span>
+          <span class="end"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+          <span class="token"></span>
+        </div>
+        <p class="verdict" id="hVerdict" aria-live="polite" data-es="Elige un escenario y mira dónde lo detiene el arnés.">Pick a scenario and see where the harness stops it.</p>
+        <button type="button" class="btn small" id="hApprove" hidden><span data-es="Aprobar como persona">Approve as a person</span></button>
+      </div>
     </div>
   </div>
 </section>
@@ -1202,7 +1288,8 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
       S("ok", "Attempt 2: finishes the whole task", "Intento 2: termina la tarea completa"), S("ok", "Checks short tasks: just as good", "Revisa tareas cortas: siguen igual de bien"),
       S("install", "Keeps it, for long tasks", "Se la queda, para tareas largas")]],
   };
-  const ICON = { run: "▸", fail: "✕", think: "…", new: "✦", ok: "✓", install: "✓" };
+  const SVG = (d) => `<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const ICON = { run: SVG("M5 3.5 11 8l-6 4.5z"), fail: SVG("M4.5 4.5l7 7m0-7-7 7"), think: SVG("M3.5 8h.01M8 8h.01M12.5 8h.01"), new: SVG("M8 2.5v11M2.5 8h11"), ok: SVG("M3.5 8.5 6.5 11.5 12.5 4.5"), install: SVG("M3.5 8.5 6.5 11.5 12.5 4.5") };
   const con = $("#console"), log = $("#exLog"), end = $("#exEnd");
   let timers = [], running = "";
   const stop = () => { timers.forEach(clearTimeout); timers = []; running = ""; runBtn.disabled = false; runTxt.textContent = L(T.run); };
@@ -1262,7 +1349,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   document.querySelectorAll(".ent").forEach((el) => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add("in"); else io.observe(el); });
   const links = [...document.querySelectorAll(".links a[href^='#']")];
   const nio = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) links.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id)); }), { rootMargin: "-50% 0px -50% 0px" });
-  ["como-funciona", "laboratorio", "meta", "avance"].forEach((id) => nio.observe(document.getElementById(id)));
+  ["como-funciona", "laboratorio", "meta", "arnes", "avance"].forEach((id) => nio.observe(document.getElementById(id)));
 
   applyLang(lang, false);
 })();

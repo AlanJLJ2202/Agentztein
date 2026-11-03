@@ -94,5 +94,10 @@ export async function complete({ provider, key, model, system, user, effort = "l
   const body = await res.json();
   const text = body?.choices?.[0]?.message?.content;
   if (typeof text !== "string" || !text.trim()) throw new HttpError(502, "The model returned an empty answer");
-  return text;
+  // real token counts when Meta reports them; otherwise a rough estimate (about 4 characters per token)
+  const usage = {
+    input: Number(body?.usage?.prompt_tokens) || Math.ceil((system.length + user.length) / 4),
+    output: Number(body?.usage?.completion_tokens) || Math.ceil(text.length / 4),
+  };
+  return { text, usage };
 }

@@ -1,8 +1,10 @@
 // /api/radar: the research radar.
 //   GET   the user's past triage notes
+//   PATCH { id, decision } the person's call on an idea ("approved" or "rejected"): nothing goes to the lab without it
 //   POST  { provider?, lang?, effort? } read the most discussed AI stories on Hacker News this week and let the
 //         user's own model decide, with a trade-off, which ones deserve an experiment in the lab.
-import { EFFORTS, familyOf, fetchAiStories, parseTriage, triagePrompt, TRIAGE_SYSTEM } from "@skillab/research";
+import { costOf, EFFORTS, familyOf, fetchAiStories, parseTriage, triagePrompt, TRIAGE_SYSTEM } from "@skillab/research";
+import { budgetOf, MAX_OUTPUT_TOKENS } from "./_lib/harness.js";
 import { requireUser } from "./_lib/auth.js";
 import { open } from "./_lib/crypto.js";
 import { db } from "./_lib/db.js";
@@ -28,6 +30,8 @@ const note = (r) => ({
   provider: r.provider,
   model: r.model,
   assessedAt: r.created_at,
+  decision: r.decision ?? null,
+  decidedAt: r.decided_at ?? null,
 });
 
 export const GET = handle(async (request) => {
@@ -71,7 +75,21 @@ export const POST = handle(async (request) => {
   // effort only for models that take it (Muse Spark); Muse Wonder always reasons at full depth
   const fam = familyOf(row.model);
   const effort = fam && !fam.effort ? null : EFFORTS.includes(body.effort) ? body.effort : "low";
-  const reply = await complete({ provider: row.provider, key, model: row.model, effort, system: TRIAGE_SYSTEM, user: triagePrompt(stories, lang) });
+  const prompt = triagePrompt(stories, lang);
+
+  // the harness: refuse before spending if this run could go over the monthly budget
+  const budget = await budgetOf(pool, user.id);
+  const worst = costOf(row.model, Math.ceil((TRIAGE_SYSTEM.length + prompt.length) / 4), MAX_OUTPUT_TOKENS);
+  if (budget.spent + worst > budget.monthly) {
+    throw new HttpError(409, "This run could go over your monthly budget. Raise it or wait until next month.", { reason: "budget", ...budget, worst });
+  }
+  const { text: reply, usage } = await complete({ provider: row.provider, key, model: row.model, effort, system: TRIAGE_SYSTEM, user: prompt });
+  const spentNow = costOf(row.model, usage.input, usage.output);
+  await pool.query(
+    `INSERT INTO app.harness_runs (user_id, kind, provider, model, effort, input_tokens, output_tokens, cost_usd, outcome)
+     VALUES ($1, 'radar', $2, $3, $4, $5, $6, $7, 'ok')`,
+    [user.id, row.provider, row.model, effort, usage.input, usage.output, spentNow],
+  );
   let assessments;
   try {
     assessments = parseTriage(reply, stories.map((s) => s.id));
@@ -105,5 +123,20 @@ export const POST = handle(async (request) => {
   } finally {
     client.release();
   }
-  return json({ notes: saved, read: stories.length, provider: row.provider, model: row.model, effort });
+  return json({ notes: saved, read: stories.length, provider: row.provider, model: row.model, effort, cost: spentNow, budget: { ...budget, spent: budget.spent + spentNow } });
+});
+
+export const PATCH = handle(async (request) => {
+  const user = await requireUser(request);
+  const body = await readJson(request);
+  const id = typeof body.id === "string" ? body.id : "";
+  const decision = body.decision === "approved" || body.decision === "rejected" ? body.decision : null;
+  if (!id || !decision) throw new HttpError(400, "Send the idea and your decision");
+  const { rows } = await db().query(
+    `UPDATE app.research_notes SET decision = $3, decided_at = now()
+     WHERE user_id = $1 AND source = 'hackernews' AND external_id = $2 RETURNING *`,
+    [user.id, id, decision],
+  );
+  if (!rows[0]) throw new HttpError(404, "That idea isn't in your notes");
+  return json({ note: note(rows[0]) });
 });

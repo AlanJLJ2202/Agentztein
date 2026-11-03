@@ -27,3 +27,11 @@ export function MetaMark({ size = 22 }: { size?: number }) {
     </svg>
   );
 }
+
+export function Check({ size = 12 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden="true">
+      <path d="M3.5 8.5 6.5 11.5 12.5 4.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

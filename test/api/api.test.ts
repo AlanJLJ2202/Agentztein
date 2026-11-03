@@ -9,6 +9,8 @@ import { freshDatabase, hasDatabase } from "../../packages/db/test/helpers.js";
 import type * as ConfigApi from "../../api/config.js";
 import type * as KeysApi from "../../api/keys.js";
 import type * as RadarApi from "../../api/radar.js";
+import type * as LimitsApi from "../../api/limits.js";
+import pg from "pg";
 
 const SECRET = "x".repeat(40);
 const USER = { id: "8d7c2c1e-4f7e-4b8f-9d0a-0f4c1f6b9a11", email: "alan@example.com" };
@@ -85,12 +87,15 @@ describe.skipIf(!hasDatabase)("endpoints (Postgres)", () => {
   let keys: typeof KeysApi;
   let radar: typeof RadarApi;
   let config: typeof ConfigApi;
+  let limits: typeof LimitsApi;
+  let dbUrl = "";
   const calls: Array<{ url: string; body?: unknown }> = [];
   let who = USER;
 
   beforeAll(async () => {
     const fresh = await freshDatabase();
     close = fresh.close;
+    dbUrl = fresh.url;
     vi.stubEnv("DATABASE_URL", fresh.url);
     vi.stubEnv("DATABASE_SSL_CA", "");
     vi.stubEnv("SUPABASE_URL", "https://proj.supabase.co");
@@ -116,11 +121,11 @@ describe.skipIf(!hasDatabase)("endpoints (Postgres)", () => {
           { id: "501", capability: "terminal", verdict: "experiment", gain: "Fewer stuck builds", cost: "A day of runs", why: "Concrete and testable" },
           { id: "502", capability: "none", verdict: "watch", gain: "Maybe a better brain", cost: "Unknown", why: "Self-reported score" },
           { id: "999", capability: "code", verdict: "experiment", gain: "x", cost: "x", why: "not in the batch" },
-        ] }) } }] });
+        ] }) } }], usage: { prompt_tokens: 2000, completion_tokens: 800 } });
       }
       return new Response("unexpected " + url, { status: 500 });
     });
-    [keys, radar, config] = await Promise.all([import("../../api/keys.js"), import("../../api/radar.js"), import("../../api/config.js")]);
+    [keys, radar, config, limits] = await Promise.all([import("../../api/keys.js"), import("../../api/radar.js"), import("../../api/config.js"), import("../../api/limits.js")]);
   });
 
   afterAll(async () => {
@@ -194,7 +199,49 @@ describe.skipIf(!hasDatabase)("endpoints (Postgres)", () => {
 
     const history = await (await radar.GET(req("/api/radar"))).json();
     expect(history.notes).toHaveLength(2);
-    expect(history.notes[0]).toMatchObject({ discussionUrl: "https://news.ycombinator.com/item?id=501", capability: "terminal" });
+    expect(history.notes[0]).toMatchObject({ discussionUrl: "https://news.ycombinator.com/item?id=501", capability: "terminal", decision: null });
+    // the harness logged the call with Meta's real token counts: 2000 × $1.25 + 800 × $4.25 per million
+    expect(out.cost).toBeCloseTo(0.0059, 6);
+    const spend = await (await limits.GET(req("/api/limits"))).json();
+    expect(spend).toMatchObject({ monthly: 5, runs: 1 });
+    expect(spend.spent).toBeCloseTo(0.0059, 6);
+  });
+
+  it("keeps the harness log append-only", async () => {
+    const c = new pg.Client({ connectionString: dbUrl });
+    await c.connect();
+    await expect(c.query("UPDATE app.harness_runs SET cost_usd = 0")).rejects.toThrow(/append-only/);
+    await expect(c.query("DELETE FROM app.harness_runs")).rejects.toThrow(/append-only/);
+    await c.end();
+  });
+
+  it("refuses a run that could go over the budget", async () => {
+    expect((await limits.PUT(req("/api/limits", "PUT", { monthly: 0.1 }))).status).toBe(400);
+    const set = await limits.PUT(req("/api/limits", "PUT", { monthly: 0.5 }));
+    expect((await set.json()).monthly).toBe(0.5);
+    // pretend we already spent most of it (a new log row: the log is append-only)
+    const c = new pg.Client({ connectionString: dbUrl });
+    await c.connect();
+    await c.query("INSERT INTO app.harness_runs (user_id, kind, provider, model, input_tokens, output_tokens, cost_usd, outcome) VALUES ($1, 'radar', 'meta', 'muse-spark-1.3', 1, 1, 0.49, 'ok')", [USER.id]);
+    await c.query("UPDATE app.research_notes SET created_at = now() - interval '2 minutes' WHERE user_id = $1", [USER.id]);
+    await c.end();
+    const before = calls.filter((x) => x.url.endsWith("/chat/completions")).length;
+    const res = await radar.POST(req("/api/radar", "POST", {}));
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ reason: "budget" });
+    expect(calls.filter((x) => x.url.endsWith("/chat/completions")).length).toBe(before); // Meta was never called
+    await limits.PUT(req("/api/limits", "PUT", { monthly: 5 }));
+  });
+
+  it("records the person's decision on an idea", async () => {
+    expect((await radar.PATCH(req("/api/radar", "PATCH", { id: "501", decision: "maybe" }))).status).toBe(400);
+    expect((await radar.PATCH(req("/api/radar", "PATCH", { id: "nope", decision: "approved" }))).status).toBe(404);
+    const res = await radar.PATCH(req("/api/radar", "PATCH", { id: "501", decision: "approved" }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).note).toMatchObject({ id: "501", decision: "approved" });
+    who = OTHER;
+    expect((await radar.PATCH(req("/api/radar", "PATCH", { id: "501", decision: "rejected" }))).status).toBe(404);
+    who = USER;
   });
 
   it("forgets a key", async () => {

@@ -503,7 +503,7 @@ export function makeBench(id) {
   } else if (id === "terminal") {
     const win = windowPanel(1.5, 1.05, true, (c) => {
       c.font = "600 24px monospace";
-      [["$ ", "make build", "#e7eef3"], ["✓ ", "compiló sin errores", "#3ccf6e"], ["$ ", "pytest -q", "#e7eef3"], ["✓ ", "128 pruebas pasan", "#3ccf6e"], ["$ ", "", "#e7eef3"]].forEach(([p, t, col], i) => {
+      [["$ ", "make build", "#e7eef3"], ["ok ", "compiló sin errores", "#3ccf6e"], ["$ ", "pytest -q", "#e7eef3"], ["ok ", "128 pruebas pasan", "#3ccf6e"], ["$ ", "", "#e7eef3"]].forEach(([p, t, col], i) => {
         const y = 92 + i * 52;
         c.fillStyle = "#4aa8ff"; c.fillText(p, 24, y); c.fillStyle = col; c.fillText(t, 58, y);
       });
