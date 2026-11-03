@@ -80,7 +80,10 @@ function plane(w, h, pxW, draw, { basic = true, transparent = false } = {}) {
   const mat = basic ? new THREE.MeshBasicMaterial({ map: t, toneMapped: false, transparent }) : new THREE.MeshStandardMaterial({ map: t, roughness: 0.6, transparent });
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
 }
-function sign(text, color, w = 2.6) {
+/* Every floating name sign is registered here: the room fades them by distance and hides the ones that
+   would overlap on screen, so the view never fills up with labels. billboard: it turns to face you. */
+let SIGNS = [];
+function sign(text, color, w = 2.6, { billboard = false, room = null } = {}) {
   const draw = (g, W, Hh) => {
     const s = tr(text());
     let size = 64; g.font = `800 ${size}px ${FONT}`;
@@ -91,6 +94,8 @@ function sign(text, color, w = 2.6) {
   };
   const m = plane(w, 0.42, 1100, draw, { transparent: true });
   m.renderOrder = 6;
+  m.material.depthWrite = false;
+  SIGNS.push({ m, w, billboard, room, op: 1, pos: null, normal: null, parentYaw: 0 });
   return m;
 }
 
@@ -98,6 +103,7 @@ function sign(text, color, w = 2.6) {
 export function buildRoom(scene) {
   const root = new THREE.Group();
   scene.add(root);
+  SIGNS = [];
   const relabels = [];
   const walls = new THREE.Group();
   root.add(walls);
@@ -143,7 +149,7 @@ export function buildRoom(scene) {
     [-1.05, 1.05].forEach((x) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.7, 0.34), mat); p.position.set(x, 1.35, 0); g.add(p); });
     const top = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.2, 0.34), mat); top.position.y = 2.7; g.add(top);
     [1, -1].forEach((s) => {
-      const lab = sign(() => (s > 0 ? room.bench ?? room.name : ROOMS.cuna.name), s > 0 ? room.color : ROOMS.cuna.color, 2.4);
+      const lab = sign(() => (s > 0 ? room.bench ?? room.name : ROOMS.cuna.name), s > 0 ? room.color : ROOMS.cuna.color, 2.4, { room: "door" });
       lab.position.set(0, 3.12, s * -0.2); lab.rotation.y = s > 0 ? Math.PI : 0;
       relabels.push(() => lab.material.map.userData.redraw());
       g.add(lab);
@@ -158,6 +164,7 @@ export function buildRoom(scene) {
   const exhibits = [];
   const updates = [];
   const obstacles = []; // circles [x, z, r]
+  const rects = []; // boxes [x1, z1, x2, z2], world coordinates
   const extra = { pods: {} };
   const ceilings = [];
   const emitters = [];
@@ -173,6 +180,7 @@ export function buildRoom(scene) {
       const world = g.localToWorld(new THREE.Vector3(ex.at[0], 0, ex.at[1]));
       const stand = g.localToWorld(new THREE.Vector3(ex.stand[0], 0, ex.stand[1]));
       if (ex.solid) obstacles.push([world.x, world.z, ex.solid]);
+      if (ex.rect) { const a = g.localToWorld(new THREE.Vector3(ex.rect[0], 0, ex.rect[1])), b = g.localToWorld(new THREE.Vector3(ex.rect[2], 0, ex.rect[3])); rects.push([Math.min(a.x, b.x), Math.min(a.z, b.z), Math.max(a.x, b.x), Math.max(a.z, b.z)]); }
       (ex.blocks ?? []).forEach(([bx, bz, br]) => { const w = g.localToWorld(new THREE.Vector3(bx, 0, bz)); obstacles.push([w.x, w.z, br]); });
       ex.hits.forEach((h) => { h.userData.exhibit = `${r.id}:${ex.key}`; });
       exhibits.push({ ...ex, room: r.id, id: `${r.id}:${ex.key}`, world, standWorld: stand });
@@ -185,7 +193,14 @@ export function buildRoom(scene) {
     dressed.emitters.forEach((e) => { const pos = new THREE.Vector3(); e.obj.getWorldPosition(pos); emitters.push({ room: r.id, kind: e.kind, pos, next: 1 + Math.random() * 4 }); });
   });
 
-  return { root, walls, ceilings, emitters, floorHit, doors, exhibits, updates, obstacles, extra, relabel: () => relabels.forEach((f) => f()) };
+  root.updateMatrixWorld(true);
+  const q = new THREE.Quaternion(), e = new THREE.Euler();
+  SIGNS.forEach((sg) => {
+    sg.pos = sg.m.getWorldPosition(new THREE.Vector3());
+    sg.normal = new THREE.Vector3(0, 0, 1).applyQuaternion(sg.m.getWorldQuaternion(q));
+    sg.parentYaw = e.setFromQuaternion(sg.m.parent.getWorldQuaternion(q), "YXZ").y;
+  });
+  return { root, walls, ceilings, emitters, floorHit, doors, exhibits, updates, obstacles, rects, signs: SIGNS, extra, relabel: () => relabels.forEach((f) => f()) };
 }
 
 
@@ -652,13 +667,13 @@ const THEMES = T;
  *   onFrame?: (head: { x: number, y: number }) => void, onFlash?: () => void, onMove?: () => void,
  *   onGuide?: (g: { room: string, item?: string } | null) => void, onView?: (fp: boolean) => void, onRun?: (room: string) => void }} o
  */
-export function createRoom(canvas, { reduced = false, minimap = null, onArrive = () => {}, onSay = () => {}, onFrame = () => {}, onFlash = () => {}, onMove = () => {}, onGuide = () => {}, onView = () => {}, onRun = () => {}, onAnchor = () => {}, onWorker = () => {}, onTour = () => {} } = {}) {
+export function createRoom(canvas, { reduced = false, minimap = null, onArrive = () => {}, onSay = () => {}, onFrame = () => {}, onFlash = () => {}, onMove = () => {}, onGuide = () => {}, onView = () => {}, onRun = () => {}, onAnchor = () => {}, onWorker = () => {}, onTour = () => {}, onMode = () => {} } = {}) {
   const renderer = setupRenderer(canvas);
   const scene = new THREE.Scene();
   addLights(scene, renderer, { extent: 22, mapSize: 2048 });
   const camera = new THREE.PerspectiveCamera(40, 1, 0.08, 120);
   const B = buildRoom(scene);
-  const { walls, floorHit, doors, exhibits, updates, obstacles, extra } = B;
+  const { walls, floorHit, doors, exhibits, updates, obstacles, rects, extra } = B;
 
   const agent = makeAgent({ legs: true });
   agent.scale.setScalar(SCALE);
@@ -677,6 +692,12 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   let fp = false, t = 0, zap = 0, armsUp = 0, thinkUntil = 0, happyUntil = 0, alertUntil = 0, screenMode = null;
   let path = [], pendingRoom = null, pendingExhibit = null, currentRoom = "cuna", guideKey = "", engaged = false, visible = true;
   let yaw = Math.PI, pitch = -0.05, camAz = 0, wallK = 0.32, stuck = 0;
+  // blend: 0 = third person, 1 = through its eyes. It travels between both so the camera flies into its head.
+  let blend = 0;
+  // the autopilot: while nobody has taken control, Agentztein walks the lab by itself, through the doors
+  let auto = !reduced, autoQ = [], autoWait = 0, tourIdx = 0, lastInput = 0;
+  let pin = null; // the exhibit it just used stays in the guide for a while
+  let faceEx = null, faceUntil = 0;
   const keys = new Set();
   // the jetpack: alt is the height above the floor; a route between rooms flies over the wall instead of using the door
   let alt = 0, vy = 0, flyRoute = false, jetOn = 0, wasUp = false;
@@ -714,6 +735,12 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
         if (d < R + 0.1 && d > 1e-6) { p.x = cx + (dx / d) * (R + 0.1); p.z = cz + (dz / d) * (R + 0.1); }
         else if (d <= 1e-6) { if (x1 === x2) p.x += p.x < x1 ? -(R + 0.1) : R + 0.1; else p.z += p.z < z1 ? -(R + 0.1) : R + 0.1; }
       }
+      if (alt < 1.3) for (const [x1, z1, x2, z2] of rects) {
+        const cx = THREE.MathUtils.clamp(p.x, x1, x2), cz = THREE.MathUtils.clamp(p.z, z1, z2);
+        const dx = p.x - cx, dz = p.z - cz, d = Math.hypot(dx, dz);
+        if (d < R && d > 1e-6) { p.x = cx + (dx / d) * R; p.z = cz + (dz / d) * R; }
+        else if (d <= 1e-6) { const out = [[p.x - x1, -1, 0], [x2 - p.x, 1, 0], [p.z - z1, 0, -1], [z2 - p.z, 0, 1]].sort((a, b) => a[0] - b[0])[0]; p.x += out[1] * (out[0] + R); p.z += out[2] * (out[0] + R); }
+      }
       if (alt < 1.3) for (const [ox, oz, or] of obstacles) {
         const dx = p.x - ox, dz = p.z - oz, d = Math.hypot(dx, dz), m = or + R * 0.8;
         if (d < m && d > 1e-6) { p.x = ox + (dx / d) * m; p.z = oz + (dz / d) * m; }
@@ -722,11 +749,51 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     p.x = THREE.MathUtils.clamp(p.x, -13.5, 13.5); p.z = THREE.MathUtils.clamp(p.z, -13.5, 15.5);
     return p;
   }
+  // does the segment a→b cross a box (grown by the agent's size)? Liang–Barsky against each rect
+  function crosses(a, b, rc, grow = R * 0.95) {
+    const x1 = rc[0] - grow, z1 = rc[1] - grow, x2 = rc[2] + grow, z2 = rc[3] + grow;
+    let t0 = 0, t1 = 1; const dx = b.x - a.x, dz = b.z - a.z;
+    for (const [pp, qq] of [[-dx, a.x - x1], [dx, x2 - a.x], [-dz, a.z - z1], [dz, z2 - a.z]]) {
+      if (Math.abs(pp) < 1e-9) { if (qq < 0) return false; continue; }
+      const r = qq / pp; if (pp < 0) { if (r > t1) return false; if (r > t0) t0 = r; } else { if (r < t0) return false; if (r < t1) t1 = r; }
+    }
+    return t0 < t1;
+  }
+  /** From a to b, going around any box in the way by its corners. */
+  function around(a, b) {
+    const rc = rects.find((r) => crosses(a, b, r));
+    if (!rc) return [b];
+    const m = R + 0.35;
+    const C = [[rc[0] - m, rc[1] - m], [rc[2] + m, rc[1] - m], [rc[2] + m, rc[3] + m], [rc[0] - m, rc[3] + m]].map(([x, z]) => new THREE.Vector3(x, HOVER_Y, z));
+    const ok = (p, q) => !crosses(p, q, rc);
+    let best = null, bl = Infinity;
+    for (let i = 0; i < 4; i++) {
+      if (ok(a, C[i]) && ok(C[i], b)) { const l = a.distanceTo(C[i]) + C[i].distanceTo(b); if (l < bl) { bl = l; best = [C[i], b]; } }
+      for (const j of [(i + 1) % 4, (i + 3) % 4]) if (ok(a, C[i]) && ok(C[j], b)) { const l = a.distanceTo(C[i]) + C[i].distanceTo(C[j]) + C[j].distanceTo(b); if (l < bl) { bl = l; best = [C[i], C[j], b]; } }
+    }
+    return best ?? [b];
+  }
   function route(to) {
     const from = roomAt(agent.position.x, agent.position.z) ?? currentRoom;
     const dest = roomAt(to.x, to.z) ?? from;
     flyRoute = from !== dest; // between rooms it takes off, flies over the wall and lands
-    return [to.clone().setY(HOVER_Y)];
+    return flyRoute ? [to.clone().setY(HOVER_Y)] : around(agent.position.clone().setY(HOVER_Y), to.clone().setY(HOVER_Y));
+  }
+  /** On foot: out through its door, across the reception and in through the other door. */
+  function walkRoute(to) {
+    const from = roomAt(agent.position.x, agent.position.z) ?? currentRoom;
+    const dest = roomAt(to.x, to.z) ?? from;
+    const pts = [];
+    const door = (id, side) => { const r = BYID[id]; return new THREE.Vector3(r.door[0] + r.normal[0] * side, HOVER_Y, r.door[1] + r.normal[1] * side); };
+    if (from !== dest) {
+      if (from !== "cuna") pts.push(door(from, 0.9), door(from, -0.9));
+      if (from !== "cuna" && dest !== "cuna") pts.push(new THREE.Vector3(0, HOVER_Y, -1.2)); // the middle of the reception, clear of the coils
+      if (dest !== "cuna") pts.push(door(dest, -0.9), door(dest, 0.9));
+    }
+    const last = pts.length ? pts[pts.length - 1] : agent.position.clone().setY(HOVER_Y);
+    pts.push(...around(last, to.clone().setY(HOVER_Y)));
+    flyRoute = false;
+    return pts;
   }
   function walkTo(p, { roomId = null, exhibit = null } = {}) {
     onMove(); clearExercise();
@@ -740,6 +807,39 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     walkTo(at, { roomId: id });
   }
   function goToExhibit(ex) { walkTo(ex.standWorld.clone(), { roomId: ex.room, exhibit: ex }); }
+
+  /* ---------- the autopilot: it tours the lab on foot until someone takes control ---------- */
+  const TOUR = ["cuna", "swe", "terminal", "arc", "web", "research", "horizon", "taller"];
+  const STOPS = { cuna: ["brain", "map"], taller: ["brain", "tools", "loop", "limits"] };
+  function planRoom(id) {
+    const own = exhibits.filter((e) => e.room === id && e.key !== "pod");
+    const keys = STOPS[id] ?? [own[0]?.key, own[2]?.key ?? own[1]?.key];
+    keys.forEach((k) => { const e = own.find((x) => x.key === k); if (e) autoQ.push(e); });
+  }
+  function autoNext() {
+    if (!autoQ.length) { tourIdx = (tourIdx + 1) % TOUR.length; planRoom(TOUR[tourIdx]); }
+    const e = autoQ.shift();
+    if (!e) return;
+    path = walkRoute(e.standWorld.clone()); pendingExhibit = e; pendingRoom = null; autoWait = Infinity;
+  }
+  function startAuto() {
+    if (reduced || auto) return;
+    auto = true; autoQ = []; tourIdx = Math.max(0, TOUR.indexOf(currentRoom)); planRoom(TOUR[tourIdx]); autoWait = t + 1.2;
+    onMode("watch");
+  }
+  function stopAuto() {
+    lastInput = t;
+    if (!auto) return;
+    auto = false; autoQ = []; path = []; pendingExhibit = null; pendingRoom = null;
+    onMode("play");
+  }
+  /** The visitor wants to use the lab: the camera flies into its eyes. */
+  function takeControl() {
+    stopAuto(); engaged = true;
+    if (!fp) setView(true);
+    try { canvas.focus({ preventScroll: true }); } catch { /* old browser */ }
+  }
+  const inView = () => { const r = canvas.getBoundingClientRect(); return r.top < innerHeight * 0.6 && r.bottom > innerHeight * 0.4; };
 
   // ---- guide: the nearest exhibit (or the one you look at) ----
   const center = new THREE.Vector2(0, 0);
@@ -755,24 +855,32 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   }
   function nearest() {
     let best = null, bd = 2.6;
-    for (const e of exhibits) { if (e.room !== currentRoom) continue; const d = Math.hypot(e.world.x - agent.position.x, e.world.z - agent.position.z) - (e.solid ?? 0.4); if (d < bd) { bd = d; best = e; } }
+    for (const e of exhibits) {
+      if (e.room !== currentRoom) continue;
+      const dx = e.world.x - agent.position.x, dz = e.world.z - agent.position.z;
+      if (fp && (dx * Math.sin(yaw) + dz * Math.cos(yaw)) / Math.max(1e-3, Math.hypot(dx, dz)) < -0.1) continue; // not what is behind you
+      const d = Math.hypot(dx, dz) - (e.solid ?? 0.4); if (d < bd) { bd = d; best = e; }
+    }
     return best;
   }
   let focus = null;
   const toured = new Set();
   function updateGuide() {
-    focus = (fp ? aimed() : null) ?? nearest();
+    const looked = fp && blend > 0.9 ? aimed() : null;
+    const pinned = pin && t < pin.until && pin.e.room === currentRoom && Math.hypot(pin.e.world.x - agent.position.x, pin.e.world.z - agent.position.z) < 3.6 ? pin.e : null;
+    focus = looked ?? pinned ?? nearest();
     // reaching a room's main exhibit (the engine in the workshop) once per visit: the page may narrate it
-    const mainKey = focus ? (focus.room === "taller" ? "engine" : mainOf(focus.room)?.key) : null;
+    const mainKey = focus ? (focus.room === "taller" ? "brain" : mainOf(focus.room)?.key) : null;
     if (focus && focus.key === mainKey && !toured.has(focus.room)) { toured.add(focus.room); onTour(focus.room); }
     const key = focus ? focus.id : currentRoom;
     if (key === guideKey) return;
     guideKey = key;
     onGuide(focus ? { room: focus.room, item: focus.key } : { room: currentRoom });
   }
-  function interact(e = focus) {
+  function interact(e = focus, { byAuto = false } = {}) {
     if (!e) return;
-    engaged = true;
+    if (!byAuto) engaged = true;
+    pin = { e, until: t + 7 };
     sound.sfx("interact");
     e.act();
     thinkUntil = t + 0.8; happyUntil = t + 2;
@@ -788,20 +896,26 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   function unlockMouse() { if (document.pointerLockElement === canvas) document.exitPointerLock(); }
   document.addEventListener("pointerlockchange", () => {
     locked = document.pointerLockElement === canvas;
+    if (locked) lockedAt = performance.now();
     canvas.style.cursor = fp ? (locked ? "none" : "crosshair") : "";
     document.dispatchEvent(new CustomEvent("room:hint"));
   });
+  let lockedAt = 0;
   document.addEventListener("mousemove", (ev) => {
     if (!locked || !fp) return;
+    // while the camera flies into its eyes the view is not yours yet; and right after the mouse is captured
+    // some browsers report one huge, fake jump
+    if (blend < 0.95 || performance.now() - lockedAt < 120 || Math.abs(ev.movementX) > 250 || Math.abs(ev.movementY) > 250) return;
     yaw -= ev.movementX * 0.0022; // right hand, right turn
     pitch = THREE.MathUtils.clamp(pitch - ev.movementY * 0.0022, -1.2, 1.2);
-    if (ev.movementX || ev.movementY) { path = []; pendingExhibit = null; }
+    if (ev.movementX || ev.movementY) { path = []; pendingExhibit = null; lastInput = t; }
   });
   function setView(next) {
     fp = next;
-    agent.visible = !fp;
-    if (fp) { yaw = agent.rotation.y; pitch = -0.05; lockMouse(); }
+    lastInput = t;
+    if (fp) { yaw = agent.rotation.y; pitch = -0.12; lockMouse(); }
     else { camAz = yaw + Math.PI; unlockMouse(); }
+    if (reduced) blend = fp ? 1 : 0;
     canvas.style.cursor = fp ? "crosshair" : "";
     guideKey = "";
     onView(fp);
@@ -811,7 +925,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   const ndc = new THREE.Vector2();
   const aim = (ev) => { const r = canvas.getBoundingClientRect(); ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); };
   let down = null;
-  canvas.addEventListener("pointerdown", (ev) => { engaged = true; down = { x: ev.clientX, y: ev.clientY, yaw, pitch, camAz, moved: false, id: ev.pointerId, type: ev.pointerType }; });
+  canvas.addEventListener("pointerdown", (ev) => { if (!auto) engaged = true; lastInput = t; down = { x: ev.clientX, y: ev.clientY, yaw, pitch, camAz, moved: false, id: ev.pointerId, type: ev.pointerType }; });
   canvas.addEventListener("pointermove", (ev) => {
     if (down) {
       const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
@@ -824,6 +938,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       return;
     }
     if (ev.pointerType !== "mouse" || fp) return;
+    if (auto) { canvas.style.cursor = "pointer"; return; }
     aim(ev);
     canvas.style.cursor = ray.intersectObjects(exHits, false).length || ray.intersectObjects(doors.map((d) => d.hit), false).length ? "pointer" : "crosshair";
   });
@@ -832,6 +947,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     const wasDrag = down.moved;
     down = null;
     if (wasDrag) return;
+    if (auto) { takeControl(); return; } // watching: a click means "let me in"
     if (fp && ev.pointerType === "mouse") {
       if (!locked) { lockMouse(); return; } // the first click captures the mouse; after that, a click uses what the crosshair is on
       const e = aimed();
@@ -858,7 +974,12 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   const active = () => document.activeElement === canvas || (engaged && visible);
   const onKey = (isDown) => (ev) => {
     if (ev.altKey || ev.ctrlKey || ev.metaKey || /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target?.tagName || "")) return;
+    if (isDown && auto && /^Key[WASDEV]$/.test(ev.code) && visible && inView()) {
+      takeControl();
+      if (ev.code === "KeyV" || ev.code === "KeyE") { ev.preventDefault(); return; }
+    }
     if (!active()) return;
+    if (isDown) lastInput = t;
     if (isDown && ev.code === "KeyV") { setView(!fp); ev.preventDefault(); return; }
     if (isDown && (ev.code === "KeyE" || (ev.code === "Enter" && document.activeElement === canvas))) { interact(); ev.preventDefault(); return; }
     const k = KEYMAP[ev.code];
@@ -1033,7 +1154,42 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   // ---- loop ----
   let last = performance.now(), screenTick = 0, boltTick = 0, mapTick = 0;
   const v = new THREE.Vector3(), fwd = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), tmp = new THREE.Vector3();
-  const camTarget = new THREE.Vector3(0, 0.8, 0);
+  const camTarget = new THREE.Vector3(0, 0.8, 0), tpPos = new THREE.Vector3(), eyePos = new THREE.Vector3(), eyeLook = new THREE.Vector3(), lookAt = new THREE.Vector3();
+
+  /* ---------- signs: fade with distance, only the room you are in, never on top of each other ---------- */
+  const camDir = new THREE.Vector3(), sv = new THREE.Vector3(), shown = [];
+  const smooth = (a, b, x) => { const k = THREE.MathUtils.clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
+  function tickSigns(dt) {
+    camera.getWorldDirection(camDir);
+    const Ww = canvas.clientWidth, Hh = canvas.clientHeight, focal = Hh / 2 / Math.tan((camera.fov * Math.PI) / 360);
+    const list = [];
+    for (const sg of B.signs) {
+      const dx = sg.pos.x - camera.position.x, dy = sg.pos.y - camera.position.y, dz = sg.pos.z - camera.position.z;
+      const d = Math.hypot(dx, dy, dz), depth = dx * camDir.x + dy * camDir.y + dz * camDir.z;
+      if (sg.billboard) sg.m.rotation.y = Math.atan2(-dx, -dz) - sg.parentYaw;
+      const face = sg.billboard ? 1 : (sg.normal.x * -dx + sg.normal.z * -dz) / Math.max(1e-3, Math.hypot(dx, dz));
+      let want;
+      if (face <= 0.05 || depth < 0.3) want = 0;
+      else if (blend > 0.5) want = smooth(2.0, 3.0, d) * (1 - smooth(7, 9.5, d)); // up close the card already names it
+      else {
+        const da = Math.hypot(sg.pos.x - agent.position.x, sg.pos.z - agent.position.z);
+        want = sg.room === "door" ? 1 - smooth(6, 10, da) : sg.room === currentRoom ? 1 : 0;
+      }
+      sg.want = want;
+      if (want > 0.05) {
+        sv.copy(sg.pos).project(camera);
+        list.push({ sg, depth, x: (sv.x * 0.5 + 0.5) * Ww, y: (-sv.y * 0.5 + 0.5) * Hh, hw: (sg.w / 2) * (focal / depth) * Math.max(0.3, face), hh: 0.21 * (focal / depth) });
+      }
+    }
+    // the nearest sign wins; anything that would cover it waits its turn
+    list.sort((a, b) => a.depth - b.depth);
+    shown.length = 0;
+    for (const c of list) {
+      if (shown.length >= (blend > 0.5 ? 3 : 8) || shown.some((o) => Math.abs(o.x - c.x) < o.hw + c.hw + 8 && Math.abs(o.y - c.y) < o.hh + c.hh + 4)) c.sg.want = 0;
+      else shown.push(c);
+    }
+    for (const sg of B.signs) { sg.op += (sg.want - sg.op) * Math.min(1, dt * 7); sg.m.material.opacity = sg.op; sg.m.visible = sg.op > 0.02; }
+  }
   const tick = () => {
     requestAnimationFrame(tick);
     const now = performance.now();
@@ -1077,7 +1233,8 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
         if (dist < 0.08 || stuck > 0.8) { path.shift(); stuck = 0; }
         else if (flyRoute && alt < 2.6 && dist > 2.4) { turnTo(Math.atan2(dx, dz), dt); } // taking off first
         else {
-          const step = Math.min(dist, Math.min(3.4, dist * 3 + 0.6) * dt);
+          const spd = auto ? 1.75 : 3.4; // the autopilot walks; you run
+          const step = Math.min(dist, (path.length > 1 ? spd : Math.min(spd, dist * 3 + 0.6)) * dt);
           agent.position.x += (dx / dist) * step; agent.position.z += (dz / dist) * step;
           collide(agent.position);
           turnTo(Math.atan2(dx, dz), dt);
@@ -1085,11 +1242,14 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
           stuck = after > dist - 0.002 ? stuck + dt : 0; // blocked by a wall or an exhibit: give up on this point
         }
         if (!path.length) arrive();
-      } else if (pendingExhibit) {
-        turnTo(Math.atan2(pendingExhibit.world.x - agent.position.x, pendingExhibit.world.z - agent.position.z), dt);
+      } else if (pendingExhibit || (faceEx && t < faceUntil)) {
+        const fe = pendingExhibit ?? faceEx;
+        turnTo(Math.atan2(fe.world.x - agent.position.x, fe.world.z - agent.position.z), dt);
       }
+      if (auto && !path.length && t > autoWait) autoNext();
+      if (!auto && !fp && !reduced && !path.length && t - lastInput > 50) startAuto(); // left alone for a while: it goes back to its tour
       // a guided walk turns the view with it; otherwise, in first person, the view turns the body
-      if (!fp || path.length || pendingExhibit) yaw = agent.rotation.y;
+      if (!fp || path.length || pendingExhibit || (faceEx && t < faceUntil)) yaw = agent.rotation.y;
       else agent.rotation.y = yaw;
     }
     // the walk cycle follows how fast it really moves; each foot strike makes a soft step
@@ -1180,7 +1340,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       if (k >= 1) {
         if (flight.slot) { agent.add(flight.chip); flight.chip.position.set(flight.slot[0], flight.slot[1], 0.47); flight.chip.rotation.set(0, 0, 0); flight.chip.scale.setScalar(0.42); if (flight.chip.userData.tag) flight.chip.userData.tag.visible = false; installed.set(flight.id, flight.chip); }
         else flight.chip.removeFromParent();
-        flight = null; armsUp = t + 1.6; happyUntil = t + 2.2; onFlash();
+        flight = null; armsUp = t + 1.6; happyUntil = t + 2.2; onFlash(); guideKey = ""; // the card shows the new count
         sound.sfx("chip"); line(`piece${Math.min(installed.size, 6)}`);
       }
     }
@@ -1194,26 +1354,34 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     if ((screenTick += dt) > 0.06) { screenTick = 0; paintScreen(u.screenTex, screenMode || (currentRoom === "cuna" ? "pulse" : "test"), tt); }
 
     // walls: full height in first person, a cutaway in third person
-    const wk = fp ? 1 : 0.32;
-    wallK += (wk - wallK) * Math.min(1, dt * 5);
+    const goalB = fp ? 1 : 0;
+    if (blend !== goalB) blend = reduced ? goalB : THREE.MathUtils.clamp(blend + Math.sign(goalB - blend) * dt / 1.25, 0, 1);
+    const eb = blend * blend * blend * (blend * (blend * 6 - 15) + 10); // smootherstep
+    wallK = 0.32 + 0.68 * eb;
     walls.scale.y = wallK;
-    B.ceilings.forEach((c) => { c.visible = fp && wallK > 0.97 && alt < 1.2; }); // the ceiling only exists when you are inside
+    B.ceilings.forEach((c) => { c.visible = fp && blend > 0.97 && alt < 1.2; }); // the ceiling only exists when you are inside
+    agent.visible = blend < 0.82; // the camera goes into its head, then you see through its eyes
 
     // camera
-    if (fp) {
-      camera.fov += (72 - camera.fov) * Math.min(1, dt * 6);
-      camera.position.set(agent.position.x + (Math.random() - 0.5) * 0.02 * jetOn, EYE + alt + Math.abs(Math.cos(gaitPhase)) * 0.05 * gaitAmt + (Math.random() - 0.5) * 0.02 * jetOn, agent.position.z);
-      tmp.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).add(camera.position);
-      camera.lookAt(tmp);
-    } else {
-      camera.fov += ((camera.aspect < 1 ? 56 : 40) - camera.fov) * Math.min(1, dt * 6);
+    {
+      // third-person pose: above and behind; while it tours by itself the camera circles slowly
       tmp.set(agent.position.x, 0.8 + alt * 0.6, agent.position.z);
       camTarget.lerp(tmp, Math.min(1, dt * 3));
-      const dist = camera.aspect < 1 ? 15 : 12.5, el = 0.85;
-      camera.position.set(camTarget.x + Math.sin(camAz) * Math.cos(el) * dist, camTarget.y + Math.sin(el) * dist, camTarget.z + Math.cos(camAz) * Math.cos(el) * dist);
-      camera.lookAt(camTarget);
+      if (auto && !down && !reduced) camAz += dt * 0.06;
+      const dist = (camera.aspect < 1 ? 15 : 12.5) * (auto ? 0.86 : 1), el = auto ? 0.74 : 0.85;
+      tpPos.set(camTarget.x + Math.sin(camAz) * Math.cos(el) * dist, camTarget.y + Math.sin(el) * dist, camTarget.z + Math.cos(camAz) * Math.cos(el) * dist);
+      // first-person pose: its eyes
+      eyePos.set(agent.position.x + (Math.random() - 0.5) * 0.02 * jetOn, EYE + alt + Math.abs(Math.cos(gaitPhase)) * 0.05 * gaitAmt + (Math.random() - 0.5) * 0.02 * jetOn, agent.position.z);
+      eyeLook.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).add(eyePos);
+      camera.position.lerpVectors(tpPos, eyePos, eb);
+      lookAt.lerpVectors(camTarget, eyeLook, eb);
+      const tpFov = camera.aspect < 1 ? 56 : 40;
+      camera.fov = tpFov + (72 - tpFov) * eb;
+      camera.lookAt(lookAt);
     }
     camera.updateProjectionMatrix();
+    camera.updateMatrixWorld();
+    tickSigns(dt);
 
     // signs and plaques face whoever is looking only through their own rotation (they're fixed); render
     renderer.render(scene, camera);
@@ -1223,24 +1391,34 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     else onAnchor(null);
     if ((mapTick += dt) > 0.1) { mapTick = 0; drawMap(); }
 
-    if (fp) onFrame({ x: canvas.clientWidth / 2, y: canvas.clientHeight * 0.32 });
+    if (fp && blend > 0.6) onFrame({ x: canvas.clientWidth / 2, y: canvas.clientHeight * 0.32 });
     else { u.brain.getWorldPosition(tmp); tmp.y += 0.05; tmp.project(camera); onFrame({ x: (tmp.x * 0.5 + 0.5) * canvas.clientWidth, y: (-tmp.y * 0.5 + 0.5) * canvas.clientHeight }); }
   };
   function turnTo(target, dt) { let d = target - agent.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); agent.rotation.y += d * Math.min(1, dt * 8); }
   function arrive() {
-    if (pendingExhibit) { const e = pendingExhibit; interact(e); pendingExhibit = null; }
+    if (pendingExhibit) {
+      const e = pendingExhibit; pendingExhibit = null;
+      faceEx = e; faceUntil = t + 1.4;
+      interact(e, { byAuto: auto });
+      if (auto) autoWait = t + 4.5; // it stays a moment so you can see what the exhibit does
+    }
     if (pendingRoom) { const id = pendingRoom; pendingRoom = null; onArrive(id); if (id === "cuna" && !reduced) extra.zap(); }
   }
+  if (auto) { planRoom("cuna"); autoWait = 2.5; }
   tick();
   onArrive("cuna");
   onGuide({ room: "cuna" });
+  onMode(auto ? "watch" : "play");
 
   return {
-    goTo,
+    goTo: (id) => { stopAuto(); goTo(id); },
     react,
     relabel: B.relabel,
-    press: (k, isDown) => { engaged = true; if (isDown) keys.add(k); else keys.delete(k); },
-    setView,
+    press: (k, isDown) => { stopAuto(); engaged = true; if (isDown) keys.add(k); else keys.delete(k); },
+    setView: (v) => { stopAuto(); setView(v); },
+    takeControl,
+    get auto() { return auto; },
+    live: () => ({ installed: installed.size, effort: extra.effort?.() ?? "medium" }),
     get fp() { return fp; },
     get locked() { return locked; },
     get active() { return active(); },

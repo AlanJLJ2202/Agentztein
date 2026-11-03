@@ -69,20 +69,37 @@ function renderGuide(g) {
   $("#cL1").textContent = it ? tr(r.name) : r.bench ? `${tr(r.kind)} · ${tr(r.bench)}` : tr(r.kind);
   $("#cA").textContent = it ? tr(it.text) : tr(r.intro);
   $("#cL2").parentElement.hidden = true;
-  $("#actBtn").hidden = !it;
+  // a few hard facts, like a spec sheet (the engine's parts have them)
+  const facts = it?.facts ? it.facts(room?.live?.() ?? { installed: 0, effort: "medium" }) : null;
+  const cf = $("#cF");
+  cf.hidden = !facts;
+  cf.replaceChildren(...(facts ?? []).map(([k, v]) => { const d = document.createElement("div"); const b = document.createElement("b"); const i = document.createElement("span"); i.textContent = tr(k); b.textContent = typeof v === "string" ? v : tr(v); d.append(i, b); return d; }));
+  $("#actBtn").hidden = !it || Boolean(room?.auto);
   card.classList.remove("swap"); void card.offsetWidth; card.classList.add("swap");
 }
 function viewLabel() {
   const fp = Boolean(room?.fp);
+  $("#labStage").classList.toggle("watch", Boolean(room?.auto));
   $("#viewTxt").textContent = tr(fp ? UI.tp : UI.fp);
   $("#viewBtn").setAttribute("aria-pressed", String(fp));
   const fine = matchMedia("(pointer: fine)").matches;
-  $("#roomHint").textContent = tr(fp ? (room?.locked ? UI.fpHint2 : fine ? UI.fpLock : UI.fpHint) : UI.tpHint);
+  $("#roomHint").textContent = tr(room?.auto ? UI.watchHint : fp ? (room?.locked ? UI.fpHint2 : fine ? UI.fpLock : UI.fpHint) : UI.tpHint);
   const fsTxt = $("#fsTxt");
   if (fsTxt) fsTxt.textContent = tr(document.fullscreenElement ? UI.exitFull : UI.full);
 }
 
 const stageEl = $(".stage");
+
+/* The sound buttons float over the page; while the lab fills the screen they move inside it, next to the
+   other controls, so they never sit on top of the guide card. */
+{
+  const dock = $(".snddock"), wrap = $("#labStage");
+  if (dock && wrap) new IntersectionObserver(([e]) => {
+    const inside = e.intersectionRatio >= 0.45;
+    if (inside && dock.parentElement !== stageEl) { stageEl.append(dock); dock.classList.add("in-stage"); }
+    if (!inside && dock.parentElement === stageEl) { document.body.append(dock); dock.classList.remove("in-stage"); }
+  }, { threshold: [0, 0.45, 0.7] }).observe(wrap);
+}
 
 /* A small caption over the room's agent while it works: what it is doing right now. */
 let workEl = null;
@@ -92,6 +109,16 @@ function workCaption(w) {
   if (workEl.textContent !== w.text) workEl.textContent = w.text;
   workEl.classList.add("on");
   workEl.style.transform = `translate(${w.x}px, ${w.y}px) translate(-50%, -100%)`;
+}
+
+/* The keys live in a thin strip over the lab, not in the card: it shows when you take control and fades after a while. */
+let keysTimer = 0;
+function showKeys() {
+  const k = $("#labKeys");
+  if (!k) return;
+  k.classList.add("on");
+  clearTimeout(keysTimer);
+  keysTimer = setTimeout(() => k.classList.remove("on"), 9000);
 }
 
 function startRoom() {
@@ -108,16 +135,18 @@ function startRoom() {
       onFlash: () => pulse($("#roomFlash"), "go"),
       onMove: () => document.dispatchEvent(new CustomEvent("room:move")),
       onGuide: renderGuide,
-      onView: (fp) => { $(".stage").classList.toggle("fp", fp); viewLabel(); },
+      onView: (fp) => { $(".stage").classList.toggle("fp", fp); if (!reduced) pulse($(".stage"), fp ? "dive" : "rise"); viewLabel(); showKeys(); },
+      onMode: (m) => { viewLabel(); if (lastGuide) renderGuide(lastGuide); if (m === "play") showKeys(); },
       onRun: () => document.dispatchEvent(new CustomEvent("room:run")),
       onWorker: workCaption,
-      onTour: (id) => { if (tourOn) sound.narrate(`tour-${id}`); },
+      onTour: (id) => { if (tourOn) sound.narrate(id === "taller" ? "tour-workshop" : `tour-${id}`); },
     });
     root.classList.add("room-3d");
     viewLabel();
     renderGuide(lastGuide ?? { room: "cuna" });
     $("#viewBtn").addEventListener("click", () => { room.setView(!room.fp); room.focusCanvas(); });
     $("#actBtn").addEventListener("click", () => room.interact());
+    $("#takeBtn").addEventListener("click", () => room.takeControl());
     // full screen for the whole lab (stage + guide card), where the browser allows it
     const wrap = $("#labStage"), fsBtn = $("#fsBtn");
     if (document.fullscreenEnabled && wrap.requestFullscreen) {
