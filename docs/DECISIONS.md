@@ -277,3 +277,19 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
     modelo no lo acepta.
   - "Así se desarrolla sola" pasa a ser un diagrama circular: Agentztein al centro (su imagen cambia por fase)
     y las cinco fases alrededor como un ciclo; una sola línea por fase y "Ver detalle" para lo demás.
+
+## ADR-022 — La familia Muse completa, sujetos de prueba en criogenia y controles más fáciles
+- **Contexto (3 nov 2026):** Alan pidió poder elegir entre todos los modelos de Meta (no solo Muse Spark),
+  investigar qué más ofrecen (visión, voz), un Agentztein congelado por cuarto que despierte para hacer la
+  prueba, controles menos confusos y que el laboratorio quepa en la pantalla.
+- **Lo que hay hoy en la Meta Model API (verificado con fuentes, ver `packages/research/src/meta.js`):**
+  Muse Wonder 1.0 (el más capaz, siempre razona, $4/$20), Muse Spark 1.1–1.3 ($1.25/$4.25, ve imágenes,
+  video y PDF, esfuerzo minimal–xhigh), tiers `-contributor` (más baratos; Meta puede entrenar con los datos),
+  Muse Glimmer y Muse Spark Open (pesos abiertos), Muse Voice Transcribe 1.0 (voz a texto). No hay texto a voz.
+  Muse Image y SAM 3.1 aparecen en la página de Meta, sin id confirmado para la API.
+- **Decisión:** catálogo compartido `META_MODELS` (app, API y landing). En la app se elige la familia y se usa
+  el id más nuevo que la llave tenga; el radar acepta `effort` y no lo manda a modelos sin niveles (Wonder).
+  Cada cuarto del edificio tiene una cápsula con una copia dormida que despierta, actúa el ejercicio en la
+  exhibición principal y vuelve a dormir (también por inactividad). Primera persona: A/D ya no están
+  invertidas, arrastrar funciona como Street View y un clic camina hasta lo que se toca. El laboratorio se
+  ajusta al alto de la pantalla y tiene botón de pantalla completa.

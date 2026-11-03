@@ -1,8 +1,8 @@
 // /api/radar: the research radar.
 //   GET   the user's past triage notes
-//   POST  { provider?, lang? } read the most discussed AI stories on Hacker News this week and let the
+//   POST  { provider?, lang?, effort? } read the most discussed AI stories on Hacker News this week and let the
 //         user's own model decide, with a trade-off, which ones deserve an experiment in the lab.
-import { fetchAiStories, parseTriage, triagePrompt, TRIAGE_SYSTEM } from "@skillab/research";
+import { EFFORTS, familyOf, fetchAiStories, parseTriage, triagePrompt, TRIAGE_SYSTEM } from "@skillab/research";
 import { requireUser } from "./_lib/auth.js";
 import { open } from "./_lib/crypto.js";
 import { db } from "./_lib/db.js";
@@ -68,7 +68,10 @@ export const POST = handle(async (request) => {
   if (!stories.length) return json({ notes: [], read: 0 });
 
   const key = open(row.secret, { userId: user.id, provider: row.provider });
-  const reply = await complete({ provider: row.provider, key, model: row.model, system: TRIAGE_SYSTEM, user: triagePrompt(stories, lang) });
+  // effort only for models that take it (Muse Spark); Muse Wonder always reasons at full depth
+  const fam = familyOf(row.model);
+  const effort = fam && !fam.effort ? null : EFFORTS.includes(body.effort) ? body.effort : "low";
+  const reply = await complete({ provider: row.provider, key, model: row.model, effort, system: TRIAGE_SYSTEM, user: triagePrompt(stories, lang) });
   let assessments;
   try {
     assessments = parseTriage(reply, stories.map((s) => s.id));
@@ -102,5 +105,5 @@ export const POST = handle(async (request) => {
   } finally {
     client.release();
   }
-  return json({ notes: saved, read: stories.length, provider: row.provider, model: row.model });
+  return json({ notes: saved, read: stories.length, provider: row.provider, model: row.model, effort });
 });

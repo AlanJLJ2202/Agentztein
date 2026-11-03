@@ -421,9 +421,10 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .ring-svg .track { fill: none; stroke: var(--soft-2); stroke-width: 3; stroke-dasharray: 2 10; stroke-linecap: round; }
 .ring-svg .chev { fill: none; stroke: #b7c2ce; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-.ring-svg .runner { transform-origin: 200px 200px; animation: orbit 10s linear infinite; }
+.ring-svg .runner { transform-origin: 200px 200px; transform: rotate(var(--from, 0deg)); transition: transform .5s var(--ease); }
+.running .ring-svg .runner { animation: seg 7s linear forwards; }
+@keyframes seg { from { transform: rotate(var(--from, 0deg)); } to { transform: rotate(calc(var(--from, 0deg) + 72deg)); } }
 .ring-svg .runner circle { fill: var(--c); transition: fill .4s var(--ease); }
-@keyframes orbit { to { transform: rotate(360deg); } }
 .core { position: absolute; left: 50%; top: 50%; width: 62%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 55%, #ffffff 0%, #eef4fa 60%, #e1eaf3 100%); box-shadow: inset 0 0 0 6px #fff, 0 20px 50px rgba(28, 43, 51, .12), 0 0 0 3px var(--c); transition: box-shadow .4s var(--ease); touch-action: pan-y; }
 .pv { position: absolute; inset: 0; margin: 0; opacity: 0; visibility: hidden; transition: opacity .5s var(--ease), visibility 0s .5s; }
 .pv.on { opacity: 1; visibility: visible; transition: opacity .5s var(--ease); }
@@ -443,8 +444,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .ctab:focus-visible { outline: 3px solid var(--meta); outline-offset: 3px; }
 .cbar { position: absolute; left: 44px; right: 16px; bottom: 5px; height: 3px; border-radius: 3px; overflow: hidden; }
 .cbar i { display: block; height: 100%; width: 0; background: var(--c); border-radius: inherit; }
-.ctab.on .cbar i { width: 100%; }
-.running .ctab.on .cbar i { width: 0; animation: cfill 7s linear forwards; }
+.running .ctab.on .cbar i { animation: cfill 7s linear forwards; }
 @keyframes cfill { to { width: 100%; } }
 .ctext { position: relative; display: grid; }
 .pt { grid-area: 1 / 1; display: grid; gap: 12px; align-content: center; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .4s var(--ease), transform .4s var(--ease), visibility 0s .4s; }
@@ -633,6 +633,39 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .dial .on b { color: var(--blue); }
 .dial span { font-size: .75rem; line-height: 1.25; color: var(--ink); text-align: center; }
 .dial .on::before { box-shadow: 0 0 0 2px var(--blue); }
+
+/* The lab fits the screen; full screen on demand; a compact guide card */
+.stage-wrap { scroll-margin-top: 76px; }
+.stage { height: clamp(460px, calc(100svh - 100px), 820px); }
+.fsbtn { left: auto; right: 20px; top: 62px; }
+.room-3d .fsbtn[hidden] { display: none; }
+.stage-wrap:fullscreen { background: #fff; display: grid; }
+.stage-wrap:fullscreen .stage { height: 100vh; border-radius: 0; }
+.stage-wrap:fullscreen .card { left: 20px; bottom: 20px; }
+.card { width: min(360px, calc(100% - 40px)); padding: 16px 18px 18px; }
+.card .who-name { font-size: 1.2rem; }
+.card dl { margin-top: 8px; gap: 6px; }
+.card dd { font-size: .975rem; line-height: 1.4; }
+.card-acts { gap: 6px; margin-top: 12px; }
+.card-acts .run { min-height: 38px; padding: 0 14px; font-size: .9rem; }
+@media (min-width: 761px) { .card { max-height: calc(100% - 140px); overflow: auto; } }
+@media (max-width: 760px) { .stage { height: min(520px, calc(100svh - 140px)); } .fsbtn { top: 12px; right: 12px; } }
+
+/* Meta's family and senses */
+.family { list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 8px; }
+.family li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 14px 16px; border-radius: 16px; background: #fff; border-left: 5px solid var(--m); }
+.family b { font-size: 1.0625rem; }
+.family span { grid-column: 1; color: var(--muted); font-size: .9375rem; line-height: 1.4; }
+.family em { grid-column: 2; grid-row: 1 / span 2; align-self: center; font: 700 .8125rem/1 ui-monospace, monospace; font-style: normal; color: var(--ink); background: var(--soft); padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
+.senses { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.senses li { display: grid; gap: 2px; padding: 12px 14px; border-radius: 16px; background: #fff; }
+.senses i { font-style: normal; font-size: 1.2rem; }
+.senses b { font-size: .9375rem; }
+.senses span { font-size: .8125rem; color: var(--muted); line-height: 1.35; }
+.senses .no { background: rgba(255, 255, 255, .55); }
+.senses .no b { color: var(--muted); }
+.mfine { margin-top: 14px; }
+@media (max-width: 560px) { .senses { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
 <body>
@@ -680,7 +713,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
       <h1 data-es='<span class="w">La</span> <span class="w">IA</span> <span class="w">que</span> <span class="w">se</span> <span class="w">desarrolla</span> <span class="w">sola</span>'><span class="w">The</span> <span class="w">AI</span> <span class="w">that</span> <span class="w">builds</span> <span class="w">itself</span></h1>
       <p class="lead" data-es="Agentztein es un agente de investigación de IA que crea sus propias habilidades, las pone a prueba en benchmarks de frontera y solo se queda con las que lo hacen mejor, sin olvidar lo que ya sabía.">Agentztein is an AI research agent that creates its own skills, tests them on frontier benchmarks and keeps only the ones that make it better, without forgetting what it already knew.</p>
       <div class="cta">
-        <a class="btn" href="#laboratorio"><span data-es="Entra a su laboratorio">Enter its lab</span>
+        <a class="btn" href="#labStage"><span data-es="Entra a su laboratorio">Enter its lab</span>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </a>
         <a class="btn ghost" href="/app/"><span data-es="Crea tu cuenta">Create your account</span></a>
@@ -828,7 +861,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
       <h2 data-es="Recorre su laboratorio">Walk through its lab</h2>
       <p class="lead" data-es="Un edificio con la cuna al centro, donde nace, y un cuarto temático por benchmark. Camina en tercera o en primera persona, acércate a las exhibiciones numeradas y córrele un ejercicio.">A building with the cradle in the middle, where it is born, and one themed room per benchmark. Walk in third or first person, visit the numbered exhibits and run an exercise.</p>
     </div>
-    <div class="stage-wrap">
+    <div class="stage-wrap" id="labStage">
       <div class="stage">
         <img class="still" src="img/room.webp" width="1600" height="1000" alt="Agentztein's lab in 3D: a white room with the Meta logo on the wall, a whiteboard of frontier benchmarks, a Muse Spark screen, the cradle between two Tesla coils and six tables, one per benchmark, each with its object." data-es-alt="El laboratorio de Agentztein en 3D: un cuarto blanco con el logo de Meta en la pared, un pizarrón con los benchmarks de frontera, una pantalla de Muse Spark, la cuna entre dos bobinas de Tesla y seis mesas, una por benchmark, cada una con su objeto." loading="lazy" />
         <canvas id="room3d" tabindex="0" aria-label="3D lab: a building with one room per benchmark. Tap the floor, a door or an exhibit to walk there, or use the arrows and W, A, S, D. Press V for first person and E to interact. The card below explains what you are looking at." data-es-aria-label="Laboratorio en 3D: un edificio con un cuarto por benchmark. Toca el piso, una puerta o una exhibición para ir, o usa las flechas y W, A, S, D. Presiona V para primera persona y E para interactuar. La tarjeta de abajo explica lo que estás viendo."></canvas>
@@ -836,6 +869,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         <div class="flash" id="roomFlash" aria-hidden="true"></div>
         <span class="hint" id="roomHint">Tap the floor or a door · arrows to walk · V for first person</span>
         <button class="viewbtn" id="viewBtn" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg><span id="viewTxt">First person</span></button>
+        <button class="viewbtn fsbtn" id="fsBtn" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span id="fsTxt">Full screen</span></button>
         <canvas class="minimap" id="miniMap" width="168" height="120" aria-hidden="true"></canvas>
         <span class="cross" aria-hidden="true"></span>
         <div class="pad" role="group" aria-label="Move Agentztein" data-es-aria-label="Mover a Agentztein">
@@ -893,12 +927,22 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 <section class="meta-sec" id="meta">
   <div class="wrap brain">
     <div class="ent">
-      <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#metalogo"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Muse Spark</span></span>
+      <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#metalogo"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Muse</span></span>
       <h2 data-es="El cerebro lo pone Meta">The brain is Meta's</h2>
-      <p class="lead" data-es="Bajo la cúpula de Agentztein vive Muse Spark, el modelo de Meta. Piensa, decide, investiga y escribe sus habilidades. No lo modificamos: lo que crece son las piezas que se va cosiendo.">Under Agentztein's dome lives Muse Spark, Meta's model. It thinks, decides, researches and writes its skills. We don't modify it: what grows are the pieces it keeps sewing on.</p>
+      <p class="lead" data-es="Agentztein piensa con los modelos Muse de Meta, y tú eliges cuál: el más capaz para lo difícil o uno más ligero para el día a día. No los modificamos: lo que crece son las piezas que se va cosiendo.">Agentztein thinks with Meta's Muse models, and you choose which: the most capable for hard work or a lighter one for every day. We don't modify them: what grows are the pieces it keeps sewing on.</p>
+      <ul class="family">
+        <li style="--m:#6d5ce8"><b>Muse Wonder</b><span data-es="El más capaz: tareas largas de agente y benchmarks difíciles. Siempre razona a fondo.">The most capable: long agent tasks and hard benchmarks. Always reasons at full depth.</span><em>$4 / $20</em></li>
+        <li style="--m:#0081fb"><b>Muse Spark</b><span data-es="Equilibrado: pensar a diario, investigar y ordenar noticias, con niveles de esfuerzo.">Balanced: everyday thinking, research and sorting the news, with effort levels.</span><em>$1.25 / $4.25</em></li>
+        <li style="--m:#2ec4b6"><b>Muse Glimmer · Spark Open</b><span data-es="Pesos abiertos: Glimmer es ligero (30B) y corre en tu computadora; Spark Open está afinado para código.">Open weights: Glimmer is light (30B) and runs on your own computer; Spark Open is tuned for code.</span><em data-es="abiertos">open</em></li>
+      </ul>
+      <ul class="senses">
+        <li class="yes"><i aria-hidden="true">👁</i><b data-es="Ve">Sees</b><span data-es="imágenes, video y PDF (Spark y Wonder)">images, video and PDF (Spark and Wonder)</span></li>
+        <li class="yes"><i aria-hidden="true">👂</i><b data-es="Escucha">Listens</b><span data-es="Muse Voice Transcribe: de voz a texto, en vivo">Muse Voice Transcribe: speech to text, live</span></li>
+        <li class="no"><i aria-hidden="true">🔈</i><b data-es="Aún no habla">Doesn't speak yet</b><span data-es="Meta no ofrece texto a voz en su API todavía">Meta doesn't offer text-to-speech in its API yet</span></li>
+      </ul>
       <div class="effort">
-        <p class="eff-t" data-es="Niveles de esfuerzo">Effort levels</p>
-        <p class="eff-d" data-es="Muse Spark puede pensar más o menos a fondo. Más esfuerzo es más tiempo y más costo, así que Agentztein lo ajusta a cada tarea.">Muse Spark can think more or less deeply. More effort means more time and more cost, so Agentztein matches it to each task.</p>
+        <p class="eff-t" data-es="Niveles de esfuerzo de Muse Spark">Muse Spark's effort levels</p>
+        <p class="eff-d" data-es="Más esfuerzo es pensar más a fondo, con más tiempo y costo. Tú lo eliges en cada corrida.">More effort means deeper thinking, with more time and cost. You choose it on every run.</p>
         <ol class="dial" aria-label="Effort levels, from least to most" data-es-aria-label="Niveles de esfuerzo, de menos a más">
           <li style="--k:1"><b>minimal</b></li>
           <li style="--k:2" class="on"><b>low</b><span data-es="ordenar noticias de Hacker News">sorting Hacker News stories</span></li>
@@ -907,18 +951,10 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
           <li style="--k:5" class="on"><b>xhigh</b><span data-es="un benchmark difícil">a hard benchmark</span></li>
         </ol>
       </div>
-      <ul class="mcards">
-        <li><b>Meta Model API</b><span data-es="Cada quien conecta su propia llave de dev.meta.ai. Es compatible con OpenAI y está en vista previa pública.">Everyone connects their own key from dev.meta.ai. It is OpenAI-compatible and in public preview.</span></li>
-        <li><b data-es="Tus datos, tu decisión">Your data, your call</b><span data-es="Por defecto usa los modelos estándar. Los «-contributor» son más baratos, pero Meta puede entrenar con lo que les mandes.">It uses the standard models by default. “-contributor” ones are cheaper, but Meta may train on what you send them.</span></li>
-      </ul>
-      <div class="facts">
-        <div><b>5</b><span data-es="niveles de esfuerzo">effort levels</span></div>
-        <div><b>6</b><span data-es="benchmarks públicos como meta">public benchmarks as goals</span></div>
-        <div><b>0</b><span data-es="resultados inventados">made-up results</span></div>
-      </div>
+      <p class="fine mfine" data-es="Precios en USD por millón de tokens (entrada / salida). Cada quien usa su propia llave de la Meta Model API (dev.meta.ai), en vista previa pública. Los modelos «-contributor» son más baratos, pero Meta puede entrenar con lo que les mandes.">Prices in USD per million tokens (input / output). Everyone uses their own Meta Model API key (dev.meta.ai), in public preview. “-contributor” models are cheaper, but Meta may train on what you send them.</p>
     </div>
     <div class="art ent"><img src="img/muse.webp" width="900" height="900" alt="Agentztein's face: a plush hood with a cream face, button eyes, rosy cheeks, stitches, and a glass dome with a blue brain under the Meta logo." data-es-alt="La cara de Agentztein: una capucha de felpa con cara crema, ojos de botón, mejillas rosadas, costuras y una cúpula de vidrio con un cerebro azul bajo el logo de Meta." loading="lazy" />
-      <p class="mchip"><span class="dotm"></span>muse-spark · Meta Model API</p>
+      <p class="mchip"><span class="dotm"></span>Meta Model API · Muse</p>
     </div>
   </div>
 </section>
@@ -1195,6 +1231,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     });
   };
   runBtn.addEventListener("click", run);
+  document.addEventListener("room:run", () => { if (!running && EX[current]) run(); });
   $("#exClose").addEventListener("click", closeConsole);
   document.addEventListener("room:move", () => { if (running || !con.hidden) closeConsole(); });
 

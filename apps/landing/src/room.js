@@ -149,13 +149,14 @@ export function buildRoom(scene) {
   const exhibits = [];
   const updates = [];
   const obstacles = []; // circles [x, z, r]
-  const extra = {};
+  const extra = { pods: {} };
   LAYOUT.forEach((r) => {
     const g = new THREE.Group();
     if (r.id === "cuna") g.position.set(0, 0, 0);
     else { g.position.set(r.center[0], 0, r.center[1]); g.rotation.y = r.rot; }
     root.add(g);
     const built = THEMES[r.id](g, { relabels, room: ROOMS[r.id], extra });
+    if (r.id !== "cuna") addPod(g, r.id, built, relabels, extra);
     g.updateMatrixWorld(true);
     built.exhibits.forEach((ex) => {
       const world = g.localToWorld(new THREE.Vector3(ex.at[0], 0, ex.at[1]));
@@ -170,6 +171,36 @@ export function buildRoom(scene) {
   });
 
   return { root, walls, floorHit, doors, exhibits, updates, obstacles, extra, relabel: () => relabels.forEach((f) => f()) };
+}
+
+
+/* A cryo pod with a copy of Agentztein asleep inside. It wakes up to run the room's test (a simulation). */
+function addPod(g, id, built, relabels, extra) {
+  const room = ROOMS[id];
+  const at = id === "arc" ? [2.5, -3.45] : [2.3, -3.2];
+  const pod = new THREE.Group(); pod.position.set(at[0], 0, at[1]); g.add(pod);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.68, 0.14, 40), glossy(0xffffff)); base.position.y = 0.07;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.035, 10, 48), std(room.color, { emissive: room.color, emissiveIntensity: 0.6 })); ring.rotation.x = Math.PI / 2; ring.position.y = 0.15;
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.56, 1.9, 40, 1, true), new THREE.MeshPhysicalMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.38, roughness: 0.12, side: THREE.DoubleSide, depthWrite: false, emissive: 0x9fd3ff, emissiveIntensity: 0.22 }));
+  glass.position.y = 1.1;
+  const mist = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.54, 0.7, 32), new THREE.MeshBasicMaterial({ color: 0xe8f6ff, transparent: true, opacity: 0.45, depthWrite: false }));
+  mist.position.y = 0.5;
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.6, 0.16, 40), glossy(0xffffff)); cap.position.y = 2.12;
+  const capRing = ring.clone(); capRing.position.y = 2.02;
+  pod.add(base, ring, glass, mist, cap, capRing);
+  const sleeper = makeAgent();
+  sleeper.scale.setScalar(0.62);
+  sleeper.position.set(at[0], 0.14, at[1]);
+  const home = new THREE.Vector3(at[0], 0.14, at[1]);
+  sleeper.rotation.y = Math.atan2(-at[0], -at[1]); // facing the middle of the room
+  sleeper.userData.power = 0.04;
+  for (let i = 0; i < 20; i++) pose(sleeper, "sleep", 0, 0.1);
+  paintScreen(sleeper.userData.screenTex, "off", 0);
+  g.add(sleeper);
+  plaque(g, at[0] - 1.05, at[1] + 1.25, built.exhibits.length + 1, room.items.pod.title, room.color, relabels, -0.5);
+  const main = built.exhibits[0];
+  built.exhibits.push({ key: "pod", at, stand: [at[0] - 1.0, at[1] + 1.7], solid: 0.65, hits: [glass, base, cap], act: () => extra.runExercise?.(id) });
+  extra.pods[id] = { pod, glass, mist, sleeper, home, front: new THREE.Vector3(main.stand[0], 0.14, main.stand[1] - 0.4), look: new THREE.Vector3(main.at[0], 0, main.at[1]), mood: "sleep", awake: false, busy: 0 };
 }
 
 /* A plaque in front of each exhibit: number + title. */
@@ -238,19 +269,20 @@ T.cuna = (g, { relabels, room, extra }) => {
   const stand = box(0.3, 1.3, 0.3, 0xe6ebf0); stand.position.y = 0.65;
   const scr = windowPanel(1.9, 1.15, true, () => {});
   const face = scr.children[1];
+  const MODELS = [["Muse Wonder", "#a99bff"], ["Muse Spark", "#4aa8ff"], ["Glimmer · Open", "#5fe0d2"]];
   const drawBrain = () => {
     const { g: c, c: cv } = face.material.map.userData;
     c.fillStyle = "#17242d"; c.fillRect(0, 0, cv.width, cv.height);
-    c.fillStyle = "#4aa8ff"; c.font = `800 40px ${FONT}`; c.fillText("Muse Spark", 24, 92);
-    c.fillStyle = "#c9d3da"; c.font = `500 20px ${FONT}`; c.fillText(tr({ en: "Agentztein's brain · by Meta", es: "El cerebro de Agentztein · de Meta" }), 24, 124);
-    c.fillStyle = "#9fb3c2"; c.font = `700 18px ${FONT}`; c.fillText(tr({ en: "REASONING EFFORT", es: "NIVEL DE ESFUERZO" }), 24, 176);
+    c.fillStyle = "#ffffff"; c.font = `800 34px ${FONT}`; c.fillText(tr({ en: "Meta's Muse models", es: "Modelos Muse de Meta" }), 24, 88);
+    MODELS.forEach(([n, col], i) => { c.fillStyle = col; rr(c, 24 + i * 158, 106, 148, 36, 18); c.fill(); c.fillStyle = "#0f1d26"; c.font = `700 17px ${FONT}`; c.textAlign = "center"; c.fillText(n, 98 + i * 158, 130); c.textAlign = "left"; });
+    c.fillStyle = "#9fb3c2"; c.font = `700 18px ${FONT}`; c.fillText(tr({ en: "MUSE SPARK · REASONING EFFORT", es: "MUSE SPARK · NIVEL DE ESFUERZO" }), 24, 184);
     LEVELS.forEach((l, i) => {
       const x = 24 + i * 94, on = i === lit;
-      c.fillStyle = on ? "#4aa8ff" : "#26394a"; rr(c, x, 192, 86, 40, 20); c.fill();
-      c.fillStyle = on ? "#0f1d26" : "#c9d3da"; c.font = `700 18px ${FONT}`; c.textAlign = "center"; c.fillText(l, x + 43, 218); c.textAlign = "left";
+      c.fillStyle = on ? "#4aa8ff" : "#26394a"; rr(c, x, 198, 86, 40, 20); c.fill();
+      c.fillStyle = on ? "#0f1d26" : "#c9d3da"; c.font = `700 18px ${FONT}`; c.textAlign = "center"; c.fillText(l, x + 43, 224); c.textAlign = "left";
     });
     c.fillStyle = "#7f93a3"; c.font = `500 17px ${FONT}`;
-    c.fillText(tr({ en: "more effort = deeper thinking, more time and cost", es: "más esfuerzo = piensa más a fondo, con más tiempo y costo" }), 24, 270);
+    c.fillText(tr({ en: "more effort = deeper thinking, more time and cost", es: "más esfuerzo = piensa más a fondo, con más tiempo y costo" }), 24, 274);
     face.material.map.needsUpdate = true;
   };
   drawBrain(); relabels.push(drawBrain);
@@ -587,9 +619,9 @@ const THEMES = T;
  * @param {HTMLCanvasElement} canvas
  * @param {{ reduced?: boolean, minimap?: HTMLCanvasElement | null, onArrive?: (id: string) => void, onSay?: (text: string) => void,
  *   onFrame?: (head: { x: number, y: number }) => void, onFlash?: () => void, onMove?: () => void,
- *   onGuide?: (g: { room: string, item?: string } | null) => void, onView?: (fp: boolean) => void }} o
+ *   onGuide?: (g: { room: string, item?: string } | null) => void, onView?: (fp: boolean) => void, onRun?: (room: string) => void }} o
  */
-export function createRoom(canvas, { reduced = false, minimap = null, onArrive = () => {}, onSay = () => {}, onFrame = () => {}, onFlash = () => {}, onMove = () => {}, onGuide = () => {}, onView = () => {} } = {}) {
+export function createRoom(canvas, { reduced = false, minimap = null, onArrive = () => {}, onSay = () => {}, onFrame = () => {}, onFlash = () => {}, onMove = () => {}, onGuide = () => {}, onView = () => {}, onRun = () => {} } = {}) {
   const renderer = setupRenderer(canvas);
   const scene = new THREE.Scene();
   addLights(scene, renderer, { extent: 16, mapSize: 2048 });
@@ -618,6 +650,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   extra.cheer = () => { armsUp = t + 1.8; happyUntil = t + 2.4; onFlash(); };
   extra.think = () => { thinkUntil = t + 2.5; say({ en: "Thinking harder costs more time.", es: "Pensar más a fondo cuesta más tiempo." }); };
   extra.zap = () => { if (!reduced) { zap = 1.4; u.power = 0.2; } else { onFlash(); say(ROOMS.cuna.items.coils.title); } };
+  extra.runExercise = (id) => onRun(id);
   extra.lightDoors = () => doors.forEach((d, i) => { anim(0.01, () => { d.mat.emissiveIntensity = 1.4; }, i * 0.35); anim(0.01, () => { d.mat.emissiveIntensity = 0.2; }, i * 0.35 + 0.6); });
 
   // ---- size ----
@@ -727,7 +760,8 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
       if (!down.moved && Math.hypot(dx, dy) > 6) { down.moved = true; try { canvas.setPointerCapture(down.id); } catch { /* gone */ } }
       if (down.moved) {
-        if (fp) { path = []; pendingExhibit = null; yaw = down.yaw - dx * 0.005; if (down.type === "mouse") pitch = THREE.MathUtils.clamp(down.pitch - dy * 0.004, -0.9, 0.7); }
+        // like Street View: you drag the scene, so dragging right turns the view left
+        if (fp) { path = []; pendingExhibit = null; yaw = down.yaw + dx * 0.005; if (down.type === "mouse") pitch = THREE.MathUtils.clamp(down.pitch + dy * 0.004, -0.9, 0.7); }
         else camAz = down.camAz - dx * 0.006;
       }
       return;
@@ -741,10 +775,14 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     const wasDrag = down.moved;
     down = null;
     if (wasDrag) return;
-    if (fp) { interact(aimed() ?? focus); return; }
     aim(ev);
     const eh = ray.intersectObjects(exHits, false)[0];
-    if (eh) { const e = exhibitById(eh.object.userData.exhibit); if (Math.hypot(e.standWorld.x - agent.position.x, e.standWorld.z - agent.position.z) < 0.8) interact(e); else goToExhibit(e); return; }
+    if (eh) {
+      const e = exhibitById(eh.object.userData.exhibit);
+      const close = fp ? eh.distance < 4.5 : Math.hypot(e.standWorld.x - agent.position.x, e.standWorld.z - agent.position.z) < 0.8;
+      if (close) interact(e); else goToExhibit(e);
+      return;
+    }
     const dh = ray.intersectObjects(doors.map((d) => d.hit), false)[0];
     if (dh) { const d = doors.find((x) => x.hit === dh.object); goTo(roomAt(agent.position.x, agent.position.z) === d.id ? "cuna" : d.id); return; }
     const fh = ray.intersectObject(floorHit, false)[0];
@@ -770,28 +808,81 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   window.addEventListener("blur", () => keys.clear());
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (!visible) { engaged = false; keys.clear(); } }).observe(canvas);
 
-  // ---- the example exercise (the page runs the script, the lab acts it out at the room's first exhibit) ----
+  // ---- the example exercise: the room's frozen copy wakes up and acts it out at the main experiment ----
   const SLOTS = [[-0.52, 1.02], [0.52, 1.02], [-0.42, 0.42], [0.42, 0.42], [0, 0.42], [0, 1.3]];
   const installed = new Map();
+  const pods = extra.pods;
   let fresh = null, flight = null;
   const mainOf = (id) => exhibits.find((e) => e.room === id);
+  const step = (P, a, b, dur, delay) => anim(dur, (k) => { P.sleeper.position.lerpVectors(a, b, k); P.sleeper.rotation.y = Math.atan2(b.x - a.x, b.z - a.z); }, delay);
+  function setPod(P, mood, screen) { if (P.walking) P.pending = [mood, screen]; else { P.mood = mood; P.screen = screen; } }
+  function wakePod(id) {
+    const P = pods[id];
+    if (!P || P.awake) return;
+    P.awake = true; P.walking = true; P.mood = "sleep"; P.screen = "pulse"; P.last = t;
+    const corner = new THREE.Vector3(P.home.x - 0.2, P.home.y, P.front.z);
+    const d = reduced ? 0 : 1;
+    anim(0.6 * d || 0.01, (k) => { P.glass.scale.y = Math.max(0.02, 1 - k); P.glass.position.y = 0.15 + 0.95 * (1 - k); P.mist.material.opacity = 0.45 * (1 - k); });
+    anim(0.7 * d || 0.01, (k) => { P.sleeper.userData.power = 0.04 + k * 0.96; }, 0.3 * d);
+    anim(0.01, () => { P.mood = "happy"; }, 0.9 * d);
+    step(P, P.home.clone(), corner, 0.7 * d || 0.01, 1.0 * d);
+    step(P, corner, P.front.clone(), 0.7 * d || 0.01, 1.7 * d);
+    anim(0.01, () => {
+      P.walking = false;
+      P.sleeper.rotation.y = Math.atan2(P.look.x - P.front.x, P.look.z - P.front.z);
+      const [m, sc] = P.pending ?? ["think", "pulse"]; P.pending = null; P.mood = m; P.screen = sc;
+    }, 2.45 * d);
+  }
+  function sleepPod(id) {
+    const P = pods[id];
+    if (!P || !P.awake || P.walking) return;
+    P.walking = true; P.mood = "idle";
+    const corner = new THREE.Vector3(P.home.x - 0.2, P.home.y, P.front.z);
+    const d = reduced ? 0 : 1;
+    step(P, P.sleeper.position.clone(), corner, 0.7 * d || 0.01, 0);
+    step(P, corner, P.home.clone(), 0.7 * d || 0.01, 0.7 * d);
+    anim(0.01, () => { P.sleeper.rotation.y = Math.atan2(-P.home.x, -P.home.z); P.mood = "sleep"; }, 1.45 * d);
+    anim(0.7 * d || 0.01, (k) => { P.sleeper.userData.power = 1 - k * 0.96; }, 1.5 * d);
+    anim(0.6 * d || 0.01, (k) => { P.glass.scale.y = Math.max(0.02, k); P.glass.position.y = 0.15 + 0.95 * k; P.mist.material.opacity = 0.45 * k; }, 1.6 * d);
+    anim(0.01, () => { P.awake = false; P.walking = false; P.screen = "off"; paintScreen(P.sleeper.userData.screenTex, "off", 0); }, 2.3 * d);
+  }
   function clearExercise() { if (fresh && !flight) fresh.removeFromParent(); if (!flight) fresh = null; screenMode = null; alertUntil = 0; }
   function react(kind) {
     if (currentRoom === "cuna") return;
     engaged = true;
     const main = mainOf(currentRoom);
-    if (kind === "run") { screenMode = "pulse"; thinkUntil = 0; happyUntil = 0; }
-    if (kind === "fail") { screenMode = "alert"; alertUntil = t + 1.3; }
-    if (kind === "think") { screenMode = "sync"; thinkUntil = t + 1.5; }
+    const P = pods[currentRoom];
+    if (P) P.last = t;
+    if (kind === "run") { if (P?.awake && !P.walking) setPod(P, "think", "pulse"); else wakePod(currentRoom); }
+    if (kind === "fail" && P) setPod(P, "alert", "alert");
+    if (kind === "think" && P) setPod(P, "think", "sync");
     if (kind === "new") {
-      screenMode = "test";
+      if (P) setPod(P, "think", "test");
       if (fresh) fresh.removeFromParent();
       fresh = makeChip({ id: currentRoom, name: { en: "New", es: "Nueva" }, color: ROOMS[currentRoom].color });
       fresh.position.set(main.world.x, 2.4, main.world.z); fresh.scale.setScalar(0.001); fresh.userData.grow = 0;
       scene.add(fresh);
     }
-    if (kind === "ok") { screenMode = "ok"; happyUntil = t + 1.3; main.act(); }
-    if (kind === "install" && fresh) { flight = { chip: fresh, from: fresh.position.clone(), t0: t, slot: installed.has(currentRoom) ? null : SLOTS[installed.size % SLOTS.length], id: currentRoom }; fresh = null; screenMode = "ok"; }
+    if (kind === "ok") { if (P) setPod(P, "happy", "ok"); main.act(); }
+    if (kind === "install" && fresh) {
+      if (P) { setPod(P, "happy", "ok"); P.cheer = t + 1.6; P.last = t - 7.5; } // back to sleep a few seconds later
+      flight = { chip: fresh, from: fresh.position.clone(), t0: t, slot: installed.has(currentRoom) ? null : SLOTS[installed.size % SLOTS.length], id: currentRoom };
+      fresh = null;
+    }
+  }
+  let podPaint = 0;
+  function tickPods(tt, dt) {
+    podPaint += dt;
+    for (const [id, P] of Object.entries(pods)) {
+      if (P.awake && !P.walking && t - P.last > 10) sleepPod(id);
+      if (!P.awake && P.mood === "sleep" && P.sleeper.userData.power < 0.05) continue; // asleep: nothing to animate
+      pose(P.sleeper, P.mood, tt, dt);
+      const up = t < (P.cheer ?? 0);
+      const sw = P.walking ? Math.sin(tt * 9) * 0.35 : 0;
+      setArms(P.sleeper, up ? -2.5 : -0.16, up ? 2.5 : P.mood === "think" ? 1.1 : 0.16, sw, -sw);
+      if (podPaint > 0.08 && P.awake) paintScreen(P.sleeper.userData.screenTex, P.screen, tt);
+    }
+    if (podPaint > 0.08) podPaint = 0;
   }
 
   // ---- mini map ----
@@ -824,6 +915,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     const tt = reduced ? 2 : t;
     runAnims(dt);
     updates.forEach((f) => f(tt, dt));
+    tickPods(tt, dt);
 
     // movement
     let moving = false;
@@ -834,8 +926,8 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       v.set(0, 0, 0);
       if (keys.has("f")) v.add(fwd);
       if (keys.has("b")) v.sub(fwd);
-      if (keys.has("sr")) v.sub(right);
-      if (keys.has("sl")) v.add(right);
+      if (keys.has("sr")) v.add(right);
+      if (keys.has("sl")) v.sub(right);
       if (v.lengthSq() > 0) { path = []; pendingRoom = null; pendingExhibit = null; v.normalize().multiplyScalar(3 * dt); agent.position.add(v); collide(agent.position); moving = true; onMove(); }
     } else {
       if (keys.size) {

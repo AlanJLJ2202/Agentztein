@@ -216,3 +216,25 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 .signin-copy .h2 { font-size: clamp(1.8rem, 1.4rem + 1.2vw, 2.4rem); font-weight: 800; letter-spacing: -.035em; }
 .meta-note { margin-top: 16px; max-width: 46em; display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-radius: 14px; background: var(--sky); color: var(--ink); font-size: .9375rem; line-height: 1.45; }
 .meta-note svg { flex: none; margin-top: 1px; }
+
+/* Meta model chooser and effort picker */
+.models { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.models legend { font-size: .875rem; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+.mopt { position: relative; display: grid; gap: 4px; padding: 12px 14px 12px 42px; border-radius: 14px; background: var(--soft); cursor: pointer; border: 2px solid transparent; }
+.mopt input { position: absolute; left: 14px; top: 15px; width: 18px; height: 18px; min-height: 0; accent-color: var(--blue); }
+.mopt.on { background: #fff; border-color: var(--blue); }
+.mopt.off { opacity: .55; cursor: not-allowed; }
+.mtop { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.mtop em { font-style: normal; font: 600 .8125rem/1 ui-monospace, monospace; color: var(--muted); white-space: nowrap; }
+.mrole { font-size: .9rem; color: var(--muted); line-height: 1.35; }
+.mtags { display: flex; flex-wrap: wrap; gap: 4px; }
+.mtags i { font-style: normal; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #fff; color: var(--muted); }
+.mopt.on .mtags i { background: var(--soft); }
+.mtags .na { color: var(--bad); }
+.mtags .cur { font-family: ui-monospace, monospace; color: var(--blue); }
+.other summary { cursor: pointer; font-size: .875rem; font-weight: 600; color: var(--muted); }
+.other .row { margin-top: 8px; }
+.effort-pick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 3px; border-radius: 12px; background: #fff; }
+.effort-pick button { all: unset; box-sizing: border-box; text-align: center; padding: 8px 2px; border-radius: 9px; font: 700 .75rem/1 ui-monospace, monospace; color: var(--muted); cursor: pointer; }
+.effort-pick button[aria-checked="true"] { background: var(--blue); color: #fff; }
+.effort-pick button:focus-visible { outline: 3px solid var(--meta); }

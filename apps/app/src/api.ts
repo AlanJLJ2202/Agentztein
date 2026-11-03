@@ -62,10 +62,10 @@ export function api(supabase: SupabaseClient) {
       call<{ key: SavedKey }>("/api/keys", { method: "PATCH", body: JSON.stringify({ provider, model }) }),
     removeKey: (provider: string) => call<{ ok: true }>(`/api/keys?provider=${encodeURIComponent(provider)}`, { method: "DELETE" }),
     notes: () => call<{ notes: Note[] }>("/api/radar"),
-    triage: (provider: string | null, lang: string) =>
-      call<{ notes: Note[]; read: number; provider?: string; model?: string }>("/api/radar", {
+    triage: (provider: string | null, lang: string, effort: string | null) =>
+      call<{ notes: Note[]; read: number; provider?: string; model?: string; effort?: string | null }>("/api/radar", {
         method: "POST",
-        body: JSON.stringify({ provider, lang }),
+        body: JSON.stringify({ provider, lang, effort }),
       }),
   };
 }

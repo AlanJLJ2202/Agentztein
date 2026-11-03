@@ -9,7 +9,7 @@ export const ROOMS = {
       "Aquí despierta Agentztein. Cada puerta lleva a un benchmark: cada cuarto explica con un ejemplo qué se mide y por qué importa."),
     items: {
       coils: { title: E("The coils", "Las bobinas"), text: E("They give it the jolt that switches it on. Interact to bring it back to life.", "Le dan la descarga que lo enciende. Interactúa para revivirlo.") },
-      brain: { title: E("The brain: Muse Spark", "El cerebro: Muse Spark"), text: E("Meta's model does the thinking. It can think with more or less effort, from minimal to xhigh: more effort, more time and cost.", "El modelo de Meta es quien piensa. Puede pensar con más o menos esfuerzo, de minimal a xhigh: más esfuerzo, más tiempo y costo.") },
+      brain: { title: E("The brain: Meta's Muse", "El cerebro: Muse de Meta"), text: E("You choose which Meta model thinks for it: Muse Wonder for the hardest work, Muse Spark for every day (with effort levels from minimal to xhigh) or a lighter open one.", "Tú eliges qué modelo de Meta piensa por él: Muse Wonder para lo más difícil, Muse Spark para el día a día (con niveles de esfuerzo de minimal a xhigh) o uno abierto más ligero.") },
       map: { title: E("Map of the lab", "Mapa del laboratorio"), text: E("Six rooms, six abilities: code, terminal, reasoning, web, research and autonomy. Walk through any door.", "Seis cuartos, seis capacidades: código, terminal, razonamiento, web, investigación y autonomía. Entra por cualquier puerta.") },
     },
   },
@@ -75,6 +75,16 @@ export const ROOMS = {
   },
 };
 
+// every benchmark room keeps a copy of Agentztein frozen in a cryo pod: it wakes up to run the room's test
+for (const [id, room] of Object.entries(ROOMS)) {
+  if (id === "cuna") continue;
+  room.items.pod = {
+    title: E("The frozen test subject", "El sujeto de prueba congelado"),
+    text: E("A copy of Agentztein waits in cryosleep. Interact to wake it: it runs this room's test (a simulation), and if the new skill works, it gets sewn onto the real Agentztein.",
+      "Una copia de Agentztein espera en criogenia. Interactúa para despertarla: hace la prueba de este cuarto (una simulación) y, si la habilidad nueva funciona, se la cosen al Agentztein de verdad."),
+  };
+}
+
 export const UI = {
   interact: E("Interact", "Interactuar"),
   keyHint: E("E or click", "E o clic"),
@@ -83,4 +93,7 @@ export const UI = {
   tp: E("Third person", "Tercera persona"),
   fpHint: E("Drag to look · W A S D or arrows to walk · E to interact", "Arrastra para mirar · W A S D o flechas para caminar · E para interactuar"),
   tpHint: E("Tap the floor or a door · arrows to walk · V for first person", "Toca el piso o una puerta · flechas para caminar · V para primera persona"),
+  fpHint2: E("Click the floor to walk there · drag to look · W A S D · E to interact", "Clic en el piso para ir · arrastra para mirar · W A S D · E para interactuar"),
+  full: E("Full screen", "Pantalla completa"),
+  exitFull: E("Exit full screen", "Salir de pantalla completa"),
 };

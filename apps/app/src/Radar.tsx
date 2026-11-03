@@ -1,5 +1,5 @@
 // The research radar: what Hacker News is discussing this week, and what Agentztein decided about it.
-import { CAPABILITIES, fetchAiStories, type Story } from "@skillab/research";
+import { CAPABILITIES, EFFORTS, familyOf, fetchAiStories, type Story } from "@skillab/research";
 import { useEffect, useState } from "react";
 import { ApiError, type Api, type Note, type SavedKey, type Verdict } from "./api.js";
 import type { Tab } from "./App.js";
@@ -32,6 +32,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [lastRun, setLastRun] = useState<{ read: number; model?: string } | null>(null);
+  const [effort, setEffort] = useState<string>("low");
 
   useEffect(() => {
     const ctl = new AbortController();
@@ -50,7 +51,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
     setBusy(true);
     setError("");
     try {
-      const r = await client.triage(provider, lang);
+      const r = await client.triage(provider, lang, takesEffort ? effort : null);
       const fresh = new Set(r.notes.map((n) => n.id));
       const merged = [...r.notes, ...(notes ?? []).filter((n) => !fresh.has(n.id))];
       setNotes(merged);
@@ -64,6 +65,9 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
   };
 
   const hasKey = Boolean(keys?.length);
+  const activeKey = keys?.find((k) => k.provider === provider) ?? keys?.[0];
+  const fam = familyOf(activeKey?.model);
+  const takesEffort = !fam || fam.effort;
   const shown = (notes ?? []).filter((n) => filter === "all" || n.verdict === filter);
   const count = (v: Verdict) => (notes ?? []).filter((n) => n.verdict === v).length;
   return (
@@ -85,6 +89,18 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
                   </select>
                 </label>
               )}
+              <p className="small"><b>{fam?.name ?? activeKey?.model}</b>{activeKey?.model ? <span className="muted"> · {activeKey.model}</span> : null}</p>
+              {takesEffort ? (
+                <label className="field">
+                  <span>{t(T.effort)}</span>
+                  <div className="effort-pick" role="radiogroup" aria-label={t(T.effort)}>
+                    {EFFORTS.map((e) => (
+                      <button key={e} type="button" role="radio" aria-checked={effort === e} onClick={() => setEffort(e)}>{e}</button>
+                    ))}
+                  </div>
+                  <small className="muted">{t(T.effortHelp)}</small>
+                </label>
+              ) : fam?.note ? <p className="muted small">{t(fam.note)}</p> : null}
               <button type="button" className="btn" onClick={() => void run()} disabled={busy} aria-busy={busy}>
                 {busy && <span className="spin light" aria-hidden="true" />}
                 {busy ? t(T.triaging) : t(T.triage)}

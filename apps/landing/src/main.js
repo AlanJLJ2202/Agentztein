@@ -69,7 +69,9 @@ function viewLabel() {
   const fp = Boolean(room?.fp);
   $("#viewTxt").textContent = tr(fp ? UI.tp : UI.fp);
   $("#viewBtn").setAttribute("aria-pressed", String(fp));
-  $("#roomHint").textContent = tr(fp ? UI.fpHint : UI.tpHint);
+  $("#roomHint").textContent = tr(fp ? UI.fpHint2 : UI.tpHint);
+  const fsTxt = $("#fsTxt");
+  if (fsTxt) fsTxt.textContent = tr(document.fullscreenElement ? UI.exitFull : UI.full);
 }
 
 function startRoom() {
@@ -87,12 +89,20 @@ function startRoom() {
       onMove: () => document.dispatchEvent(new CustomEvent("room:move")),
       onGuide: renderGuide,
       onView: (fp) => { $(".stage").classList.toggle("fp", fp); viewLabel(); },
+      onRun: () => document.dispatchEvent(new CustomEvent("room:run")),
     });
     root.classList.add("room-3d");
     viewLabel();
     renderGuide(lastGuide ?? { room: "cuna" });
     $("#viewBtn").addEventListener("click", () => { room.setView(!room.fp); room.focusCanvas(); });
     $("#actBtn").addEventListener("click", () => room.interact());
+    // full screen for the whole lab (stage + guide card), where the browser allows it
+    const wrap = $("#labStage"), fsBtn = $("#fsBtn");
+    if (document.fullscreenEnabled && wrap.requestFullscreen) {
+      fsBtn.hidden = false;
+      fsBtn.addEventListener("click", () => { if (document.fullscreenElement) document.exitFullscreen(); else wrap.requestFullscreen().catch(() => {}); room.focusCanvas(); });
+      document.addEventListener("fullscreenchange", viewLabel);
+    }
     document.addEventListener("room:hint", viewLabel);
     document.addEventListener("room:goto", (e) => room.goTo(e.detail));
     document.addEventListener("room:react", (e) => room.react(e.detail));

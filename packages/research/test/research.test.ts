@@ -85,3 +85,19 @@ describe("triage", () => {
     expect(() => parseTriage("I can't help with that", ["1"])).toThrow(/JSON/);
   });
 });
+
+describe("Meta models", () => {
+  it("knows each family and picks the newest available id", async () => {
+    const { familyOf, pickId, META_MODELS } = await import("../src/index.js");
+    expect(familyOf("muse-wonder-1.0")?.family).toBe("wonder");
+    expect(familyOf("muse-spark-1.3")?.family).toBe("spark");
+    expect(familyOf("muse-spark-1.3-contributor")?.family).toBe("spark-contributor");
+    const spark = META_MODELS.find((m) => m.family === "spark");
+    if (!spark) throw new Error("no spark");
+    expect(pickId(spark, ["muse-spark-1.1", "muse-spark-1.10", "muse-spark-1.3-contributor"])).toBe("muse-spark-1.10");
+    expect(pickId(spark, [])).toBe("muse-spark-1.1");
+    const wonder = META_MODELS.find((m) => m.family === "wonder");
+    if (!wonder) throw new Error("no wonder");
+    expect(pickId(wonder, ["muse-spark-1.3"])).toBeNull();
+  });
+});

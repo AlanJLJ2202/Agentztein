@@ -4,6 +4,7 @@ import type { Api, ProviderInfo, SavedKey } from "./api.js";
 import type { Tab } from "./App.js";
 import { T, useT } from "./i18n.js";
 import { MetaMark } from "./Logos.js";
+import { familyOf, META_MODELS, pickId } from "@skillab/research";
 
 type Props = { client: Api; keys: SavedKey[] | null; onKeys: (k: SavedKey[]) => void; go: (t: Tab) => void };
 
@@ -79,11 +80,12 @@ function ProviderCard({ p, saved, client, onSaved, onRemoved }: { p: ProviderInf
       setBusy(false);
     }
   };
-  const saveModel = async () => {
+  const saveModel = async (id = model) => {
     setBusy(true);
     setMsg(null);
     try {
-      onSaved((await client.setModel(p.id, model)).key);
+      setModel(id);
+      onSaved((await client.setModel(p.id, id)).key);
       setMsg({ kind: "ok", text: "✓" });
     } catch (err) {
       setMsg({ kind: "error", text: (err as Error).message });
@@ -113,14 +115,35 @@ function ProviderCard({ p, saved, client, onSaved, onRemoved }: { p: ProviderInf
       {saved && (
         <>
           <p className="keyline"><code>{saved.hint}</code>{!saved.verifiedAt && <span className="muted"> · {t(T.unverified)}</span>}</p>
-          <label className="field">
-            <span>{t(T.model)}</span>
+          <fieldset className="models">
+            <legend>{t(T.chooseModel)}</legend>
+            {META_MODELS.map((fam) => {
+              const id = pickId(fam, saved.models);
+              const on = familyOf(saved.model)?.family === fam.family;
+              return (
+                <label key={fam.family} className={`mopt${on ? " on" : ""}${id ? "" : " off"}`}>
+                  <input type="radio" name={`model-${p.id}`} checked={on} disabled={!id || busy} onChange={() => id && void saveModel(id)} />
+                  <span className="mtop"><b>{fam.name}</b><em>{fam.price}{fam.unconfirmed ? " *" : ""}</em></span>
+                  <span className="mrole">{t(fam.role)}</span>
+                  <span className="mtags">
+                    {fam.sees && <i>{t(T.sees)}</i>}
+                    {fam.effort ? <i>{t(T.hasEffort)}</i> : <i>{t(T.noEffort)}</i>}
+                    {!id && <i className="na">{t(T.notWithKey)}</i>}
+                    {on && saved.model && <i className="cur">{saved.model}</i>}
+                  </span>
+                </label>
+              );
+            })}
+            <p className="fine">{t(T.priceNote)}</p>
+          </fieldset>
+          <details className="other">
+            <summary>{t(T.otherModel)}</summary>
             <div className="row">
-              <input list={listId} value={model} onChange={(e) => setModel(e.target.value)} spellCheck={false} autoComplete="off" />
+              <input list={listId} value={model} onChange={(e) => setModel(e.target.value)} spellCheck={false} autoComplete="off" aria-label={t(T.model)} />
               <datalist id={listId}>{saved.models.map((m) => <option key={m} value={m} />)}</datalist>
               <button type="button" className="btn small ghost" disabled={busy || !model.trim() || model === saved.model} onClick={() => void saveModel()}>{t(T.useModel)}</button>
             </div>
-          </label>
+          </details>
         </>
       )}
       {editing ? (

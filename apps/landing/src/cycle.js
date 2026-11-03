@@ -1,5 +1,6 @@
-/* The self-development cycle: five phases on a ring around Agentztein, with equal weight. It advances on its own while it is on
-   screen (each phase replays its animation), and pauses on hover, focus, when hidden or when asked.
+/* The self-development cycle: five phases on a ring around Agentztein, with equal weight. It advances on its own while it
+   is on screen; the dot travels from one phase to the next in step with the timer. It only stops with the pause button,
+   when the page is hidden or with reduced motion.
    Tabs, arrows, swipe and the arrow keys move between phases. No auto-advance with reduced motion. */
 const cyc = document.getElementById("cycle");
 
@@ -11,7 +12,8 @@ if (cyc) {
   const says = [...cyc.querySelectorAll(".say")];
   const playBtn = cyc.querySelector("#cPlay");
   const DUR = 7000;
-  let i = 0, timer = 0, playing = !reduce, inView = false, hover = false;
+  let i = 0, timer = 0, playing = !reduce, inView = false;
+  const runner = cyc.querySelector(".runner");
 
   const label = () => {
     const es = document.documentElement.lang === "es";
@@ -21,7 +23,7 @@ if (cyc) {
 
   function schedule() {
     clearTimeout(timer);
-    const running = playing && inView && !hover && !document.hidden;
+    const running = playing && inView && !document.hidden;
     cyc.classList.toggle("running", running);
     if (running) timer = setTimeout(() => show(i + 1), DUR);
   }
@@ -40,6 +42,10 @@ if (cyc) {
     txt.forEach((v, k) => v.classList.toggle("on", k === i));
     says.forEach((v, k) => v.classList.toggle("on", k === i));
     cyc.style.setProperty("--c", tabs[i].style.getPropertyValue("--c"));
+    if (runner) {
+      runner.style.setProperty("--from", `${i * 72}deg`);
+      runner.style.animation = "none"; void runner.getBoundingClientRect(); runner.style.animation = "";
+    }
     if (focus) tabs[i].focus();
     schedule();
   }
@@ -68,10 +74,6 @@ if (cyc) {
     if (Math.abs(dx) > 40) show(i + (dx < 0 ? 1 : -1));
   });
 
-  cyc.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") { hover = true; schedule(); } });
-  cyc.addEventListener("pointerleave", () => { hover = false; schedule(); });
-  cyc.addEventListener("focusin", () => { hover = true; schedule(); });
-  cyc.addEventListener("focusout", (e) => { if (!cyc.contains(e.relatedTarget)) { hover = false; schedule(); } });
   document.addEventListener("visibilitychange", schedule);
   document.addEventListener("lang:change", label);
   new IntersectionObserver(([e]) => { inView = e.isIntersecting; schedule(); }, { threshold: 0.35 }).observe(cyc);

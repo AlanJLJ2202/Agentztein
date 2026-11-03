@@ -13,7 +13,7 @@ import { HttpError } from "./http.js";
 
 /** @type {Record<string, Provider>} */
 export const PROVIDERS = {
-  meta: { label: "Meta Model API · Muse Spark", keysUrl: "https://dev.meta.ai/", base: "https://api.meta.ai/v1", fallbackModel: "muse-spark-1.1" },
+  meta: { label: "Meta Model API · Muse", keysUrl: "https://dev.meta.ai/", base: "https://api.meta.ai/v1", fallbackModel: "muse-spark-1.1" },
 };
 
 /** @param {unknown} id @returns {id is keyof typeof PROVIDERS} */
