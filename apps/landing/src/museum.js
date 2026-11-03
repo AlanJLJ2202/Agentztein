@@ -54,7 +54,7 @@ export const ROOMS = {
     },
   },
   research: {
-    name: E("Science lab", "Laboratorio científico"), bench: "MLE-bench · PaperBench", color: 0xffb53d, kind: E("AI research", "Investigación de IA"),
+    name: E("Science lab", "Laboratorio científico"), bench: "MLE-bench · PaperBench", color: 0xff6600, kind: E("AI research", "Investigación de IA"),
     intro: E("Here the agent does AI research itself: it competes in machine-learning contests and repeats scientific papers to see if they come out the same.",
       "Aquí el agente hace investigación de IA: compite en concursos de machine learning y repite artículos científicos para ver si salen igual."),
     items: {
@@ -93,7 +93,8 @@ export const UI = {
   tp: E("Third person", "Tercera persona"),
   fpHint: E("Drag to look · W A S D or arrows to walk · E to interact", "Arrastra para mirar · W A S D o flechas para caminar · E para interactuar"),
   tpHint: E("Tap the floor or a door · arrows to walk · V for first person", "Toca el piso o una puerta · flechas para caminar · V para primera persona"),
-  fpHint2: E("Click the floor to walk there · drag to look · W A S D · E to interact", "Clic en el piso para ir · arrastra para mirar · W A S D · E para interactuar"),
+  fpHint2: E("Move the mouse to look · W A S D to walk · Shift to run · click or E to interact · Esc to release", "Mueve el mouse para mirar · W A S D para caminar · Shift para correr · clic o E para interactuar · Esc para soltar"),
+  fpLock: E("Click the view to capture the mouse and look around like in a game", "Haz clic en la vista para capturar el mouse y mirar como en un videojuego"),
   full: E("Full screen", "Pantalla completa"),
   exitFull: E("Exit full screen", "Salir de pantalla completa"),
 };

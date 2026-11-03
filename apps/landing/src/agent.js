@@ -32,7 +32,7 @@ export const SKILLS = [
   { id: "terminal", name: { en: "Terminal", es: "Terminal" }, color: 0x2ec4b6 },
   { id: "razonamiento", name: { en: "Reasoning", es: "Razonamiento" }, color: 0xff8f70 },
   { id: "web", name: { en: "Web", es: "Web" }, color: 0x3ccf6e },
-  { id: "investigacion", name: { en: "Research", es: "Investigación" }, color: 0xffb53d },
+  { id: "investigacion", name: { en: "Research", es: "Investigación" }, color: 0xff6600 },
 ];
 
 const hex = (n) => "#" + n.toString(16).padStart(6, "0");

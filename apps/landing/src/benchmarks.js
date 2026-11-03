@@ -101,7 +101,7 @@ export const BENCHES = [
     sources: [["OpenAI · BrowseComp", "https://openai.com/index/browsecomp/"], ["Paper (arXiv 2504.12516)", "https://arxiv.org/abs/2504.12516"]],
   },
   {
-    id: "research", name: E("MLE-bench & PaperBench", "MLE-bench y PaperBench"), color: "#ffb53d", cap: E("AI research", "Investigación de IA"),
+    id: "research", name: E("MLE-bench & PaperBench", "MLE-bench y PaperBench"), color: "#ff6600", cap: E("AI research", "Investigación de IA"),
     tagline: E("Doing AI research itself: win machine-learning competitions and replicate scientific papers from scratch.", "Hacer investigación de IA: ganar competencias de machine learning y replicar artículos científicos desde cero."),
     steps: [E("Two benches", "Dos bancos"), E("A medal", "Una medalla"), E("Rubric", "Rúbrica")],
     how: [

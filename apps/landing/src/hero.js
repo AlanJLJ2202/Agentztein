@@ -2,16 +2,16 @@
    and it comes alive. It follows the pointer, and a click gives it another jolt. The page drives the
    lights (dim/flash overlays), the headline and the speech bubble through the callbacks. */
 import * as THREE from "three";
+import { sound } from "./sound.js";
+import { LINES as CATALOG } from "../../../api/_data/audio-catalog.js";
 import { SKILLS, makeAgent, pose, setArms, makeCoil, makeBolt, makeChip, setupRenderer, addLights, makeFloor, paintScreen, tr } from "./agent.js";
 
 const COIL_X = 2.35;
 const CENTER = new THREE.Vector3(0, 1.75, 0);
 const CROWN = [[-2.15, 2.5], [-1.2, 3.3], [0, 3.6], [1.2, 3.3], [2.15, 2.5]];
-const LINES = [
-  { en: "I'm alive!", es: "¡Estoy vivo!" }, { en: "More voltage!", es: "¡Más voltaje!" },
-  { en: "Ready for the next benchmark.", es: "Listo para el siguiente benchmark." }, { en: "Bzzzt! Thanks.", es: "¡Bzzzt! Gracias." },
-  { en: "Another test? Bring it on!", es: "¿Otra prueba? ¡Venga!" },
-];
+// the agent's catchphrases, in order; the same ids are voiced by ElevenLabs (api/_data/audio-catalog.js)
+const LINES = ["alive", "volt", "ready", "thanks", "another"];
+const say = (onSay, id) => { onSay(tr(CATALOG[id])); sound.say(id); };
 
 /**
  * @param {HTMLCanvasElement} canvas
@@ -80,6 +80,7 @@ export function createHero(canvas, { reduced = false, onPhase = () => {}, onSay 
   let zap = 0, zapTotal = 0, boltTick = 0, happyUntil = 0, armsUp = 0, t = 0, intro = !reduced, lineIx = 0;
   const jolt = (seconds, big) => {
     zap = zapTotal = seconds;
+    sound.sfx("zap");
     if (big) onPhase("zap");
   };
   const boltEnds = (coil, side) => {
@@ -115,7 +116,7 @@ export function createHero(canvas, { reduced = false, onPhase = () => {}, onSay 
     if (!reduced) jolt(0.7, false);
     happyUntil = t + 2.2; armsUp = t + 1.6;
     lineIx = (lineIx + 1) % LINES.length;
-    onSay(tr(LINES[lineIx]));
+    say(onSay, LINES[lineIx]);
   }
 
   let visible = true;
@@ -159,7 +160,8 @@ export function createHero(canvas, { reduced = false, onPhase = () => {}, onSay 
           intro = false;
           happyUntil = t + 2.8; armsUp = t + 2.2;
           onPhase("alive");
-          onSay(tr(LINES[0]));
+          sound.sfx("awake");
+          say(onSay, LINES[0]);
         }
       }
     }

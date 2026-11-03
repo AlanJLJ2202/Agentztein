@@ -96,6 +96,14 @@ Todo se opera desde el navegador (ADR-015):
 7. Correr `db-migrate` para crear el esquema `app` (migraciones `0005`, `0006` y `0007`: llaves, notas, presupuesto, skills del agente y
    registro del arnés). No se expone por la Data API de Supabase.
 
+**Sonido y voz (opcional, ElevenLabs).** La landing suena: pasos, descarga de las bobinas, puertas, alarma del
+arnés y la voz de Agentztein diciendo sus frases (en inglés y español). Para que use ElevenLabs agrega en Vercel
+`ELEVENLABS_API_KEY` (y, si quieres otra voz, `ELEVENLABS_VOICE_ID`). La llave se queda en el servidor:
+`/api/audio` solo genera los sonidos y frases de la lista cerrada de `api/_data/audio-catalog.js` (nadie puede
+pedirle texto propio) y la CDN guarda cada audio un año, así que cada uno se paga una sola vez. Sin llave, el
+sitio sintetiza sus propios efectos en el navegador y las frases solo salen en el globo de texto. El botón del
+altavoz (abajo a la izquierda) enciende y apaga el sonido; arranca al primer toque, salvo que lo hayas silenciado.
+
 **Solo modelos de Meta.** Cada usuario pega su llave de la **Meta Model API** (`https://api.meta.ai/v1`,
 compatible con OpenAI; se crea en dev.meta.ai). Es la que reemplazó a la Llama API (retirada el 6 jul 2026) y
 sirve los modelos Muse Spark. Está en vista previa pública para desarrolladores en EE. UU. La llave se verifica

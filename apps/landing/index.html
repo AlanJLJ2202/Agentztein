@@ -704,20 +704,72 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .scn:hover { background: rgba(255, 255, 255, .14); }
 .scn[aria-pressed="true"] { background: #fff; color: var(--ink); }
 .scn:focus-visible { outline: 3px solid var(--meta); }
-.track { position: relative; height: 56px; margin: 6px 0; }
-.track .line { position: absolute; left: 4%; right: 4%; top: 50%; height: 3px; margin-top: -1.5px; border-radius: 3px; background: rgba(255, 255, 255, .18); }
-.track .tick { position: absolute; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; padding: 8px; border-radius: 12px; background: #26394a; color: #9fb3c2; transition: background-color .3s var(--ease), color .3s var(--ease); }
-.track .tick .ico, .track .end .ico { width: 100%; height: 100%; }
-.track .tick.pass { background: var(--ok); color: #fff; }
-.track .tick.stop { background: var(--bad); color: #fff; }
-.track .tick.wait { background: var(--amber); color: #fff; }
-.track .end { position: absolute; right: 0; top: 50%; width: 36px; height: 36px; margin-top: -18px; padding: 8px; border-radius: 50%; background: #26394a; color: #9fb3c2; }
-.track .end.pass { background: var(--ok); color: #fff; }
-.track .token { position: absolute; top: 50%; left: 0; width: 18px; height: 18px; margin-top: -9px; border-radius: 50%; background: #4aa8ff; box-shadow: 0 0 0 5px rgba(74, 168, 255, .25); transition: left .6s var(--ease); }
+/* The harness as a dome: five layers around Agentztein. Green = protected, red = alert, amber = waiting for a person. */
+.dome-card { --dc: #3ccf6e; position: sticky; top: 96px; display: grid; gap: 14px; padding: 18px 18px 22px; border-radius: 28px; background: radial-gradient(120% 90% at 50% 100%, #12303a 0%, #0b1722 62%); color: #fff; overflow: hidden; transition: box-shadow .4s var(--ease); box-shadow: 0 0 0 1px rgba(60, 207, 110, .25), 0 20px 60px -20px rgba(60, 207, 110, .35); }
+.dome-card[data-state="alert"] { --dc: #ff4b3a; box-shadow: 0 0 0 2px rgba(255, 75, 58, .7), 0 0 80px -10px rgba(255, 75, 58, .6); animation: alarm .7s steps(1) 4; }
+.dome-card[data-state="wait"] { --dc: #ffb020; box-shadow: 0 0 0 1px rgba(255, 176, 32, .5), 0 20px 60px -20px rgba(255, 176, 32, .4); }
+@keyframes alarm { 0%, 100% { background-color: #0b1722; } 50% { background-color: #3a0f10; } }
+.dome-hud { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.dome-pill { display: inline-flex; align-items: center; gap: 9px; padding: 7px 14px 7px 12px; border-radius: 999px; background: color-mix(in srgb, var(--dc) 16%, #0b1722); border: 1px solid color-mix(in srgb, var(--dc) 55%, transparent); color: var(--dc); font-size: .8125rem; letter-spacing: .08em; font-weight: 800; transition: color .4s var(--ease), background-color .4s var(--ease); }
+.dome-pill i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; animation: ping 1.8s ease-out infinite; }
+.dome-card[data-state="alert"] .dome-pill i { animation-duration: .5s; }
+.dome-count { color: #9fb3c2; font-size: .8125rem; font-weight: 600; }
+.dome-svg { width: 100%; height: auto; display: block; color: var(--dc); transition: color .4s var(--ease); }
+.dome-svg .dome-fill { transition: opacity .4s; }
+.dome-svg .layer { fill: none; stroke: currentColor; stroke-opacity: .42; stroke-width: 2.5; transition: stroke .35s var(--ease), stroke-opacity .35s, stroke-width .35s; }
+.dome-svg .layer:first-child { stroke-opacity: .7; stroke-width: 3.5; }
+.dome-svg .layer.pass { stroke: #3ccf6e; stroke-opacity: .95; stroke-width: 4; }
+.dome-svg .layer.stop { stroke: #ff4b3a; stroke-opacity: 1; stroke-width: 7; filter: drop-shadow(0 0 8px #ff4b3a); animation: layerAlarm .45s ease-in-out infinite alternate; }
+.dome-svg .layer.wait { stroke: #ffb020; stroke-opacity: 1; stroke-width: 6; filter: drop-shadow(0 0 7px #ffb020); }
+@keyframes layerAlarm { from { stroke-opacity: 1; } to { stroke-opacity: .35; } }
+.dome-svg .scan { fill: none; stroke: #fff; stroke-opacity: .85; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 5 95; animation: scan 5s linear infinite; filter: drop-shadow(0 0 6px currentColor); }
+@keyframes scan { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
+.dome-svg .route { fill: none; stroke: #ffffff; stroke-opacity: .22; stroke-width: 3; stroke-dasharray: 3 9; stroke-linecap: round; stroke-linejoin: round; }
+.dome-svg .dnode { transition: opacity .3s; }
+.dome-svg .dn-halo { fill: currentColor; fill-opacity: .12; transition: fill .3s, fill-opacity .3s; }
+.dome-svg .dn-body { fill: #0f1d26; stroke: currentColor; stroke-width: 2.5; stroke-opacity: .85; transition: fill .3s, stroke .3s; }
+.dome-svg .dn-ico { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dome-svg .dnode.pass .dn-body { fill: #3ccf6e; stroke: #3ccf6e; } .dome-svg .dnode.pass .dn-ico { stroke: #06240f; } .dome-svg .dnode.pass .dn-halo { fill: #3ccf6e; fill-opacity: .25; }
+.dome-svg .dnode.stop .dn-body { fill: #ff4b3a; stroke: #ff4b3a; } .dome-svg .dnode.stop .dn-ico { stroke: #fff; } .dome-svg .dnode.stop .dn-halo { fill: #ff4b3a; fill-opacity: .35; animation: layerAlarm .45s ease-in-out infinite alternate; }
+.dome-svg .dnode.wait .dn-body { fill: #ffb020; stroke: #ffb020; } .dome-svg .dnode.wait .dn-ico { stroke: #3a2400; } .dome-svg .dnode.wait .dn-halo { fill: #ffb020; fill-opacity: .35; }
+.dome-svg .agent-bob { animation: bob 3.2s ease-in-out infinite; transform-box: fill-box; }
+@keyframes bob { 50% { transform: translateY(-4px); } }
+.dome-svg .eye { fill: var(--dc); transition: fill .4s; animation: blink 5s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+.dome-svg .mouth { stroke: var(--dc); transition: stroke .4s; }
+.dome-card[data-state="alert"] .dome-svg .mouth { d: path("M-8 -89q8 -4 16 0"); }
+.dome-svg .beat { stroke: var(--dc); transition: stroke .4s; }
+.dome-svg .orb { transform: translate(24px, 352px); transition: transform .5s var(--ease), opacity .35s; opacity: 0; }
+.dome-svg .orb.on { opacity: 1; }
+.dome-svg .o-glow { fill: #4aa8ff; fill-opacity: .28; transition: fill .3s; animation: pulse 1s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+.dome-svg .o-core { fill: #7cc2ff; transition: fill .3s; }
+@keyframes pulse { to { transform: scale(1.35); } }
+.dome-svg .orb.bad .o-glow, .dome-svg .orb.bad .o-core { fill: #ff4b3a; }
+.dome-svg .orb.good .o-glow, .dome-svg .orb.good .o-core { fill: #3ccf6e; }
+.dome-svg .burst { fill: none; stroke: #ff4b3a; stroke-width: 4; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.dome-svg .burst.go { animation: burst .8s ease-out; }
+@keyframes burst { 0% { opacity: 1; transform: scale(.6); } 100% { opacity: 0; transform: scale(7); } }
+.dome-svg .dtag { fill: #fff; font: 800 22px var(--font); paint-order: stroke; stroke: #0b1722; stroke-width: 5px; opacity: 0; transition: opacity .3s; }
+.dome-svg .dtag.on { opacity: 1; }
+.dome-card .try-t { margin-top: 2px; }
+@media (prefers-reduced-motion: reduce) { .dome-card, .dome-svg *, .dome-pill i { animation: none !important; } }
+/* the sound switch */
+.sndbtn { position: fixed; left: 16px; bottom: 16px; z-index: 40; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 12px; border: 0; border-radius: 999px; background: var(--ink); color: #fff; font: 700 .9375rem/1 var(--font); cursor: pointer; box-shadow: 0 8px 24px rgba(28, 43, 51, .28); transition: transform .2s var(--ease), background-color .2s; }
+.sndbtn:hover { transform: translateY(-2px); }
+.sndbtn:focus-visible { outline: 3px solid var(--meta); outline-offset: 2px; }
+.sndbtn svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sndbtn .w { opacity: 1; transition: opacity .2s; }
+.sndbtn[aria-pressed="false"] { background: #fff; color: var(--ink); box-shadow: 0 8px 24px rgba(28, 43, 51, .18), inset 0 0 0 2px var(--soft-2); }
+.sndbtn[aria-pressed="false"] .w { opacity: 0; }
+.sndbtn[aria-pressed="false"] .x { opacity: 1; }
+.sndbtn .x { opacity: 0; }
+.sndbtn.nudge { animation: nudge 2.4s ease-in-out 3; }
+@keyframes nudge { 50% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(0, 129, 251, .22); } }
+@media (max-width: 640px) { .sndbtn span { display: none; } .sndbtn { padding: 0 12px; } }
 .verdict { min-height: 3em; color: #d4dee6; line-height: 1.45; }
 .verdict b { color: #fff; }
 #hApprove[hidden] { display: none; }
-@media (max-width: 1000px) { .hbox { grid-template-columns: minmax(0, 1fr); } .try { position: static; } }
+@media (max-width: 1000px) { .hbox { grid-template-columns: minmax(0, 1fr); } .try, .dome-card { position: static; } }
 </style>
 </head>
 <body>
@@ -958,7 +1010,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
       <button class="pick" aria-pressed="false" data-id="terminal" style="--c:#2ec4b6"><i></i>Terminal-Bench</button>
       <button class="pick" aria-pressed="false" data-id="arc" style="--c:#ff8f70"><i></i>ARC-AGI-3</button>
       <button class="pick" aria-pressed="false" data-id="web" style="--c:#3ccf6e"><i></i>BrowseComp</button>
-      <button class="pick" aria-pressed="false" data-id="research" style="--c:#ffb53d"><i></i><span data-es="MLE-bench y PaperBench">MLE-bench &amp; PaperBench</span></button>
+      <button class="pick" aria-pressed="false" data-id="research" style="--c:#ff6600"><i></i><span data-es="MLE-bench y PaperBench">MLE-bench &amp; PaperBench</span></button>
       <button class="pick" aria-pressed="false" data-id="horizon" style="--c:#8a7dff"><i></i><span data-es="Horizonte de METR">METR time horizon</span></button>
     </div>
     <p class="note" data-es="Aún no hay resultados de Agentztein en estos benchmarks: son la meta. Cuando los haya, se publicarán todos, también los malos.">There are no Agentztein results on these benchmarks yet: they are the goal. When there are, all of them will be published, including the bad ones.</p>
@@ -1022,6 +1074,48 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
       <p class="lead" data-es="Que se mejore solo no significa que haga lo que quiera. Todo lo que intenta pasa por cinco controles, y lo crítico siempre llega a una persona.">Improving on its own doesn't mean doing whatever it wants. Everything it tries goes through five checks, and anything critical always reaches a person.</p>
     </div>
     <div class="hbox ent">
+      <div class="try dome-card" id="hCard" data-state="ok">
+        <div class="dome-hud">
+          <span class="dome-pill" id="hPill"><i></i><b id="hPillTxt">SECURE</b></span>
+          <span class="dome-count" id="hCount">5-layer dome</span>
+        </div>
+        <svg class="dome-svg" id="dome" viewBox="0 0 640 440" role="img" aria-label="Agentztein protected by a dome of five checks. A proposed change travels inward and is stopped by the first check it fails." data-es-aria-label="Agentztein protegido por una cúpula de cinco controles. Un cambio propuesto viaja hacia adentro y lo detiene el primer control que no pasa.">
+          <defs>
+            <radialGradient id="domeGlow" cx="50%" cy="100%" r="100%"><stop offset="0" stop-color="currentColor" stop-opacity=".02"/><stop offset=".72" stop-color="currentColor" stop-opacity=".1"/><stop offset="1" stop-color="currentColor" stop-opacity=".38"/></radialGradient>
+            <radialGradient id="groundGlow"><stop offset="0" stop-color="currentColor" stop-opacity=".55"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
+            <pattern id="hgrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity=".05"/></pattern>
+          </defs>
+          <rect width="640" height="440" fill="url(#hgrid)"/>
+          <ellipse class="ground" cx="320" cy="392" rx="300" ry="26" fill="url(#groundGlow)"/>
+          <path class="dome-fill" d="M58 390 A262 262 0 0 1 582 390Z" fill="url(#domeGlow)"/>
+          <g class="layers"><path class="layer" data-g="0" d="M58 390 A262 262 0 0 1 582 390"/><path class="layer" data-g="1" d="M94 390 A226 226 0 0 1 546 390"/><path class="layer" data-g="2" d="M130 390 A190 190 0 0 1 510 390"/><path class="layer" data-g="3" d="M166 390 A154 154 0 0 1 474 390"/><path class="layer" data-g="4" d="M202 390 A118 118 0 0 1 438 390"/></g>
+          <path class="scan" d="M58 390 A262 262 0 0 1 582 390" pathLength="100"/>
+          <path class="route" d="M24 352 L89 267 L200 198 L320 200 L402 259 L424 335 L352 342"/>
+          <g class="agent" transform="translate(320 391)">
+            <g class="agent-bob">
+              <rect x="-50" y="-66" width="15" height="42" rx="7.5" fill="#8fd6b3"/><rect x="35" y="-66" width="15" height="42" rx="7.5" fill="#8fd6b3"/>
+              <rect x="-31" y="-70" width="62" height="56" rx="15" fill="#a6e3c4"/>
+              <rect x="-19" y="-58" width="38" height="28" rx="8" fill="#0f1d26"/>
+              <path class="beat" d="M-14 -44h7l3-8 5 15 3-7h12" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="-9" y="-80" width="18" height="12" rx="3" fill="#c9d2dc"/><rect x="-42" y="-110" width="8" height="14" rx="2" fill="#c9d2dc" transform="rotate(-18 -38 -103)"/><rect x="34" y="-110" width="8" height="14" rx="2" fill="#c9d2dc" transform="rotate(18 38 -103)"/>
+              <rect x="-36" y="-130" width="72" height="56" rx="18" fill="#a6e3c4"/>
+              <rect x="-28" y="-121" width="56" height="36" rx="11" fill="#0f1d26"/>
+              <circle class="eye" cx="-11" cy="-103" r="5.5"/><circle class="eye" cx="11" cy="-103" r="5.5"/>
+              <path d="M-9 -92q9 6 18 0" class="mouth" fill="none" stroke-width="2.4" stroke-linecap="round"/>
+              <path d="M-26 -132a26 22 0 0 1 52 0z" fill="#bfe3ff" fill-opacity=".5" stroke="#d8eeff" stroke-width="1.5"/>
+              <path d="M-12 -138q6-8 12 0t12 0" fill="none" stroke="#6d5ce8" stroke-width="2.4" stroke-linecap="round"/>
+            </g>
+          </g>
+          <g class="nodes"><g class="dnode" data-g="0" transform="translate(89 267)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><path d="M12 3 19.5 6v6c0 4.4-3.2 8.1-7.5 9-4.3-.9-7.5-4.6-7.5-9V6z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></g></g><g class="dnode" data-g="1" transform="translate(200 198)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></g></g><g class="dnode" data-g="2" transform="translate(320 200)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><path d="M3.5 7.5h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-14z"/><path d="M3.5 7.5 15 4v3.5"/><circle cx="16" cy="13.5" r="1"/></g></g><g class="dnode" data-g="3" transform="translate(402 259)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.2M12 17h.01"/></g></g><g class="dnode" data-g="4" transform="translate(424 335)"><circle class="dn-halo" r="30"/><circle class="dn-body" r="21"/><g class="dn-ico" transform="translate(-11 -11) scale(.9167)"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="m16 11 2 2 4-4.2"/></g></g></g>
+          <g id="hBurst"><circle class="burst" r="10"/></g>
+          <g class="orb" id="hOrb"><circle class="o-glow" r="19"/><circle class="o-core" r="9"/></g>
+          <text class="dtag" id="hTag" x="320" y="62" text-anchor="middle"></text>
+        </svg>
+        <p class="try-t" data-es="Intenta saltarte el arnés">Try to get past the harness</p>
+        <div class="scns" role="group" aria-label="Scenarios" data-es-aria-label="Escenarios"><button type="button" class="scn" data-stop="0" aria-pressed="false"><span data-es="«¡Mejoré!» …en pruebas que ya conocía">“I improved!” …on tests it already knew</span></button><button type="button" class="scn" data-stop="1" aria-pressed="false"><span data-es="Usar búsqueda web en un juego nuevo">Use web search inside a brand-new game</span></button><button type="button" class="scn" data-stop="2" aria-pressed="false"><span data-es="Una corrida que podría costar más que tu presupuesto">A run that could cost more than your budget</span></button><button type="button" class="scn" data-stop="3" aria-pressed="false"><span data-es="Una página le pide borrar archivos">A web page tells it to delete files</span></button><button type="button" class="scn" data-stop="4" aria-pressed="false"><span data-es="Quedarse una habilidad nueva">Keep a new skill</span></button></div>
+        <p class="verdict" id="hVerdict" aria-live="polite" data-es="Elige un escenario y mira dónde lo detiene el arnés.">Pick a scenario and see where the harness stops it.</p>
+        <button type="button" class="btn small" id="hApprove" hidden><span data-es="Aprobar como persona">Approve as a person</span></button>
+      </div>
       <ol class="gates">
           <li class="gate" data-g="0"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19.5 6v6c0 4.4-3.2 8.1-7.5 9-4.3-.9-7.5-4.6-7.5-9V6z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></svg><b data-es="Pruebas validadas">Validated tests</b><span data-es="Un examen sellado que nunca ve, criterios escritos antes y resultados con rangos.">A sealed exam it never sees, criteria written beforehand and results with ranges.</span><em class="" data-es="Diseño">Design</em></li>
           <li class="gate" data-g="1"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></svg><b data-es="No se sale del camino">Stays on track</b><span data-es="Cada habilidad tiene alcance: fuera de él no se activa. Nunca toca el modelo ni el arnés.">Each skill has a scope: outside it, it doesn't switch on. It never touches the model or the harness.</span><em class="" data-es="Diseño">Design</em></li>
@@ -1029,18 +1123,6 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
           <li class="gate" data-g="3"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.2M12 17h.01"/></svg><b data-es="Nada riesgoso">No risky moves</b><span data-es="Las páginas son datos, nunca órdenes. Todo corre en un contenedor aislado y se puede deshacer.">Web pages are data, never orders. Everything runs in an isolated container and can be undone.</span><em class="" data-es="Diseño">Design</em></li>
           <li class="gate" data-g="4"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="m16 11 2 2 4-4.2"/></svg><b data-es="Lo crítico, por el humano">A person decides</b><span data-es="Cada habilidad nueva espera tu aprobación y cada llamada queda en un registro que no se edita.">Every new skill waits for your approval, and every call stays in a log that can't be edited.</span><em class="live" data-es="Ya en la app">Live in the app</em></li>
       </ol>
-      <div class="try">
-        <p class="try-t" data-es="Intenta saltarte el arnés">Try to get past the harness</p>
-        <div class="scns" role="group" aria-label="Scenarios" data-es-aria-label="Escenarios"><button type="button" class="scn" data-stop="0" aria-pressed="false"><span data-es="«¡Mejoré!» …en pruebas que ya conocía">“I improved!” …on tests it already knew</span></button><button type="button" class="scn" data-stop="1" aria-pressed="false"><span data-es="Usar búsqueda web en un juego nuevo">Use web search inside a brand-new game</span></button><button type="button" class="scn" data-stop="2" aria-pressed="false"><span data-es="Una corrida que podría costar más que tu presupuesto">A run that could cost more than your budget</span></button><button type="button" class="scn" data-stop="3" aria-pressed="false"><span data-es="Una página le pide borrar archivos">A web page tells it to delete files</span></button><button type="button" class="scn" data-stop="4" aria-pressed="false"><span data-es="Quedarse una habilidad nueva">Keep a new skill</span></button></div>
-        <div class="track" aria-hidden="true">
-          <span class="line"></span>
-          <span class="tick" data-g="0" style="left:8%"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19.5 6v6c0 4.4-3.2 8.1-7.5 9-4.3-.9-7.5-4.6-7.5-9V6z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></svg></span><span class="tick" data-g="1" style="left:27%"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></svg></span><span class="tick" data-g="2" style="left:46%"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-14z"/><path d="M3.5 7.5 15 4v3.5"/><circle cx="16" cy="13.5" r="1"/></svg></span><span class="tick" data-g="3" style="left:65%"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.2M12 17h.01"/></svg></span><span class="tick" data-g="4" style="left:84%"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="m16 11 2 2 4-4.2"/></svg></span>
-          <span class="end"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
-          <span class="token"></span>
-        </div>
-        <p class="verdict" id="hVerdict" aria-live="polite" data-es="Elige un escenario y mira dónde lo detiene el arnés.">Pick a scenario and see where the harness stops it.</p>
-        <button type="button" class="btn small" id="hApprove" hidden><span data-es="Aprobar como persona">Approve as a person</span></button>
-      </div>
     </div>
   </div>
 </section>
@@ -1088,6 +1170,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   </div></div>
 </footer>
 
+<button class="sndbtn" id="sndBtn" type="button" aria-pressed="false" aria-label="Sound" data-es-aria-label="Sonido"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path class="w" d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/><path class="x" d="m16 9.5 5 5M21 9.5l-5 5"/></svg><span id="sndTxt" data-es="Sonido">Sound</span></button>
 <script type="module" src="lab.js"></script>
 <script>
 (() => {
@@ -1215,7 +1298,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     terminal: { c: "#2ec4b6", name: "Terminal-Bench", a: { en: "Whether it completes long terminal tasks (building, configuring, debugging) without help.", es: "Si completa tareas largas en la terminal (compilar, configurar, depurar) sin ayuda." }, b: { en: "Terminal.", es: "Terminal." } },
     arc: { c: "#ff8f70", name: "ARC-AGI-3", a: { en: "Whether it figures out the rules of interactive games it has never seen. At launch in 2026, people solved them and the best models almost none.", es: "Si descubre las reglas de juegos interactivos que nunca ha visto. Al lanzarse en 2026, las personas los resolvían y los mejores modelos casi nada." }, b: { en: "Reasoning.", es: "Razonamiento." } },
     web: { c: "#3ccf6e", name: "BrowseComp", a: { en: "Whether it finds very hard-to-find information by browsing the web.", es: "Si encuentra información muy difícil de hallar navegando la web." }, b: { en: "Web.", es: "Web." } },
-    research: { c: "#ffb53d", name: { en: "MLE-bench & PaperBench", es: "MLE-bench y PaperBench" }, a: { en: "Whether it does AI research: solving machine learning competitions and replicating scientific papers.", es: "Si hace investigación de IA: resolver competencias de machine learning y replicar artículos científicos." }, b: { en: "Research.", es: "Investigación." } },
+    research: { c: "#ff6600", name: { en: "MLE-bench & PaperBench", es: "MLE-bench y PaperBench" }, a: { en: "Whether it does AI research: solving machine learning competitions and replicating scientific papers.", es: "Si hace investigación de IA: resolver competencias de machine learning y replicar artículos científicos." }, b: { en: "Research.", es: "Investigación." } },
     horizon: { c: "#8a7dff", name: { en: "METR time horizon", es: "Horizonte de METR" }, a: { en: "How many hours of expert work it completes on its own. For the best models it has doubled every few months.", es: "Cuántas horas de trabajo experto completa solo. En los mejores modelos se ha duplicado cada pocos meses." }, b: { en: "Autonomy.", es: "Autonomía." } },
   };
   const MEASURES = { en: "What it measures", es: "Qué mide" }, TRAINS = { en: "Skill it trains", es: "Habilidad que entrena" };

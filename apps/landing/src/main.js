@@ -6,6 +6,7 @@
 import { createHero } from "./hero.js";
 import { createRoom } from "./room.js";
 import { setLanguage, tr } from "./agent.js";
+import { sound } from "./sound.js";
 import { ROOMS, UI } from "./museum.js";
 import "./details.js";
 import "./cycle.js";
@@ -15,9 +16,11 @@ const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 setLanguage(root.lang);
+sound.setLanguage(root.lang);
 let hero3d = null;
 document.addEventListener("lang:change", (e) => {
   setLanguage(e.detail);
+  sound.setLanguage(e.detail);
   if (hero3d) hero3d.relabel();
   if (room) { room.relabel(); renderGuide(lastGuide); viewLabel(); }
 });
@@ -70,7 +73,8 @@ function viewLabel() {
   const fp = Boolean(room?.fp);
   $("#viewTxt").textContent = tr(fp ? UI.tp : UI.fp);
   $("#viewBtn").setAttribute("aria-pressed", String(fp));
-  $("#roomHint").textContent = tr(fp ? UI.fpHint2 : UI.tpHint);
+  const fine = matchMedia("(pointer: fine)").matches;
+  $("#roomHint").textContent = tr(fp ? (room?.locked ? UI.fpHint2 : fine ? UI.fpLock : UI.fpHint) : UI.tpHint);
   const fsTxt = $("#fsTxt");
   if (fsTxt) fsTxt.textContent = tr(document.fullscreenElement ? UI.exitFull : UI.full);
 }
@@ -145,6 +149,20 @@ function startHero() {
     console.warn("3D hero unavailable", err);
     root.classList.remove("intro", "hero-3d"); root.classList.add("alive");
   }
+}
+
+/* The speaker button: sound switches on at the first tap anywhere; this turns it off and on again. */
+const snd = $("#sndBtn");
+if (snd) {
+  const paint = (on) => { snd.setAttribute("aria-pressed", String(on)); snd.classList.remove("nudge"); };
+  sound.onChange(paint);
+  paint(sound.on);
+  try { if (!localStorage.getItem("agz-sound")) snd.classList.add("nudge"); } catch { /* private window */ }
+  snd.addEventListener("click", async () => {
+    const wasOff = !sound.on;
+    await sound.toggle();
+    if (wasOff && sound.on) hero3d?.poke(); // let them hear it right away: another jolt and a line
+  });
 }
 
 if (hasWebGL()) {

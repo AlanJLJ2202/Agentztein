@@ -397,7 +397,7 @@ export function createBenchLab(canvas, id, { lang = "en", reduced = false, onSte
         const t = track(label(L(en, es), { h: 0.12, dot: "#" + c.toString(16) })); t.position.set(-0.6, y - 0.22, 0.25);
         lb.add(p, t); return p;
       });
-      const mine = box(0.18, 1, 0.18, 0xffb53d, { emissive: 0xffb53d, emissiveIntensity: 0.3 });
+      const mine = box(0.18, 1, 0.18, 0xff6600, { emissive: 0xff6600, emissiveIntensity: 0.3 });
       mine.position.set(1.65, -0.3, 0.25); mine.scale.y = 0.05; lb.add(mine);
       const mtag = track(label(L("Agent", "Agente"), { h: 0.12, bg: "#fff1e6", fg: "#b37400" })); mtag.position.set(1.65, 0.1, 0.35); lb.add(mtag);
       const medal = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 32), glossy(0xa9b4be, { metalness: 0.6 })); medal.rotation.x = Math.PI / 2; medal.position.set(1.65, 1.25, 0.3); medal.scale.setScalar(0.001);

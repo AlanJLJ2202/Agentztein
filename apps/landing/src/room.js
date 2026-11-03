@@ -10,6 +10,9 @@ import {
   makeMetaLogo, tr, canvasTex, rr, windowPanel, FONT,
 } from "./agent.js";
 import { ROOMS } from "./museum.js";
+import { decorate } from "./decor.js";
+import { sound } from "./sound.js";
+import { LINES } from "../../../api/_data/audio-catalog.js";
 
 const H = 3; // wall height
 const R = 0.42; // agent radius
@@ -150,6 +153,7 @@ export function buildRoom(scene) {
   const updates = [];
   const obstacles = []; // circles [x, z, r]
   const extra = { pods: {} };
+  const ceilings = [];
   LAYOUT.forEach((r) => {
     const g = new THREE.Group();
     if (r.id === "cuna") g.position.set(0, 0, 0);
@@ -168,9 +172,12 @@ export function buildRoom(scene) {
     });
     if (built.update) updates.push(built.update);
     if (built.mural) relabels.push(built.mural);
+    const dressed = decorate(r.id, g, ROOMS[r.id]);
+    updates.push(dressed.update);
+    ceilings.push(dressed.ceil);
   });
 
-  return { root, walls, floorHit, doors, exhibits, updates, obstacles, extra, relabel: () => relabels.forEach((f) => f()) };
+  return { root, walls, ceilings, floorHit, doors, exhibits, updates, obstacles, extra, relabel: () => relabels.forEach((f) => f()) };
 }
 
 
@@ -477,14 +484,14 @@ T.arc = (g, { relabels, room, extra }) => {
     game.cell = k;
     if (game.won) return;
     game.steps++;
-    if (!game.key && c === key[0] && r === key[1]) { game.key = true; gem.visible = false; exitT.material = std(C.ok, { emissive: C.ok, emissiveIntensity: 0.4 }); extra.say?.({ en: "A key! Something must open.", es: "¡Una llave! Algo debe abrirse." }); }
-    if (game.key && c === exit[0] && r === exit[1]) { game.won = true; extra.say?.({ en: "Level cleared!", es: "¡Nivel superado!" }); extra.cheer?.(); }
+    if (!game.key && c === key[0] && r === key[1]) { game.key = true; gem.visible = false; exitT.material = std(C.ok, { emissive: C.ok, emissiveIntensity: 0.4 }); extra.line?.("key"); sound.sfx("pickup"); }
+    if (game.key && c === exit[0] && r === exit[1]) { game.won = true; extra.line?.("cleared"); extra.cheer?.(); }
     drawBoard();
   };
   return {
     mural: m,
     exhibits: [
-      { key: "board", at: [-2.4, 2.2], stand: [-1.6, 2.9], hits: [startT, ...tiles.slice(0, 3)], blocks, act: () => { reset(); extra.say?.({ en: "Start on the pink tile. Go!", es: "Empieza en la casilla rosa. ¡Ve!" }); } },
+      { key: "board", at: [-2.4, 2.2], stand: [-1.6, 2.9], hits: [startT, ...tiles.slice(0, 3)], blocks, act: () => { reset(); extra.line?.("start"); } },
       { key: "score", at: [0, -3.6], stand: [-1.2, -2.6], hits: [board], act: () => { anim(0.8, (k) => board.scale.setScalar(1 + Math.sin(k * Math.PI) * 0.08)); } },
       { key: "rules", at: [2.35, 2.6], stand: [1.4, 2.1], solid: 0.6, hits: [ped, ...cubes], act: () => { cubes.forEach((cb, i) => { cb.material = cb.userData.mats[0]; anim(0.5, (k, raw) => { cb.rotation.y = k * Math.PI; if (raw > 0.5) cb.material = cb.userData.mats[1]; }, i * 0.4); }); } },
     ],
@@ -539,7 +546,7 @@ T.research = (g, { relabels, room }) => {
   const lb = new THREE.Group(); lb.position.set(0, 0, -2.8); g.add(lb);
   [1.6, 1.45, 1.3, 1.1, 0.9, 0.7].forEach((h, i) => { const b = box(0.24, h, 0.24, 0xdfe7ef); b.position.set(-1.0 + i * 0.32, h / 2, 0); lb.add(b); });
   [[0xe3b41b, 1.35], [0xa9b4be, 1.1], [0xc98a5a, 0.85]].forEach(([c, y]) => { const p = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.02, 0.5), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.85 })); p.position.set(0, y, 0); lb.add(p); });
-  const mine = box(0.26, 1, 0.26, 0xffb53d, { emissive: 0xffb53d, emissiveIntensity: 0.3 }); mine.position.set(1.0 + 0.32, 0.05, 0.1); mine.scale.y = 0.1; lb.add(mine);
+  const mine = box(0.26, 1, 0.26, 0xff6600, { emissive: 0xff6600, emissiveIntensity: 0.3 }); mine.position.set(1.0 + 0.32, 0.05, 0.1); mine.scale.y = 0.1; lb.add(mine);
   const medal = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.05, 32), glossy(0xa9b4be, { metalness: 0.6 })); medal.rotation.x = Math.PI / 2; medal.position.set(1.32, 1.6, 0.2); medal.scale.setScalar(0.001); lb.add(medal);
   // the paper on a lectern
   const lec = new THREE.Group(); lec.position.set(-2.0, 0, -0.2); lec.rotation.y = 0.6; g.add(lec);
@@ -645,13 +652,17 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   let path = [], pendingRoom = null, pendingExhibit = null, currentRoom = "cuna", guideKey = "", engaged = false, visible = true;
   let yaw = Math.PI, pitch = -0.05, camAz = 0, wallK = 0.32, stuck = 0;
   const keys = new Set();
+  let locked = false, stepClock = 0.2;
   const say = (o) => onSay(tr(o));
+  // a line from the catalog: the speech bubble shows it and the agent says it out loud
+  const line = (id) => { onSay(tr(LINES[id])); sound.say(id); };
   extra.say = say;
-  extra.cheer = () => { armsUp = t + 1.8; happyUntil = t + 2.4; onFlash(); };
-  extra.think = () => { thinkUntil = t + 2.5; say({ en: "Thinking harder costs more time.", es: "Pensar más a fondo cuesta más tiempo." }); };
-  extra.zap = () => { if (!reduced) { zap = 1.4; u.power = 0.2; } else { onFlash(); say(ROOMS.cuna.items.coils.title); } };
+  extra.line = line;
+  extra.cheer = () => { armsUp = t + 1.8; happyUntil = t + 2.4; onFlash(); sound.sfx("success"); };
+  extra.think = () => { thinkUntil = t + 2.5; line("think"); sound.sfx("interact"); };
+  extra.zap = () => { sound.sfx("zap"); if (!reduced) { zap = 1.4; u.power = 0.2; } else { onFlash(); say(ROOMS.cuna.items.coils.title); } };
   extra.runExercise = (id) => onRun(id);
-  extra.lightDoors = () => doors.forEach((d, i) => { anim(0.01, () => { d.mat.emissiveIntensity = 1.4; }, i * 0.35); anim(0.01, () => { d.mat.emissiveIntensity = 0.2; }, i * 0.35 + 0.6); });
+  extra.lightDoors = () => { sound.sfx("door"); doors.forEach((d, i) => { anim(0.01, () => { d.mat.emissiveIntensity = 1.4; }, i * 0.35); anim(0.01, () => { d.mat.emissiveIntensity = 0.2; }, i * 0.35 + 0.6); }); };
 
   // ---- size ----
   const resize = () => {
@@ -735,16 +746,35 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   function interact(e = focus) {
     if (!e) return;
     engaged = true;
+    sound.sfx("interact");
     e.act();
     thinkUntil = t + 0.8; happyUntil = t + 2;
   }
 
   // ---- view ----
+  // Pointer lock turns the mouse into a game camera: no click, no drag, the view just follows your hand.
+  const canLock = () => Boolean(canvas.requestPointerLock) && matchMedia("(pointer: fine)").matches;
+  function lockMouse() {
+    if (!fp || locked || !canLock()) return;
+    try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch { /* needs a gesture */ }
+  }
+  function unlockMouse() { if (document.pointerLockElement === canvas) document.exitPointerLock(); }
+  document.addEventListener("pointerlockchange", () => {
+    locked = document.pointerLockElement === canvas;
+    canvas.style.cursor = fp ? (locked ? "none" : "crosshair") : "";
+    document.dispatchEvent(new CustomEvent("room:hint"));
+  });
+  document.addEventListener("mousemove", (ev) => {
+    if (!locked || !fp) return;
+    yaw -= ev.movementX * 0.0022; // right hand, right turn
+    pitch = THREE.MathUtils.clamp(pitch - ev.movementY * 0.0022, -1.2, 1.2);
+    if (ev.movementX || ev.movementY) { path = []; pendingExhibit = null; }
+  });
   function setView(next) {
     fp = next;
     agent.visible = !fp;
-    if (fp) { yaw = agent.rotation.y; pitch = -0.05; }
-    else camAz = yaw + Math.PI;
+    if (fp) { yaw = agent.rotation.y; pitch = -0.05; lockMouse(); }
+    else { camAz = yaw + Math.PI; unlockMouse(); }
     canvas.style.cursor = fp ? "crosshair" : "";
     guideKey = "";
     onView(fp);
@@ -775,6 +805,12 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     const wasDrag = down.moved;
     down = null;
     if (wasDrag) return;
+    if (fp && ev.pointerType === "mouse") {
+      if (!locked) { lockMouse(); return; } // the first click captures the mouse; after that, a click uses what the crosshair is on
+      const e = aimed();
+      if (e) interact(e);
+      return;
+    }
     aim(ev);
     const eh = ray.intersectObjects(exHits, false)[0];
     if (eh) {
@@ -791,7 +827,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   canvas.addEventListener("pointerup", endPointer);
   canvas.addEventListener("pointercancel", () => { down = null; });
 
-  const KEYMAP = { ArrowUp: "f", KeyW: "f", ArrowDown: "b", KeyS: "b", ArrowLeft: "l", KeyA: "sl", ArrowRight: "r", KeyD: "sr" };
+  const KEYMAP = { ArrowUp: "f", KeyW: "f", ArrowDown: "b", KeyS: "b", ArrowLeft: "l", KeyA: "sl", ArrowRight: "r", KeyD: "sr", ShiftLeft: "run", ShiftRight: "run" };
   const active = () => document.activeElement === canvas || (engaged && visible);
   const onKey = (isDown) => (ev) => {
     if (ev.altKey || ev.ctrlKey || ev.metaKey || /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target?.tagName || "")) return;
@@ -806,7 +842,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   window.addEventListener("keydown", onKey(true));
   window.addEventListener("keyup", onKey(false));
   window.addEventListener("blur", () => keys.clear());
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (!visible) { engaged = false; keys.clear(); } }).observe(canvas);
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (!visible) { engaged = false; keys.clear(); unlockMouse(); } }).observe(canvas);
 
   // ---- the example exercise: the room's frozen copy wakes up and acts it out at the main experiment ----
   const SLOTS = [[-0.52, 1.02], [0.52, 1.02], [-0.42, 0.42], [0.42, 0.42], [0, 0.42], [0, 1.3]];
@@ -853,17 +889,19 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     const main = mainOf(currentRoom);
     const P = pods[currentRoom];
     if (P) P.last = t;
-    if (kind === "run") { if (P?.awake && !P.walking) setPod(P, "think", "pulse"); else wakePod(currentRoom); }
+    if (kind === "run") { sound.sfx("interact"); if (P?.awake && !P.walking) setPod(P, "think", "pulse"); else wakePod(currentRoom); }
+    if (kind === "fail") sound.sfx("fail");
     if (kind === "fail" && P) setPod(P, "alert", "alert");
     if (kind === "think" && P) setPod(P, "think", "sync");
     if (kind === "new") {
+      sound.sfx("pickup");
       if (P) setPod(P, "think", "test");
       if (fresh) fresh.removeFromParent();
       fresh = makeChip({ id: currentRoom, name: { en: "New", es: "Nueva" }, color: ROOMS[currentRoom].color });
       fresh.position.set(main.world.x, 2.4, main.world.z); fresh.scale.setScalar(0.001); fresh.userData.grow = 0;
       scene.add(fresh);
     }
-    if (kind === "ok") { if (P) setPod(P, "happy", "ok"); main.act(); }
+    if (kind === "ok") { sound.sfx("success"); if (P) setPod(P, "happy", "ok"); main.act(); }
     if (kind === "install" && fresh) {
       if (P) { setPod(P, "happy", "ok"); P.cheer = t + 1.6; P.last = t - 7.5; } // back to sleep a few seconds later
       flight = { chip: fresh, from: fresh.position.clone(), t0: t, slot: installed.has(currentRoom) ? null : SLOTS[installed.size % SLOTS.length], id: currentRoom };
@@ -928,7 +966,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       if (keys.has("b")) v.sub(fwd);
       if (keys.has("sr")) v.add(right);
       if (keys.has("sl")) v.sub(right);
-      if (v.lengthSq() > 0) { path = []; pendingRoom = null; pendingExhibit = null; v.normalize().multiplyScalar(3 * dt); agent.position.add(v); collide(agent.position); moving = true; onMove(); }
+      if (v.lengthSq() > 0) { path = []; pendingRoom = null; pendingExhibit = null; v.normalize().multiplyScalar((keys.has("run") ? 5 : 3) * dt); agent.position.add(v); collide(agent.position); moving = true; onMove(); }
     } else {
       if (keys.size) {
         camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize(); right.crossVectors(fwd, up).normalize();
@@ -961,6 +999,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       if (!fp || path.length || pendingExhibit) yaw = agent.rotation.y;
       else agent.rotation.y = yaw;
     }
+    if (moving) { stepClock += dt * (keys.has("run") && fp ? 1.5 : 1); if (stepClock > 0.34) { stepClock = 0; sound.step(); } } else stepClock = 0.25;
     const lean = moving && !fp ? 0.14 : 0;
     agent.rotation.x += (lean - agent.rotation.x) * Math.min(1, dt * 6);
     agent.position.y = HOVER_Y + (fp ? 0 : Math.sin(tt * 2.2) * 0.05);
@@ -970,7 +1009,8 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     if (here && here !== currentRoom) {
       currentRoom = here;
       onArrive(here);
-      if (here !== "cuna") say({ en: `Welcome to the ${tr(ROOMS[here].name).toLowerCase()}.`, es: `Bienvenido a: ${tr(ROOMS[here].name).toLowerCase()}.` });
+      sound.sfx("door");
+      if (here !== "cuna") line(`welcome-${here}`);
       guideKey = "";
     }
     if (currentRoom === "arc" && extra.arcStep) {
@@ -992,7 +1032,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
         });
       }
       u.power = Math.min(1, u.power + dt * 0.7);
-      if (zap <= 0) { bolts.forEach((b) => { b.visible = false; }); u.power = 1; armsUp = t + 2; happyUntil = t + 2.6; onFlash(); say({ en: "I'm alive!", es: "¡Estoy vivo!" }); }
+      if (zap <= 0) { bolts.forEach((b) => { b.visible = false; }); u.power = 1; armsUp = t + 2; happyUntil = t + 2.6; onFlash(); sound.sfx("awake"); line("alive"); }
     }
 
     // a new skill flies to its body
@@ -1008,7 +1048,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
         if (flight.slot) { agent.add(flight.chip); flight.chip.position.set(flight.slot[0], flight.slot[1], 0.47); flight.chip.rotation.set(0, 0, 0); flight.chip.scale.setScalar(0.42); if (flight.chip.userData.tag) flight.chip.userData.tag.visible = false; installed.set(flight.id, flight.chip); }
         else flight.chip.removeFromParent();
         flight = null; armsUp = t + 1.6; happyUntil = t + 2.2; onFlash();
-        say(installed.size > 1 ? { en: `New piece! That's ${installed.size}.`, es: `¡Pieza nueva! Ya van ${installed.size}.` } : { en: "New piece!", es: "¡Pieza nueva!" });
+        sound.sfx("chip"); line(`piece${Math.min(installed.size, 6)}`);
       }
     }
 
@@ -1024,6 +1064,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     const wk = fp ? 1 : 0.32;
     wallK += (wk - wallK) * Math.min(1, dt * 5);
     walls.scale.y = wallK;
+    B.ceilings.forEach((c) => { c.visible = fp && wallK > 0.97; }); // the ceiling only exists when you are inside
 
     // camera
     if (fp) {
@@ -1065,6 +1106,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     press: (k, isDown) => { engaged = true; if (isDown) keys.add(k); else keys.delete(k); },
     setView,
     get fp() { return fp; },
+    get locked() { return locked; },
     interact: () => interact(),
     exhibit: (room, key) => exhibits.find((e) => e.room === room && e.key === key),
     focusCanvas: () => { engaged = true; canvas.focus({ preventScroll: true }); },
