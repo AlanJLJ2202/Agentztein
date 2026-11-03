@@ -9,6 +9,7 @@ import { setLanguage, tr } from "./agent.js";
 import { ROOMS, UI } from "./museum.js";
 import "./details.js";
 import "./cycle.js";
+import "./metaharness.js";
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;

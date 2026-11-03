@@ -20,13 +20,17 @@ export type Note = {
   provider: string;
   model: string;
   assessedAt: string;
+  decision: "approved" | "rejected" | null;
+  decidedAt: string | null;
 };
+export type Budget = { monthly: number; spent: number; runs: number };
 
 export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
     readonly reason?: string,
+    readonly detail?: Record<string, unknown>,
   ) {
     super(message);
   }
@@ -50,8 +54,8 @@ export function api(supabase: SupabaseClient) {
       ...init,
       headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}), ...init.headers },
     });
-    const body = (await res.json().catch(() => ({}))) as { error?: string; reason?: string };
-    if (!res.ok) throw new ApiError(body.error ?? `Error ${res.status}`, res.status, body.reason);
+    const body = (await res.json().catch(() => ({}))) as { error?: string; reason?: string } & Record<string, unknown>;
+    if (!res.ok) throw new ApiError(body.error ?? `Error ${res.status}`, res.status, body.reason, body);
     return body as T;
   }
   return {
@@ -63,10 +67,14 @@ export function api(supabase: SupabaseClient) {
     removeKey: (provider: string) => call<{ ok: true }>(`/api/keys?provider=${encodeURIComponent(provider)}`, { method: "DELETE" }),
     notes: () => call<{ notes: Note[] }>("/api/radar"),
     triage: (provider: string | null, lang: string, effort: string | null) =>
-      call<{ notes: Note[]; read: number; provider?: string; model?: string; effort?: string | null }>("/api/radar", {
+      call<{ notes: Note[]; read: number; provider?: string; model?: string; effort?: string | null; cost?: number; budget?: Budget }>("/api/radar", {
         method: "POST",
         body: JSON.stringify({ provider, lang, effort }),
       }),
+    decide: (id: string, decision: "approved" | "rejected") =>
+      call<{ note: Note }>("/api/radar", { method: "PATCH", body: JSON.stringify({ id, decision }) }),
+    limits: () => call<Budget>("/api/limits"),
+    setLimit: (monthly: number) => call<Budget>("/api/limits", { method: "PUT", body: JSON.stringify({ monthly }) }),
   };
 }
 export type Api = ReturnType<typeof api>;

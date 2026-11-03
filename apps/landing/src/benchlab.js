@@ -193,7 +193,7 @@ export function createBenchLab(canvas, id, { lang = "en", reduced = false, onSte
       const LINES = [
         ["$ make", "#e6edf3"], [L("fatal: openssl/ssl.h: no such file", "fatal: openssl/ssl.h: no existe"), "#ff9b87"],
         ["$ apt-get install -y libssl-dev", "#e6edf3"], ["$ make && ./server --port 8080", "#e6edf3"], ["listening on :8080", "#7ee2a8"],
-        ["$ bash tests.sh", "#e6edf3"], [L("✓ 5/5 checks passed", "✓ 5/5 revisiones pasan"), "#7ee2a8"],
+        ["$ bash tests.sh", "#e6edf3"], [L("PASS 5/5 checks", "PASS 5/5 revisiones"), "#7ee2a8"],
       ];
       let shown = 0;
       const drawTerm = () => mon.userData.redraw((g, W) => {

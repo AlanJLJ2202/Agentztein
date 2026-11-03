@@ -1,6 +1,6 @@
 // Bring your own key: one card per provider.
 import { useEffect, useState } from "react";
-import type { Api, ProviderInfo, SavedKey } from "./api.js";
+import type { Api, Budget, ProviderInfo, SavedKey } from "./api.js";
 import type { Tab } from "./App.js";
 import { T, useT } from "./i18n.js";
 import { MetaMark } from "./Logos.js";
@@ -41,6 +41,7 @@ export function Brain({ client, keys, onKeys, go }: Props) {
             onRemoved={() => onKeys((keys ?? []).filter((k) => k.provider !== p.id))}
           />
         ))}
+        <Limits client={client} />
         <article className="prov credits">
           <header><h2>{t(T.creditsTitle)}</h2><span className="pill amber">{t(T.phase2)}</span></header>
           <p className="muted">{t(T.creditsLead)}</p>
@@ -86,7 +87,7 @@ function ProviderCard({ p, saved, client, onSaved, onRemoved }: { p: ProviderInf
     try {
       setModel(id);
       onSaved((await client.setModel(p.id, id)).key);
-      setMsg({ kind: "ok", text: "✓" });
+      setMsg({ kind: "ok", text: t(T.harness.saved) });
     } catch (err) {
       setMsg({ kind: "error", text: (err as Error).message });
     } finally {
@@ -162,6 +163,43 @@ function ProviderCard({ p, saved, client, onSaved, onRemoved }: { p: ProviderInf
       )}
       {msg && <p className={msg.kind === "ok" ? "okmsg" : "error"} role={msg.kind === "ok" ? "status" : "alert"}>{msg.text}</p>}
       <a className="link small" href={p.keysUrl} target="_blank" rel="noreferrer">{t(T.getKey)} ↗</a>
+    </article>
+  );
+}
+
+function Limits({ client }: { client: Api }) {
+  const t = useT();
+  const [b, setB] = useState<Budget | null>(null);
+  const [val, setVal] = useState("");
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    client.limits().then((r) => { setB(r); setVal(String(r.monthly)); }).catch(() => undefined);
+  }, [client]);
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMsg("");
+    try { const r = await client.setLimit(Number(val)); setB(r); setMsg("ok"); } catch (err) { setMsg((err as Error).message); }
+  };
+  const pct = b ? Math.min(100, (b.spent / Math.max(b.monthly, 0.01)) * 100) : 0;
+  return (
+    <article className="prov on harness-card">
+      <header><h2>{t(T.harness.title)}</h2></header>
+      <p className="muted small">{t(T.harness.lead)}</p>
+      {b && (
+        <div className="spend">
+          <div className="spend-bar" aria-hidden="true"><i style={{ width: `${pct}%` }} className={pct > 85 ? "hot" : ""} /></div>
+          <p className="small"><b>${b.spent.toFixed(4)}</b> / ${b.monthly.toFixed(2)} {t(T.harness.spent)} · {b.runs} {t(T.harness.runs)}</p>
+        </div>
+      )}
+      <form className="field" onSubmit={(e) => void save(e)}>
+        <span>{t(T.harness.monthly)}</span>
+        <div className="row">
+          <input type="number" min={0.5} max={1000} step={0.5} value={val} onChange={(e) => setVal(e.target.value)} />
+          <button className="btn small ghost">{t(T.harness.save)}</button>
+        </div>
+      </form>
+      {msg && <p className={msg === "ok" ? "okmsg" : "error"} role="status">{msg === "ok" ? t(T.harness.saved) : msg}</p>}
+      <p className="fine">{t(T.harness.log)}</p>
     </article>
   );
 }

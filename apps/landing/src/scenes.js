@@ -224,7 +224,7 @@ function sweLab(L) {
 function terminalLab(L) {
   const lines = [
     ["$ make", "#e6edf3"], ["fatal: openssl/ssl.h: No such file", "#ff9b87"], ["$ apt-get install -y libssl-dev", "#e6edf3"],
-    ["$ make && ./server --port 8080", "#e6edf3"], ["listening on :8080", "#7ee2a8"], ["$ bash tests.sh", "#e6edf3"], ["✓ 5/5 checks passed", "#7ee2a8"],
+    ["$ make && ./server --port 8080", "#e6edf3"], ["listening on :8080", "#7ee2a8"], ["$ bash tests.sh", "#e6edf3"], ["PASS 5/5 checks", "#7ee2a8"],
   ];
   let body = `<g transform="translate(40 58)"><rect width="430" height="250" rx="16" fill="none" stroke="#2ec4b6" stroke-width="3" stroke-dasharray="10 8"/>${t(16, -8, L("Isolated container", "Contenedor aislado"), { size: 12, weight: 800, fill: "#1a8f84" })}
     <rect x="18" y="18" width="394" height="214" rx="12" fill="#1c2b33"/>
