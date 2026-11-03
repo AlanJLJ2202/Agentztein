@@ -806,6 +806,48 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .verdict b { color: #fff; }
 #hApprove[hidden] { display: none; }
 @media (max-width: 1000px) { .hbox { grid-template-columns: minmax(0, 1fr); } .try, .dome-card { position: static; } }
+/* ---------- the lab: watching vs. playing, the dive into its eyes, less clutter ---------- */
+.stage::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at 50% 45%, rgba(8, 16, 28, 0) 22%, rgba(8, 16, 28, .55) 52%, rgba(8, 16, 28, .96) 78%); }
+.stage.dive::after { animation: dive 1.3s cubic-bezier(.6, 0, .3, 1); }
+.stage.rise::after { animation: dive 1s cubic-bezier(.4, 0, .3, 1) reverse; }
+@keyframes dive { 0% { opacity: 0; transform: scale(1.25); } 62% { opacity: 1; transform: scale(1); } 80% { opacity: .75; } 100% { opacity: 0; transform: scale(1.06); } }
+.takebtn { position: absolute; left: 50%; top: 18px; z-index: 3; display: none; align-items: center; gap: 12px; padding: 10px 22px 10px 12px; border: 0; border-radius: 999px; background: rgba(12, 22, 34, .86); color: #fff; font: 700 1rem/1.15 var(--font); text-align: left; cursor: pointer; transform: translateX(-50%); box-shadow: 0 14px 40px rgba(10, 22, 32, .35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: transform .2s var(--ease), background-color .2s; }
+.takebtn:hover { background: rgba(12, 22, 34, .96); transform: translateX(-50%) translateY(-2px); }
+.takebtn:focus-visible { outline: 3px solid var(--meta); outline-offset: 3px; }
+.takebtn .ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--meta); flex: none; animation: ping 1.8s ease-out infinite; }
+.takebtn .ico svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.takebtn small { display: block; margin-top: 2px; color: #b8c7d4; font-size: .8125rem; font-weight: 600; }
+.room-3d .watch .takebtn { display: inline-flex; }
+.watch .pad, .watch .card .keys, .watch .hint, .watch .card-acts, .watch .viewbtn:not(.fsbtn) { display: none !important; }
+.room-3d .watch .stage canvas.minimap { display: none; }
+@media (pointer: fine) { .pad { display: none !important; } }
+.labkeys { position: absolute; left: 50%; top: 18px; z-index: 3; display: none; gap: 6px 12px; margin: 0; padding: 8px 14px; border-radius: 999px; background: rgba(255, 255, 255, .9); color: var(--muted); font-size: .8125rem; font-weight: 600; white-space: nowrap; transform: translateX(-50%); box-shadow: 0 4px 14px rgba(28, 43, 51, .1); opacity: 0; transition: opacity .6s var(--ease); pointer-events: none; }
+.labkeys span { display: inline-flex; align-items: center; gap: 4px; }
+.labkeys i { font-style: normal; }
+.labkeys kbd { background: var(--soft); color: var(--ink); border: 1px solid var(--soft-2); padding: 3px 6px; border-radius: 6px; font: 700 .75rem/1 ui-monospace, monospace; }
+@media (pointer: fine) and (min-width: 900px) { .room-3d .labkeys { display: flex; } }
+.labkeys.on { opacity: 1; }
+.watch .labkeys { display: none !important; }
+@media (min-width: 761px) { .card { max-height: calc(100% - 250px); } }
+.card .cfacts { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 6px; margin: 12px 0 0; }
+.card .cfacts[hidden] { display: none; }
+.card .cfacts div { padding: 8px 10px; border-radius: 12px; background: var(--soft); }
+.card .cfacts span { display: block; color: var(--muted); font-size: .75rem; font-weight: 600; }
+.card .cfacts b { display: block; margin-top: 2px; font-size: .9375rem; font-weight: 800; letter-spacing: -.01em; }
+.snddock.in-stage { position: absolute; left: auto; right: 20px; bottom: 20px; z-index: 3; }
+.snddock.in-stage .sndbtn { min-height: 40px; box-shadow: 0 4px 14px rgba(28, 43, 51, .14); }
+@media (max-width: 760px) {
+  .snddock.in-stage { left: 12px; right: auto; bottom: 12px; }
+  .snddock.in-stage .sndbtn span { display: none; }
+  .snddock.in-stage .sndbtn { padding: 0 11px; }
+  .takebtn { left: 12px; top: 12px; transform: none; padding: 7px 16px 7px 8px; font-size: .9375rem; }
+  .takebtn:hover { transform: translateY(-2px); }
+  .takebtn small { font-size: .75rem; }
+}
+.takebtn .on-touch { display: none; }
+@media (pointer: coarse) { .takebtn .on-fine { display: none; } .takebtn .on-touch { display: block; } }
+@media (max-width: 760px) { .fsbtn { padding: 0 11px; } .fsbtn span { display: none; } .room-3d .stage .hint { left: auto; right: 12px; top: 62px; transform: none; max-width: 52%; white-space: normal; text-align: right; font-size: .8125rem; padding: 6px 12px; border-radius: 14px; } }
+@media (prefers-reduced-motion: reduce) { .stage.dive::after, .stage.rise::after { animation: none; } }
 </style>
 </head>
 <body>
@@ -1030,6 +1072,8 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         <button class="viewbtn fsbtn" id="fsBtn" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span id="fsTxt">Full screen</span></button>
         <canvas class="minimap" id="miniMap" width="168" height="120" aria-hidden="true"></canvas>
         <span class="cross" aria-hidden="true"></span>
+                <p class="keys labkeys" id="labKeys" aria-hidden="true"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <i data-es="mover">move</i></span><span><kbd>Shift</kbd> <i data-es="correr">run</i></span><span><kbd>Space</kbd> <i data-es="jetpack">jetpack</i></span><span><kbd>E</kbd> <i data-es="usar">use</i></span><span><kbd>V</kbd> <i data-es="vista">view</i></span></p>
+        <button class="takebtn" id="takeBtn" type="button"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span><span><span data-es="Toma el control">Take control</span><small class="on-fine" data-es="Entra a sus ojos · clic o W A S D">Step into its eyes · click or W A S D</small><small class="on-touch" data-es="Entra a sus ojos · toca la vista">Step into its eyes · tap the view</small></span></button>
         <div class="pad" role="group" aria-label="Move Agentztein" data-es-aria-label="Mover a Agentztein">
           <button class="pk jet" data-k="jet" aria-label="Jetpack (Space)" data-es-aria-label="Jetpack (Espacio)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1c2 2 3 4.500 3 7.500L8 11 5 8.500C5 5.500 6 3 8 1z"/><path d="M6 12.500c.4 1.200 1 2 2 2.500 1-.5 1.600-1.300 2-2.500z" opacity=".7"/></svg></button>
           <button class="pk up" data-k="f" aria-label="Forward" data-es-aria-label="Adelante"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3 3 9h10z"/></svg></button>
@@ -1049,13 +1093,14 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
           <div><dt id="cL1" data-es="Qué es">What it is</dt><dd id="cA" data-es="Ocho estaciones: la cuna donde despierta, una por cada benchmark de frontera que quiere superar y el taller central con todas sus herramientas.">Eight stations: the cradle where it wakes up, one for each frontier benchmark it wants to beat, and the central workshop with all its tools.</dd></div>
           <div><dt id="cL2" data-es="Cómo se usa">How to use it</dt><dd id="cB" data-es="Elige una estación y Agentztein va hacia ella para mostrarte qué mide.">Pick a station and Agentztein goes there to show you what it measures.</dd></div>
         </dl>
+        <div class="cfacts" id="cF" hidden></div>
         <div class="card-acts">
           <button class="btn run" id="actBtn" type="button" hidden><span data-es="Interactuar">Interact</span> <kbd>E</kbd></button>
           <button class="btn run" id="runBtn" hidden><span id="runTxt">Run an exercise</span> <kbd>R</kbd>
           </button>
           <button class="btn ghost run" id="benchBtn" type="button" hidden><span data-es="Abrir su laboratorio 3D">Open its 3D lab</span> <kbd>L</kbd></button>
         </div>
-        <p class="keys" aria-hidden="true"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <i data-es="mover">move</i></span><span><kbd>Shift</kbd> <i data-es="correr">run</i></span><span><kbd>Space</kbd> <i data-es="jetpack">jetpack</i></span><span><kbd>V</kbd> <i data-es="vista">view</i></span></p>
+
       </div>
     </div>
     <div class="picker" role="group" aria-label="Send Agentztein to a station" data-es-aria-label="Enviar a Agentztein a una estación">
@@ -1475,7 +1520,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     web: { c: "#3ccf6e", name: "BrowseComp", a: { en: "Whether it finds very hard-to-find information by browsing the web.", es: "Si encuentra información muy difícil de hallar navegando la web." }, b: { en: "Web.", es: "Web." } },
     research: { c: "#ff6600", name: { en: "MLE-bench & PaperBench", es: "MLE-bench y PaperBench" }, a: { en: "Whether it does AI research: solving machine learning competitions and replicating scientific papers.", es: "Si hace investigación de IA: resolver competencias de machine learning y replicar artículos científicos." }, b: { en: "Research.", es: "Investigación." } },
     horizon: { c: "#8a7dff", name: { en: "METR time horizon", es: "Horizonte de METR" }, a: { en: "How many hours of expert work it completes on its own. For the best models it has doubled every few months.", es: "Cuántas horas de trabajo experto completa solo. En los mejores modelos se ha duplicado cada pocos meses." }, b: { en: "Autonomy.", es: "Autonomía." } },
-    taller: { c: "#f2b01e", name: { en: "The central workshop", es: "El taller central" }, a: { en: "Every tool the agent can reach for, and its anatomy like an engine: one cylinder per skill it really has installed.", es: "Todas las herramientas que tiene a su alcance y su anatomía como un motor: un cilindro por cada habilidad que de verdad tiene instalada." }, b: { en: "Tools.", es: "Herramientas." } },
+    taller: { c: "#f2b01e", name: { en: "The central workshop", es: "El taller central" }, a: { en: "Every tool the agent can reach for, and its anatomy on a circuit board: brain, prompt, tools, loop, memory and harness.", es: "Todas las herramientas que tiene a su alcance y su anatomía en una placa de circuito: cerebro, prompt, herramientas, ciclo, memoria y arnés." }, b: { en: "Tools.", es: "Herramientas." } },
   };
   const MEASURES = { en: "What it measures", es: "Qué mide" }, TRAINS = { en: "Skill it trains", es: "Habilidad que entrena" };
   const picks = [...document.querySelectorAll(".pick")];
