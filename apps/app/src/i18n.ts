@@ -131,6 +131,7 @@ export const T = {
   why: { en: "Why", es: "Por qué" },
   comments: { en: "comments", es: "comentarios" },
   points: { en: "votes", es: "votos" },
+  stars: { en: "stars", es: "estrellas" },
   judgedBy: { en: "Judged from the headline by", es: "Juzgado por el titular con" },
   read: { en: "stories read", es: "historias leídas" },
   auth: {

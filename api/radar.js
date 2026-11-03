@@ -1,9 +1,10 @@
 // /api/radar: the research radar.
 //   GET   the user's past triage notes
 //   PATCH { id, decision } the person's call on an idea ("approved" or "rejected"): nothing goes to the lab without it
-//   POST  { provider?, lang?, effort? } read the most discussed AI stories on Hacker News this week and let the
+//   POST  { provider?, lang?, effort? } read the most discussed AI stories of the week (Hacker News, Reddit, GitHub) and let the
 //         user's own model decide, with a trade-off, which ones deserve an experiment in the lab.
-import { costOf, EFFORTS, familyOf, fetchAiStories, parseTriage, triagePrompt, TRIAGE_SYSTEM } from "@skillab/research";
+import { costOf, EFFORTS, familyOf, parseTriage, triagePrompt, TRIAGE_SYSTEM } from "@skillab/research";
+import { loadFeed } from "./_lib/feed.js";
 import { budgetOf, MAX_OUTPUT_TOKENS } from "./_lib/harness.js";
 import { requireUser } from "./_lib/auth.js";
 import { open } from "./_lib/crypto.js";
@@ -65,9 +66,9 @@ export const POST = handle(async (request) => {
 
   let stories;
   try {
-    stories = await fetchAiStories({ days: 7, minPoints: 40, limit: 12, signal: AbortSignal.timeout(10_000) });
+    ({ stories } = await loadFeed({ limit: 12 }));
   } catch {
-    throw new HttpError(502, "Hacker News did not answer; try again in a moment");
+    throw new HttpError(502, "The news sources did not answer; try again in a moment");
   }
   if (!stories.length) return json({ notes: [], read: 0 });
 
@@ -107,12 +108,12 @@ export const POST = handle(async (request) => {
       const { rows } = await client.query(
         `INSERT INTO app.research_notes (user_id, source, external_id, title, url, discussion_url, points, posted_at,
            capability, verdict, gain, cost, why, provider, model)
-         VALUES ($1, 'hackernews', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         VALUES ($1, $15, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
          ON CONFLICT (user_id, source, external_id) DO UPDATE SET title = EXCLUDED.title, points = EXCLUDED.points,
            capability = EXCLUDED.capability, verdict = EXCLUDED.verdict, gain = EXCLUDED.gain, cost = EXCLUDED.cost,
            why = EXCLUDED.why, provider = EXCLUDED.provider, model = EXCLUDED.model, created_at = now()
          RETURNING *`,
-        [user.id, s.id, s.title, s.url, s.hnUrl, s.points, s.postedAt, a.capability, a.verdict, a.gain, a.cost, a.why, row.provider, row.model],
+        [user.id, s.id, s.title, s.url, s.discussionUrl, s.points, s.postedAt, a.capability, a.verdict, a.gain, a.cost, a.why, row.provider, row.model, s.source],
       );
       saved.push(note(rows[0]));
     }
@@ -134,7 +135,7 @@ export const PATCH = handle(async (request) => {
   if (!id || !decision) throw new HttpError(400, "Send the idea and your decision");
   const { rows } = await db().query(
     `UPDATE app.research_notes SET decision = $3, decided_at = now()
-     WHERE user_id = $1 AND source = 'hackernews' AND external_id = $2 RETURNING *`,
+     WHERE user_id = $1 AND external_id = $2 RETURNING *`,
     [user.id, id, decision],
   );
   if (!rows[0]) throw new HttpError(404, "That idea isn't in your notes");

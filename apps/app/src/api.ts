@@ -24,6 +24,7 @@ export type SavedKey = { provider: string; hint: string; model: string | null; m
 export type Verdict = "experiment" | "watch" | "skip";
 export type Note = {
   id: string;
+  source: string;
   title: string;
   url: string | null;
   discussionUrl: string | null;
@@ -40,6 +41,17 @@ export type Note = {
   decision: "approved" | "rejected" | null;
   decidedAt: string | null;
 };
+export type SourceId = "hackernews" | "reddit" | "github";
+/** One item of /api/feed: what the tech communities discuss this week. */
+export type FeedItem = { id: string; source: SourceId; title: string; url: string | null; points: number; comments: number | null; postedAt: string; hint: string | null };
+export type Feed = { stories: FeedItem[]; sources: Record<SourceId, "ok" | "error" | "off"> };
+
+/** The public feed (no session needed), cached at the edge. */
+export async function loadFeed(signal?: AbortSignal): Promise<Feed> {
+  const res = await fetch("/api/feed", signal ? { signal } : {});
+  if (!res.ok) throw new Error(`feed ${res.status}`);
+  return (await res.json()) as Feed;
+}
 export type Budget = { monthly: number; spent: number; runs: number };
 export type Scores = Record<string, { correct: number; total: number }>;
 export type BenchScenario = {

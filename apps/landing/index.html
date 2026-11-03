@@ -388,6 +388,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .src-pill { display: inline-flex; align-items: center; gap: 12px; margin-top: 22px; padding: 10px 16px 10px 10px; border-radius: 18px; background: rgba(255, 255, 255, .86); box-shadow: 0 6px 24px rgba(28, 43, 51, .08); text-decoration: none; color: var(--ink); max-width: 100%; transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
 .src-pill:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(28, 43, 51, .12); }
 .src-row { display: inline-flex; flex: none; padding-left: 6px; }
+.src-row svg[hidden] { display: none; }
 .src-row svg { width: 34px; height: 34px; padding: 6px; margin-left: -8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .9), 0 2px 8px rgba(28, 43, 51, .12); }
 .src-pill b { display: block; font-size: 1rem; letter-spacing: -.01em; }
 .src-pill small { display: block; color: var(--muted); font-size: .875rem; line-height: 1.3; }
@@ -406,6 +407,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .feed-m { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--muted); font-size: .8125rem; }
 .feed-m a { text-decoration: none; } .feed-m a:hover { text-decoration: underline; }
 .feed-msg { color: var(--muted); }
+.feed-src { flex: none; }
 .feed-msg a { color: var(--blue); font-weight: 600; }
 .feedlist .sk { height: 40px; border-radius: 12px; border: 0; background: linear-gradient(90deg, #fff3ea, #fffaf6, #fff3ea); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
 @keyframes shimmer { to { background-position: -200% 0; } }
@@ -863,7 +865,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
         <a class="btn ghost" href="/app/"><span data-es="Crea tu cuenta">Create your account</span></a>
       </div>
       <a class="src-pill" href="#como-funciona">
-        <span class="src-row" role="img" aria-label="Y Combinator, Reddit, GitHub"><svg viewBox="0 0 24 24"><use href="#src-yc"/></svg><svg viewBox="0 0 24 24"><use href="#src-reddit"/></svg><svg viewBox="0 0 24 24"><use href="#src-github"/></svg></span>
+        <span class="src-row" aria-hidden="true"><svg data-src="hackernews" viewBox="0 0 24 24"><use href="#src-yc"/></svg><svg data-src="reddit" viewBox="0 0 24 24" hidden><use href="#src-reddit"/></svg><svg data-src="github" viewBox="0 0 24 24"><use href="#src-github"/></svg></span>
         <span><b data-es="Vigila a diario a la comunidad tech">Watches the tech community every day</b><small data-es="Investiga lo nuevo en IA y decide qué probar">Researches what's new in AI and decides what to try</small></span>
         <span class="live-dot" aria-hidden="true"></span>
       </a>

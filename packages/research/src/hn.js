@@ -6,18 +6,6 @@ export const HN_API = "https://hn.algolia.com/api/v1";
 /** Searches that cover what Agentztein watches: new models, agents, benchmarks and research. */
 export const HN_QUERIES = ["LLM", "AI agent", "benchmark", "AI model", "AI research"];
 
-/**
- * @typedef {object} Story
- * @property {string} id Hacker News item id
- * @property {string} title
- * @property {string | null} url Link of the story (null for Ask HN and similar)
- * @property {string} hnUrl Discussion thread on Hacker News
- * @property {number} points
- * @property {number} comments
- * @property {string} author
- * @property {string} postedAt ISO date
- * @property {import("./capabilities.js").Capability | null} hint Keyword guess, not a verdict
- */
 
 /**
  * URL of one search: stories from the last `days` with at least `minPoints`.
@@ -37,16 +25,17 @@ export function searchUrl(query, { days = 7, minPoints = 40, perQuery = 20, now 
 
 /**
  * @param {any} hit An Algolia hit
- * @returns {Story | null}
+ * @returns {import("./story.js").Story | null}
  */
 export function toStory(hit) {
   if (!hit || typeof hit.objectID !== "string" || typeof hit.title !== "string" || !hit.title.trim()) return null;
   const title = hit.title.trim();
   return {
     id: hit.objectID,
+    source: "hackernews",
     title,
     url: typeof hit.url === "string" && /^https?:\/\//.test(hit.url) ? hit.url : null,
-    hnUrl: `https://news.ycombinator.com/item?id=${encodeURIComponent(hit.objectID)}`,
+    discussionUrl: `https://news.ycombinator.com/item?id=${encodeURIComponent(hit.objectID)}`,
     points: Number(hit.points) || 0,
     comments: Number(hit.num_comments) || 0,
     author: typeof hit.author === "string" ? hit.author : "",
@@ -59,10 +48,10 @@ export function toStory(hit) {
  * Merges the hits of several searches: one entry per story, most points first.
  * @param {any[][]} hitLists
  * @param {number} limit
- * @returns {Story[]}
+ * @returns {import("./story.js").Story[]}
  */
 export function mergeStories(hitLists, limit) {
-  /** @type {Map<string, Story>} */
+  /** @type {Map<string, import("./story.js").Story>} */
   const byId = new Map();
   for (const hits of hitLists) {
     for (const hit of hits) {
@@ -76,7 +65,7 @@ export function mergeStories(hitLists, limit) {
 /**
  * Fetches the most discussed AI stories of the last days.
  * @param {{ days?: number, minPoints?: number, limit?: number, fetchImpl?: typeof fetch, signal?: AbortSignal }} [opts]
- * @returns {Promise<Story[]>}
+ * @returns {Promise<import("./story.js").Story[]>}
  */
 export async function fetchAiStories({ days = 7, minPoints = 40, limit = 12, fetchImpl = fetch, signal } = {}) {
   const lists = await Promise.all(

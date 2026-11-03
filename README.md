@@ -45,8 +45,8 @@ packages/scenarios   marco común + 5 escenarios de negocio (conciliación, manu
 packages/db          esquema Drizzle + migraciones (tablas append-only, esquema `sealed`)
 apps/panel           panel estático de solo lectura (Vite + React): validación del entorno, sin agentes aún
 apps/app             app con sesión (Vite + React) en /app/: acceso y registro con Google o correo + código, llave de Meta por usuario y radar de investigación
-api/                 funciones de Vercel: /api/config, /api/keys (llaves cifradas), /api/radar (Hacker News + triage con el modelo del usuario)
-packages/research    lógica compartida del radar: búsqueda en Hacker News, capacidades y triage (prompt + validación)
+api/                 funciones de Vercel: /api/config, /api/keys (llaves cifradas), /api/feed (noticias de IA de Hacker News, Reddit y GitHub, pública y en caché), /api/radar (esas noticias + triage con el modelo del usuario)
+packages/research    lógica compartida del radar: lectores de Hacker News, Reddit y GitHub, el feed que los mezcla, capacidades y triage (prompt + validación)
 apps/landing         landing de presentación: Agentztein en 3D (three.js); un edificio recorrible (cuna + un cuarto por benchmark, 1.ª/3.ª persona) y un laboratorio 3D por benchmark; `pnpm --filter @skillab/landing stills` regenera sus imágenes
 datasets/manifest.json  hashes de todos los splits (los datos se regeneran desde semillas)
 ```
@@ -103,6 +103,19 @@ arnés y la voz de Agentztein diciendo sus frases (en inglés y español). Para 
 pedirle texto propio) y la CDN guarda cada audio un año, así que cada uno se paga una sola vez. Sin llave, el
 sitio sintetiza sus propios efectos en el navegador y las frases solo salen en el globo de texto. El botón del
 altavoz (abajo a la izquierda) enciende y apaga el sonido; arranca al primer toque, salvo que lo hayas silenciado.
+
+**Fuentes del radar.** `/api/feed` lee en el servidor las historias de IA de la semana y las mezcla por turnos
+(la mejor de cada fuente, luego la segunda…); el navegador nunca llama a las fuentes directo. Cada fuente que
+falla o no está configurada se reporta en `sources` y las demás siguen respondiendo; la landing solo muestra el
+logo de una fuente que de verdad respondió.
+- **Hacker News:** API pública de Algolia, sin llave.
+- **GitHub:** repos creados en los últimos 7 días con los topics `llm` o `ai-agents`, por estrellas. Funciona sin
+  llave (10 búsquedas por minuto por IP); con `GITHUB_TOKEN` (un token fino, sin permisos, solo lectura pública)
+  el límite sube y no compite con otros sitios de Vercel.
+- **Reddit:** top de la semana de r/MachineLearning y r/LocalLLaMA. Reddit bloquea el tráfico sin OAuth y desde
+  noviembre de 2025 aprueba a mano las apps nuevas de su Data API: registra una app tipo *script* en
+  reddit.com/prefs/apps, espera la aprobación y agrega `REDDIT_CLIENT_ID` y `REDDIT_CLIENT_SECRET` en Vercel.
+  Sin ellas, Reddit queda `off` y su logo no aparece.
 
 **Solo modelos de Meta.** Cada usuario pega su llave de la **Meta Model API** (`https://api.meta.ai/v1`,
 compatible con OpenAI; se crea en dev.meta.ai). Es la que reemplazó a la Llama API (retirada el 6 jul 2026) y

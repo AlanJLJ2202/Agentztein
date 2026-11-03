@@ -1,10 +1,10 @@
 // The research radar: what the tech community is discussing this week, and what Agentztein decided about it.
-import { CAPABILITIES, EFFORTS, familyOf, fetchAiStories, type Story } from "@skillab/research";
+import { CAPABILITIES, EFFORTS, familyOf } from "@skillab/research";
 import { useEffect, useState } from "react";
-import { ApiError, type Api, type Budget, type Note, type SavedKey, type Verdict } from "./api.js";
+import { ApiError, loadFeed, type Api, type Budget, type FeedItem, type Note, type SavedKey, type Verdict } from "./api.js";
 import type { Tab } from "./App.js";
 import { T, useT, type Lang } from "./i18n.js";
-import { SourceMarks } from "./Logos.js";
+import { SourceMark, SourceMarks } from "./Logos.js";
 
 type Props = { client: Api; keys: SavedKey[] | null; onKeys: (k: SavedKey[]) => void; onNotes: (n: number) => void; go: (t: Tab) => void; lang: Lang };
 type Cap = keyof typeof CAPABILITIES;
@@ -24,7 +24,7 @@ function CapChip({ cap, lang }: { cap: string | null; lang: Lang }) {
 
 export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
   const t = useT();
-  const [stories, setStories] = useState<Story[] | null>(null);
+  const [stories, setStories] = useState<FeedItem[] | null>(null);
   const [liveError, setLiveError] = useState(false);
   const [notes, setNotes] = useState<Note[] | null>(null);
   const [filter, setFilter] = useState<Verdict | "all">("all");
@@ -44,7 +44,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
 
   useEffect(() => {
     const ctl = new AbortController();
-    fetchAiStories({ limit: 10, signal: ctl.signal }).then(setStories).catch(() => !ctl.signal.aborted && setLiveError(true));
+    loadFeed(ctl.signal).then((f) => setStories(f.stories.slice(0, 10))).catch(() => !ctl.signal.aborted && setLiveError(true));
     client.notes().then((r) => { setNotes(r.notes); onNotes(r.notes.length); }).catch(() => setNotes([]));
     return () => ctl.abort();
   }, [client, onNotes]);
@@ -170,7 +170,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
                     )
                   )}
                   <p className="meta">
-                    {n.points ?? 0} {t(T.points)} · {t(T.judgedBy)} {n.model} · {ago(n.assessedAt, lang)}
+                    <SourceMark source={n.source} /> {n.points ?? 0} {n.source === "github" ? t(T.stars) : t(T.points)} · {t(T.judgedBy)} {n.model} · {ago(n.assessedAt, lang)}
                   </p>
                 </li>
               ))}
@@ -190,7 +190,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
                 <li key={s.id}>
                   <a href={s.url ?? undefined} target="_blank" rel="noreferrer">{s.title}</a>
                   <p className="meta">
-                    <CapChip cap={s.hint} lang={lang} /> {s.points} {t(T.points)} · {s.comments} {t(T.comments)} · {ago(s.postedAt, lang)}
+                    <SourceMark source={s.source} /> <CapChip cap={s.hint} lang={lang} /> {s.points} {s.source === "github" ? t(T.stars) : t(T.points)} · {s.comments != null && <>{s.comments} {t(T.comments)} · </>} {ago(s.postedAt, lang)}
                   </p>
                 </li>
               ))}

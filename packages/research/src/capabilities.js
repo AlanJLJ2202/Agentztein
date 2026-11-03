@@ -1,5 +1,5 @@
 // The capabilities Agentztein trains and the benchmark (lab station) that measures each one.
-// Shared by the landing (live Hacker News feed), the app and the API (research triage).
+// Shared by the landing (live news feed), the app and the API (research triage).
 
 /** @typedef {"code" | "terminal" | "reasoning" | "web" | "research" | "autonomy"} Capability */
 /** @typedef {"swe" | "terminal" | "arc" | "web" | "research" | "horizon"} Benchmark */

@@ -10,6 +10,7 @@ import type * as ConfigApi from "../../api/config.js";
 import type * as KeysApi from "../../api/keys.js";
 import type * as RadarApi from "../../api/radar.js";
 import type * as LimitsApi from "../../api/limits.js";
+import type * as FeedApi from "../../api/feed.js";
 import pg from "pg";
 
 const SECRET = "x".repeat(40);
@@ -88,6 +89,7 @@ describe.skipIf(!hasDatabase)("endpoints (Postgres)", () => {
   let radar: typeof RadarApi;
   let config: typeof ConfigApi;
   let limits: typeof LimitsApi;
+  let feed: typeof FeedApi;
   let dbUrl = "";
   const calls: Array<{ url: string; body?: unknown }> = [];
   let who = USER;
@@ -125,7 +127,7 @@ describe.skipIf(!hasDatabase)("endpoints (Postgres)", () => {
       }
       return new Response("unexpected " + url, { status: 500 });
     });
-    [keys, radar, config, limits] = await Promise.all([import("../../api/keys.js"), import("../../api/radar.js"), import("../../api/config.js"), import("../../api/limits.js")]);
+    [keys, radar, config, limits, feed] = await Promise.all([import("../../api/keys.js"), import("../../api/radar.js"), import("../../api/config.js"), import("../../api/limits.js"), import("../../api/feed.js")]);
   });
 
   afterAll(async () => {
@@ -184,7 +186,17 @@ describe.skipIf(!hasDatabase)("endpoints (Postgres)", () => {
     expect((await keys.POST(req("/api/keys", "POST", { provider: "acme", key: "k".repeat(30) }))).status).toBe(400);
   });
 
-  it("reads Hacker News, triages with the user's key and remembers the notes", async () => {
+  it("serves the public feed with each source's status, cached at the edge and without discussion links", async () => {
+    const res = await feed.GET(req("/api/feed"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toContain("s-maxage");
+    const out = await res.json();
+    // Reddit has no credentials in tests and the fake GitHub doesn't answer: the feed still comes from the rest
+    expect(out.sources).toEqual({ hackernews: "ok", reddit: "off", github: "error" });
+    expect(out.stories[0]).toEqual({ id: "501", source: "hackernews", title: "A terminal agent that reads errors", url: "https://ex.com/t", points: 200, comments: 40, postedAt: "2026-11-01T00:00:00Z", hint: "terminal" });
+  });
+
+  it("reads the news sources, triages with the user's key and remembers the notes", async () => {
     const res = await radar.POST(req("/api/radar", "POST", { lang: "es", effort: "medium" }));
     expect(res.status).toBe(200);
     const out = await res.json();
@@ -199,7 +211,7 @@ describe.skipIf(!hasDatabase)("endpoints (Postgres)", () => {
 
     const history = await (await radar.GET(req("/api/radar"))).json();
     expect(history.notes).toHaveLength(2);
-    expect(history.notes[0]).toMatchObject({ discussionUrl: "https://news.ycombinator.com/item?id=501", capability: "terminal", decision: null });
+    expect(history.notes[0]).toMatchObject({ source: "hackernews", discussionUrl: "https://news.ycombinator.com/item?id=501", capability: "terminal", decision: null });
     // the harness logged the call with Meta's real token counts: 2000 × $1.25 + 800 × $4.25 per million
     expect(out.cost).toBeCloseTo(0.0059, 6);
     const spend = await (await limits.GET(req("/api/limits"))).json();
