@@ -88,6 +88,26 @@ export function renderStill(canvas, which, size = 900) {
       scene.updateMatrixWorld(true);
       scene.children.filter((o) => o.userData.body).forEach((ch) => ch.lookAt(camera.position.x, ch.position.y, camera.position.z));
     } else if (which === "step0") {
+      // measures itself: reads the sheet of its practice exam, with a stopwatch
+      u.look.set(-0.85, 0.15);
+      awake(agent, "think");
+      setArms(agent, -1.25, 0.2, 0.15, 0);
+      paintScreen(u.screenTex, "pulse", 0.6);
+      const paper = makePaper([["Q1", "✓"], ["Q2", "✓"], ["Q3", "✗"], ["Q4", "✓"], ["Q5", "✓"]], { title: "Practice exam", bad: -1 });
+      paper.position.set(-1.35, 1.75, 0.6); paper.rotation.set(0, 0.45, 0.04);
+      const watch = new THREE.Group();
+      const face = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.1, 40), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }));
+      face.rotation.x = Math.PI / 2;
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.045, 12, 48), new THREE.MeshStandardMaterial({ color: C.meta, roughness: 0.3 }));
+      const hand = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.26, 0.03), new THREE.MeshStandardMaterial({ color: C.ink }));
+      hand.geometry.translate(0, 0.12, 0); hand.position.z = 0.07; hand.rotation.z = -0.9;
+      const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.12, 12), new THREE.MeshStandardMaterial({ color: C.ink }));
+      knob.position.y = 0.42;
+      watch.add(face, rim, hand, knob);
+      watch.position.set(1.35, 2.0, 0.5); watch.rotation.y = -0.35; watch.scale.setScalar(1.2);
+      scene.add(paper, watch);
+      look(0, 2.1, 8.4, 0, 1.6, 0);
+    } else if (which === "step1") {
       // researches: reads the week's AI news on Hacker News and sorts each idea
       u.look.set(-0.85, 0.2);
       awake(agent, "think");
@@ -115,7 +135,7 @@ export function renderStill(canvas, which, size = 900) {
       tags[0].userData.body.material.emissiveIntensity = 0.5;
       scene.add(news, ...tags);
       look(0, 2.1, 8.4, 0, 1.6, 0);
-    } else if (which === "step1") {
+    } else if (which === "step2") {
       // learns from its mistakes: a page of results with one wrong row
       u.look.set(-0.9, 0.1);
       awake(agent, "think");
@@ -133,7 +153,7 @@ export function renderStill(canvas, which, size = 900) {
       glass.position.set(-1.3, 1.58, 0.8); glass.rotation.set(0, 0.45, 0.5);
       scene.add(paper, x, glass);
       look(-0.45, 2.1, 7.0, -0.45, 1.5, 0);
-    } else if (which === "step2") {
+    } else if (which === "step3") {
       // tests the new skill in the lab: a coil fires through it
       u.look.set(0.9, 0.25);
       awake(agent, "idle");
@@ -148,7 +168,7 @@ export function renderStill(canvas, which, size = 900) {
       const top = new THREE.Vector3(); coil.userData.top.getWorldPosition(top);
       [0.3, 0.38].forEach((j) => { const b = makeBolt(); b.update(top, chip.position.clone().add(new THREE.Vector3(0.1, 0.05, 0)), j); scene.add(b); });
       look(0.3, 2.1, 7.0, 0.3, 1.5, 0);
-    } else if (which === "step3") {
+    } else if (which === "step4") {
       // keeps it: the new piece is sewn on and it lights up
       u.look.set(0.15, 0.3);
       awake(agent, "happy");
@@ -167,7 +187,7 @@ export function renderStill(canvas, which, size = 900) {
         scene.add(spark);
       }
       look(0, 2.0, 6.8, 0, 1.55, 0);
-    } else if (which === "step4") {
+    } else if (which === "step5") {
       // keeps up to date: the rules changed, so that skill goes back to the lab
       u.look.set(-0.85, 0.15);
       awake(agent, "think");

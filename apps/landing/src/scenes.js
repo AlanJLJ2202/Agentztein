@@ -61,6 +61,31 @@ const table = (x, w) => `<rect x="${x}" y="300" width="${w}" height="12" rx="4" 
 
 /* ================= The cycle ================= */
 
+function measureBench(L) {
+  // 40 answers of a practice exam: 26 right, 14 wrong (an illustration, not a result)
+  const wrong = new Set([2, 5, 9, 11, 14, 17, 18, 22, 25, 29, 31, 34, 36, 39]);
+  let cells = "";
+  for (let i = 0; i < 40; i++) {
+    const x = (i % 8) * 34, y = Math.floor(i / 8) * 34;
+    const bad = wrong.has(i);
+    cells += `<g class="a-pop"${d(0.04 * i)}>${rect(x, y, 28, 28, bad ? BADBG : OKBG, { r: 7 })}${bad ? `<path d="M${x + 9} ${y + 9} l10 10 M${x + 19} ${y + 9} l-10 10" stroke="${BAD}" stroke-width="2.5" stroke-linecap="round"/>` : `<path d="M${x + 7} ${y + 15} l6 6 10 -12" stroke="${OK}" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`}</g>`;
+  }
+  let body = `<g transform="translate(34 66)"><rect x="-10" y="-8" width="292" height="248" rx="16" fill="#fff" stroke="#e1e7ed" stroke-width="2"/>
+    ${t(6, 12, L("Practice exam: 40 answers", "Examen de práctica: 40 respuestas"), { size: 13, weight: 800 })}
+    <g transform="translate(6 28)">${cells}</g></g>`;
+  body += `<g transform="translate(350 66)">
+    ${rect(0, 0, 250, 124, "#fff", { r: 16, stroke: "#e1e7ed" })}
+    ${t(18, 28, L("Baseline (starting point)", "Línea base (punto de partida)"), { size: 12.5, weight: 800, fill: VIOLET })}
+    ${t(18, 82, "26 / 40", { size: 44, weight: 800 })}
+    ${t(18, 106, L("correct, with the skills it has today", "correctas, con las habilidades que tiene hoy"), { size: 11.5, weight: 600, fill: MUTED })}
+  </g>`;
+  body += chip(350, 206, L("Time: 3 min 10 s", "Tiempo: 3 min 10 s"), "#9aa8b5", { cls: "a-pop", delay: 1.4, w: 250 });
+  body += chip(350, 248, L("Cost: $0.04 of your budget", "Costo: $0.04 de tu presupuesto"), AMBER, { cls: "a-pop", delay: 1.8, w: 250 });
+  body += chip(350, 290, L("Active skills used: 1", "Habilidades activas usadas: 1"), VIOLET, { cls: "a-pop", delay: 2.2, w: 250, fill: "#f6f3ff" });
+  return room(L("Measuring bench", "Banco de medición"), VIOLET, body,
+    L("Measuring bench: a practice exam of 40 answers, 26 marked correct in green and 14 wrong in red. A card shows the baseline, 26 of 40, plus the time it took, its cost and the number of active skills it used. This is an illustration, not a result.", "Banco de medición: un examen de práctica de 40 respuestas, 26 marcadas como correctas en verde y 14 como incorrectas en rojo. Una tarjeta muestra la línea base, 26 de 40, además del tiempo que tardó, su costo y cuántas habilidades activas usó. Es una ilustración, no un resultado."));
+}
+
 function researchDesk(L) {
   const rows = [
     ["Tree search for game-playing agents", L("Experiment", "Experimentar"), VIOLET, "#efeaff"],
@@ -316,7 +341,7 @@ function horizonLab(L) {
   return room(L("Time-horizon observatory", "Observatorio del horizonte"), "#8a7dff", body, L("METR time-horizon lab: a chart with task length for a skilled person on a log scale (1 minute to 1 day) and success rate from 0 to 100%. A newer model's S-shaped curve sits to the right of an older one; where it crosses 50% is its time horizon.", "Laboratorio del horizonte de METR: una gráfica con la duración de la tarea para una persona experta en escala logarítmica (de 1 minuto a 1 día) y la tasa de éxito de 0 a 100%. La curva en S de un modelo más nuevo queda a la derecha de una vieja; donde cruza el 50% es su horizonte de tiempo."));
 }
 
-const STEP_SCENES = [researchDesk, failureLab, testChamber, sewingBench, versionArchive];
+const STEP_SCENES = [measureBench, researchDesk, failureLab, testChamber, sewingBench, versionArchive];
 const BENCH_SCENES = { swe: sweLab, terminal: terminalLab, arc: arcLab, web: webLab, research: researchLab, horizon: horizonLab };
 
 /** @param {number} i @param {"en"|"es"} lang */

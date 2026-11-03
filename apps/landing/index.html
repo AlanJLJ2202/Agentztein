@@ -414,7 +414,14 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .sheet .dlg-live li { padding: 0 0 10px; background: none; border-radius: 0; }
 .sheet .dlg-live li::before { content: none; }
 
-/* ---------- The cycle: a ring of five phases around Agentztein ---------- */
+/* ---------- The cycle: a ring of six phases around Agentztein ---------- */
+.gloss { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 14px; }
+.gloss > div { padding: 16px 18px; border-radius: 18px; background: #fff; border: 1px solid var(--soft-2); }
+.gloss dt { font-weight: 800; font-size: 1.0625rem; margin-bottom: 4px; }
+.gloss dd { margin: 0; color: var(--muted); font-size: .9375rem; line-height: 1.5; }
+.gnote { margin: 0 0 28px; padding: 12px 16px; border-radius: 14px; background: var(--amber-bg); color: var(--amber); font-size: .9375rem; line-height: 1.45; font-weight: 600; }
+@media (max-width: 900px) { .gloss { grid-template-columns: minmax(0, 1fr); } }
+
 .loop { --c: var(--meta); display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(24px, 4vw, 64px); align-items: center; }
 .ring { position: relative; width: min(100%, 580px); aspect-ratio: 1; margin: 0 auto; }
 .ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
@@ -422,7 +429,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .ring-svg .chev { fill: none; stroke: #b7c2ce; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .ring-svg .runner { transform-origin: 200px 200px; transform: rotate(var(--from, 0deg)); transition: transform .5s var(--ease); }
 .running .ring-svg .runner { animation: seg 7s linear forwards; }
-@keyframes seg { from { transform: rotate(var(--from, 0deg)); } to { transform: rotate(calc(var(--from, 0deg) + 72deg)); } }
+@keyframes seg { from { transform: rotate(var(--from, 0deg)); } to { transform: rotate(calc(var(--from, 0deg) + 60deg)); } }
 .ring-svg .runner circle { fill: var(--c); transition: fill .4s var(--ease); }
 .core { position: absolute; left: 50%; top: 50%; width: 62%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 55%, #ffffff 0%, #eef4fa 60%, #e1eaf3 100%); box-shadow: inset 0 0 0 6px #fff, 0 20px 50px rgba(28, 43, 51, .12), 0 0 0 3px var(--c); transition: box-shadow .4s var(--ease); touch-action: pan-y; }
 .pv { position: absolute; inset: 0; margin: 0; opacity: 0; visibility: hidden; transition: opacity .5s var(--ease), visibility 0s .5s; }
@@ -835,75 +842,92 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   <div class="wrap">
     <div class="head ent">
       <h2 data-es="Así se desarrolla sola">How it builds itself</h2>
-      <p class="lead" data-es="Un ciclo de cinco fases que nunca termina: cuando acaba la quinta, vuelve a investigar.">A five-phase cycle that never ends: after the fifth, it goes back to researching.</p>
+      <p class="lead" data-es="Un ciclo de seis fases que nunca termina: cuando acaba la sexta, vuelve a medirse.">A six-phase cycle that never ends: after the sixth, it measures itself again.</p>
     </div>
-    <div class="loop ent" id="cycle" style="--c:#ff6600">
+    <dl class="gloss ent">
+      <div><dt data-es="Habilidad">Skill</dt><dd data-es="Un párrafo corto de instrucciones escritas (hasta 1,500 caracteres) que el agente suma a su prompt en una situación concreta. Por ejemplo: «en un juego nuevo, mueve una pieza y observa antes de buscar en la web». Es texto, no código nuevo: el modelo no se modifica.">A short paragraph of written instructions (up to 1,500 characters) that the agent adds to its prompt in one specific situation. For example: “in a brand-new game, move a piece and watch before searching the web”. It is text, not new code: the model itself is never modified.</dd></div>
+      <div><dt data-es="Examen">Exam</dt><dd data-es="Un conjunto fijo de tareas con respuesta correcta conocida, para poder calificar cada respuesta como bien o mal. Hay tres: de práctica (de ahí aprende), de validación (con él prueba mejoras) y uno sellado que solo se corre al final.">A fixed set of tasks with a known correct answer, so every answer can be scored right or wrong. There are three: practice (it learns from it), validation (it tests improvements on it) and a sealed one that only runs at the end.</dd></div>
+      <div><dt data-es="Línea base">Baseline</dt><dd data-es="La calificación que saca hoy, antes de cambiar nada. Toda mejora se compara contra ese número.">The score it gets today, before changing anything. Every improvement is compared against that number.</dd></div>
+    </dl>
+    <p class="gnote ent" data-es="Qué funciona hoy: en la app, con tu propia llave de Meta, las fases 1 a 5 corren de verdad sobre cinco ejercicios de negocio sintéticos (por ejemplo, etiquetar movimientos bancarios). Correrlas sobre los benchmarks públicos del laboratorio (SWE-bench, Terminal-Bench…) es la meta: todavía no hay resultados en ninguno.">What works today: in the app, with your own Meta key, phases 1 to 5 really run on five synthetic business exercises (for example, labeling bank transactions). Running them on the public benchmarks in the lab (SWE-bench, Terminal-Bench…) is the goal: there are no results on any of them yet.</p>
+    <div class="loop ent" id="cycle" style="--c:#6d5ce8">
       <div class="ring">
         <svg class="ring-svg" viewBox="0 0 400 400" aria-hidden="true">
           <circle class="track" cx="200" cy="200" r="176"/>
-          <path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(-54 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(18 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(90 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(162 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(234 200 200) translate(376 200) rotate(90)"/>
+          <path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(-60 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(0 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(60 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(120 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(180 200 200) translate(376 200) rotate(90)"/><path class="chev" d="M-6 -5 L1 0 L-6 5" transform="rotate(240 200 200) translate(376 200) rotate(90)"/>
           <g class="runner"><circle cx="200" cy="24" r="7"/></g>
         </svg>
         <div class="core">
           <figure class="pv on" data-phase="0">
-            <img src="img/step0.webp" width="900" height="900" alt="Agentztein reads a Hacker News page with four AI headlines; next to it float three tags: Try it, Watch and Skip." data-es-alt="Agentztein lee una página de Hacker News con cuatro titulares de IA; a su lado flotan tres etiquetas: Probar, Vigilar y Descartar." />
+            <img src="img/step0.webp" width="900" height="900" alt="Agentztein reads its practice exam sheet: four answers are marked correct and one wrong, with a stopwatch next to it." data-es-alt="Agentztein lee la hoja de su examen de práctica: cuatro respuestas marcadas como correctas y una como incorrecta, con un cronómetro al lado." />
           </figure>
           <figure class="pv" data-phase="1">
-            <img src="img/step1.webp" width="900" height="900" alt="Agentztein checks its test sheet with a magnifying glass: one puzzle failed, marked with a red X." data-es-alt="Agentztein revisa con una lupa la hoja de sus pruebas: falló un acertijo, marcado con una X roja." loading="lazy" />
+            <img src="img/step1.webp" width="900" height="900" alt="Agentztein reads a Hacker News page with four AI headlines; next to it float three tags: Try it, Watch and Skip." data-es-alt="Agentztein lee una página de Hacker News con cuatro titulares de IA; a su lado flotan tres etiquetas: Probar, Vigilar y Descartar." loading="lazy" />
           </figure>
           <figure class="pv" data-phase="2">
-            <img src="img/step2.webp" width="900" height="900" alt="Agentztein holds out a new skill chip while a Tesla coil fires lightning through it to test it." data-es-alt="Agentztein sostiene una ficha nueva mientras una bobina de Tesla le lanza rayos para probarla." loading="lazy" />
+            <img src="img/step2.webp" width="900" height="900" alt="Agentztein checks its test sheet with a magnifying glass: one puzzle failed, marked with a red X." data-es-alt="Agentztein revisa con una lupa la hoja de sus pruebas: falló un acertijo, marcado con una X roja." loading="lazy" />
           </figure>
           <figure class="pv" data-phase="3">
-            <img src="img/step3.webp" width="900" height="900" alt="Agentztein celebrates with its arms up: the new chip is already sewn onto its body and there is confetti." data-es-alt="Agentztein celebra con los brazos arriba: la ficha nueva ya está cosida en su cuerpo y hay confeti." loading="lazy" />
+            <img src="img/step3.webp" width="900" height="900" alt="Agentztein holds out a new skill chip while a Tesla coil fires lightning through it to test it." data-es-alt="Agentztein sostiene una ficha nueva mientras una bobina de Tesla le lanza rayos para probarla." loading="lazy" />
           </figure>
           <figure class="pv" data-phase="4">
-            <img src="img/step4.webp" width="900" height="900" alt="Agentztein reads the sheet of a new benchmark version; one of its chips comes off in amber, labeled Review." data-es-alt="Agentztein lee la hoja de un benchmark en versión nueva; una de sus fichas se separa en ámbar con la etiqueta Review." loading="lazy" />
+            <img src="img/step4.webp" width="900" height="900" alt="Agentztein celebrates with its arms up: the new chip is already sewn onto its body and there is confetti." data-es-alt="Agentztein celebra con los brazos arriba: la ficha nueva ya está cosida en su cuerpo y hay confeti." loading="lazy" />
+          </figure>
+          <figure class="pv" data-phase="5">
+            <img src="img/step5.webp" width="900" height="900" alt="Agentztein reads the sheet of a new benchmark version; one of its chips comes off in amber, labeled Review." data-es-alt="Agentztein lee la hoja de un benchmark en versión nueva; una de sus fichas se separa en ámbar con la etiqueta Review." loading="lazy" />
           </figure>
         </div>
-          <span class="say on" data-phase="0" data-es="¿«Búsqueda en árbol»? Vale un experimento.">“Tree search”? Worth an experiment.</span>
-          <span class="say" data-phase="1" data-es="3 de 3 fallas: el mismo patrón.">3 of 3 failures: same pattern.</span>
-          <span class="say" data-phase="2" data-es="¿Mejora sin romper nada?">Does it help without breaking anything?</span>
-          <span class="say" data-phase="3" data-es="¡Me la quedo!">I'm keeping it!</span>
-          <span class="say" data-phase="4" data-es="Cambiaron las reglas: reviso.">The rules changed: I'll review.</span>
+          <span class="say on" data-phase="0" data-es="Primero me mido: ¿cuánto acierto hoy?">First I measure myself: how much do I get right today?</span>
+          <span class="say" data-phase="1" data-es="¿«Búsqueda en árbol»? Vale un experimento.">“Tree search”? Worth an experiment.</span>
+          <span class="say" data-phase="2" data-es="3 de 3 respuestas mal: el mismo patrón.">3 of 3 wrong answers: same pattern.</span>
+          <span class="say" data-phase="3" data-es="¿Sube mi calificación sin romper nada?">Does my score go up without breaking anything?</span>
+          <span class="say" data-phase="4" data-es="Pasó la prueba: activo la habilidad.">It passed the test: I switch the skill on.</span>
+          <span class="say" data-phase="5" data-es="Cambiaron las reglas: repruebo solo lo afectado.">The rules changed: I re-test only what's affected.</span>
         <ol class="nodes" role="tablist" aria-label="Phases" data-es-aria-label="Fases">
-          <li role="presentation" style="left:50.00%;top:6.00%"><button class="ctab" role="tab" type="button" id="ct0" aria-controls="cp0" aria-selected="true" data-phase="0" style="--c:#ff6600"><b>1</b><span data-es="Investiga">Research</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-          <li role="presentation" style="left:91.85%;top:36.40%"><button class="ctab" role="tab" type="button" id="ct1" aria-controls="cp1" aria-selected="false" data-phase="1" style="--c:#f0533c"><b>2</b><span data-es="Errores">Mistakes</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-          <li role="presentation" style="left:75.86%;top:85.60%"><button class="ctab" role="tab" type="button" id="ct2" aria-controls="cp2" aria-selected="false" data-phase="2" style="--c:#0081fb"><b>3</b><span data-es="Prueba">Test</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-          <li role="presentation" style="left:24.14%;top:85.60%"><button class="ctab" role="tab" type="button" id="ct3" aria-controls="cp3" aria-selected="false" data-phase="3" style="--c:#22b864"><b>4</b><span data-es="Se la queda">Keep</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-          <li role="presentation" style="left:8.15%;top:36.40%"><button class="ctab" role="tab" type="button" id="ct4" aria-controls="cp4" aria-selected="false" data-phase="4" style="--c:#ffa928"><b>5</b><span data-es="Al día">Update</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:50.00%;top:8.00%"><button class="ctab" role="tab" type="button" id="ct0" aria-controls="cp0" aria-selected="true" data-phase="0" style="--c:#6d5ce8"><b>1</b><span data-es="Se mide">Measures</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:86.37%;top:29.00%"><button class="ctab" role="tab" type="button" id="ct1" aria-controls="cp1" aria-selected="false" data-phase="1" style="--c:#ff6600"><b>2</b><span data-es="Investiga">Research</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:86.37%;top:71.00%"><button class="ctab" role="tab" type="button" id="ct2" aria-controls="cp2" aria-selected="false" data-phase="2" style="--c:#f0533c"><b>3</b><span data-es="Errores">Mistakes</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:50.00%;top:92.00%"><button class="ctab" role="tab" type="button" id="ct3" aria-controls="cp3" aria-selected="false" data-phase="3" style="--c:#0081fb"><b>4</b><span data-es="Prueba">Test</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:13.63%;top:71.00%"><button class="ctab" role="tab" type="button" id="ct4" aria-controls="cp4" aria-selected="false" data-phase="4" style="--c:#22b864"><b>5</b><span data-es="Se activa">Activate</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:13.63%;top:29.00%"><button class="ctab" role="tab" type="button" id="ct5" aria-controls="cp5" aria-selected="false" data-phase="5" style="--c:#ffa928"><b>6</b><span data-es="Al día">Update</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
         </ol>
       </div>
       <div class="ctext">
         <article class="pt on" role="tabpanel" id="cp0" aria-labelledby="ct0" data-phase="0">
-          <p class="kick" data-es="Fase 1 de 5">Phase 1 of 5</p>
-          <h3 data-es="Investiga">Researches</h3>
-          <p data-es="Lee lo nuevo en IA y elige qué vale la pena probar.">Reads what's new in AI and picks what's worth trying.</p>
+          <p class="kick" data-es="Fase 1 de 6">Phase 1 of 6</p>
+          <h3 data-es="Se mide">Measures itself</h3>
+          <p data-es="Antes de cambiar nada, contesta un examen de práctica con las habilidades que ya tiene y guarda cada respuesta, cuánto tardó y cuánto costó. Esa calificación es la línea base: sin ella no habría forma de saber después si algo mejoró.">Before changing anything, it takes a practice exam with the skills it already has and records every answer, how long it took and what it cost. That score is the baseline: without it, nobody could tell later whether something improved.</p>
           <button class="more" type="button" data-step="0"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <article class="pt" role="tabpanel" id="cp1" aria-labelledby="ct1" data-phase="1">
-          <p class="kick" data-es="Fase 2 de 5">Phase 2 of 5</p>
-          <h3 data-es="Aprende de sus errores">Learns from its mistakes</h3>
-          <p data-es="Agrupa sus fallas y escribe una habilidad para la más común.">Groups its failures and writes one skill for the most common.</p>
+          <p class="kick" data-es="Fase 2 de 6">Phase 2 of 6</p>
+          <h3 data-es="Investiga">Researches</h3>
+          <p data-es="Lee las historias de IA más comentadas en Hacker News y, juzgando titular y fuente de cada una, decide si merece un experimento, solo vigilarla o descartarla.">Reads the most discussed AI stories on Hacker News and, judging each headline and source, decides whether it deserves an experiment, a watch or a skip.</p>
           <button class="more" type="button" data-step="1"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <article class="pt" role="tabpanel" id="cp2" aria-labelledby="ct2" data-phase="2">
-          <p class="kick" data-es="Fase 3 de 5">Phase 3 of 5</p>
-          <h3 data-es="La pone a prueba">Tests it</h3>
-          <p data-es="Candidata contra la versión actual, en tareas nuevas y viejas.">Candidate against the current version, on new and old tasks.</p>
+          <p class="kick" data-es="Fase 3 de 6">Phase 3 of 6</p>
+          <h3 data-es="Aprende de sus errores">Learns from its mistakes</h3>
+          <p data-es="Toma las preguntas del examen que falló, las agrupa por patrón y escribe una habilidad nueva (un texto corto de instrucciones) dirigida al patrón más común.">Takes the exam questions it got wrong, groups them by pattern and writes one new skill (a short text of instructions) aimed at the most common pattern.</p>
           <button class="more" type="button" data-step="2"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <article class="pt" role="tabpanel" id="cp3" aria-labelledby="ct3" data-phase="3">
-          <p class="kick" data-es="Fase 4 de 5">Phase 4 of 5</p>
-          <h3 data-es="Se la queda">Keeps it</h3>
-          <p data-es="Solo si mejora, no rompe nada y una persona la aprueba.">Only if it improves, breaks nothing and a person approves it.</p>
+          <p class="kick" data-es="Fase 4 de 6">Phase 4 of 6</p>
+          <h3 data-es="Prueba la habilidad nueva">Tests the new skill</h3>
+          <p data-es="Contesta un segundo examen dos veces: con sus habilidades actuales y con la nueva añadida. Solo avanza si la calificación sube y nada de lo que ya funcionaba falla.">Answers a second exam twice: with its current skills, and with the new one added. It only moves on if the score goes up and nothing that used to work now fails.</p>
           <button class="more" type="button" data-step="3"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <article class="pt" role="tabpanel" id="cp4" aria-labelledby="ct4" data-phase="4">
-          <p class="kick" data-es="Fase 5 de 5">Phase 5 of 5</p>
-          <h3 data-es="Se mantiene al día">Keeps up to date</h3>
-          <p data-es="Si un benchmark cambia, solo las habilidades afectadas vuelven a revisión.">If a benchmark changes, only the affected skills go back to review.</p>
+          <p class="kick" data-es="Fase 5 de 6">Phase 5 of 6</p>
+          <h3 data-es="Se activa con aprobación">Switches on, with approval</h3>
+          <p data-es="Si la habilidad nueva pasó la prueba y una persona la aprueba, se activa: se guarda como versión nueva, etiquetada con dónde aplica y con qué reglas se probó, y se añade al prompt cada vez que aparece esa situación.">If the new skill passed the test and a person approves it, it becomes active: it is saved as a new version, labeled with where it applies and under which rules it was tested, and added to the prompt whenever that situation appears.</p>
           <button class="more" type="button" data-step="4"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        </article>
+        <article class="pt" role="tabpanel" id="cp5" aria-labelledby="ct5" data-phase="5">
+          <p class="kick" data-es="Fase 6 de 6">Phase 6 of 6</p>
+          <h3 data-es="Se mantiene al día">Keeps up to date</h3>
+          <p data-es="Cuando un benchmark cambia sus reglas, solo las habilidades etiquetadas para ese cambio vuelven a la fase 4 para probarse de nuevo. Las demás siguen funcionando y las versiones viejas se guardan.">When a benchmark changes its rules, only the skills labeled for that change go back to phase 4 to be tested again. The rest keep working, and old versions are saved.</p>
+          <button class="more" type="button" data-step="5"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <div class="cctl">
           <button class="cbtn" type="button" id="cPrev" aria-label="Previous phase" data-es-aria-label="Fase anterior"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
@@ -1204,7 +1228,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     running: { en: "Running… ", es: "Corriendo… " },
     hintTouch: { en: "Tap the floor or use the buttons", es: "Toca el piso o usa los botones" },
     end: { en: "This is how the cycle will work. It's an illustrative simulation: these are not real results yet.", es: "Así funcionará el ciclo. Es una simulación ilustrativa: todavía no son resultados reales." },
-    stepOf: { en: (i) => `Phase ${i} of 5`, es: (i) => `Fase ${i} de 5` },
+    stepOf: { en: (i) => `Phase ${i} of 6`, es: (i) => `Fase ${i} de 6` },
   };
 
   /* ---------- Nav: mobile menu, lifts on scroll, current section ---------- */
@@ -1219,40 +1243,167 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
   /* ---------- Step details ---------- */
   const STEPS = [
     {
-      c: "#ff6600",
-      title: { en: "Researches", es: "Investiga" },
-      body: { en: "Every day it reads the most discussed AI stories on Hacker News: new models, techniques and benchmarks. With Muse Spark it judges each one from its headline and source, and writes down what it could gain and what it would cost.", es: "Cada día lee las historias de IA más comentadas en Hacker News: modelos, técnicas y benchmarks nuevos. Con Muse Spark juzga cada una por su titular y su fuente, y anota qué podría ganar y qué costaría." },
-      ex: { en: "“Tree search for game-playing agents”: experiment, scoped to new games. It could find rules in fewer tries, at several times the tokens, and it doesn't help on BrowseComp.", es: "«Búsqueda en árbol para agentes que juegan»: experimentar, solo en juegos nuevos. Podría descubrir reglas en menos intentos, a cambio de varias veces más tokens, y no ayuda en BrowseComp." },
-      list: { en: ["Stories are data, never instructions.", "It judges the headline and source; it doesn't invent what it didn't read.", "“Experiment” isn't “adopt”: the idea still has to pass the lab."], es: ["Las historias son datos, nunca instrucciones.", "Juzga titular y fuente; no inventa lo que no leyó.", "«Experimentar» no es «adoptar»: la idea igual tiene que pasar el laboratorio."] },
+      "c": "#6d5ce8",
+      "title": {
+        "en": "Measures itself",
+        "es": "Se mide"
+      },
+      "body": {
+        "en": "Every improvement cycle starts with a measurement. The agent answers an exam of tasks whose correct answers are known, using only the skills it already has active. For every task it keeps its answer, how long it took and what the call cost. The tasks are split in two sets: a practice set, whose mistakes it is allowed to study, and a validation set, which it only uses later to check whether a change really helps.",
+        "es": "Cada ciclo de mejora empieza con una medición. El agente contesta un examen de tareas cuya respuesta correcta se conoce, usando solo las habilidades que ya tiene activas. De cada tarea guarda su respuesta, cuánto tardó y cuánto costó la llamada. Las tareas se dividen en dos conjuntos: uno de práctica, cuyos errores sí puede estudiar, y uno de validación, que solo usa después para comprobar si un cambio de verdad ayuda."
+      },
+      "ex": {
+        "en": "Illustrative example, not a real result: in a bank-reconciliation exercise it labels 40 records and gets 26 right. “26 of 40” is the baseline: any new skill has to beat that number.",
+        "es": "Ejemplo ilustrativo, no es un resultado real: en un ejercicio de conciliación bancaria etiqueta 40 movimientos y acierta 26. «26 de 40» es la línea base: cualquier habilidad nueva tiene que superar ese número."
+      },
+      "list": {
+        "en": [
+          "The correct answers stay on the server. The model never sees them while it answers.",
+          "The agent only gets to see the right answers for the practice set. Validation and sealed answers stay hidden.",
+          "Cost is counted from this very first run against your monthly budget."
+        ],
+        "es": [
+          "Las respuestas correctas se quedan en el servidor. El modelo nunca las ve mientras contesta.",
+          "El agente solo conoce las respuestas correctas del conjunto de práctica. Las de validación y las del examen sellado siguen ocultas.",
+          "El costo cuenta contra tu presupuesto mensual desde esta primera corrida."
+        ]
+      }
     },
     {
-      c: "#f0533c", img: "img/step1.webp",
-      title: { en: "Learns from its mistakes", es: "Aprende de sus errores" },
-      body: { en: "Every run leaves a full record: what it saw, what it decided, how long it took and what it cost. Agentztein reads its failures, groups them by pattern and writes one new skill to fix the most common one.", es: "Cada corrida deja un registro completo: qué vio, qué decidió, cuánto tardó y cuánto costó. Agentztein lee sus fallas, las agrupa por patrón y escribe una sola habilidad nueva para corregir la más común." },
-      ex: { en: "In ARC-AGI-3 puzzles it kept searching the web for answers that don't exist. Pattern found: in new games, searching only wastes time. New skill: “explore first: move a piece and watch”.", es: "En los acertijos de ARC-AGI-3 buscaba en la web respuestas que no existen. Patrón: en juegos nuevos, buscar solo gasta tiempo. Habilidad nueva: «primero explora: mueve una pieza y observa»." },
-      list: { en: ["One skill at a time, so we know exactly what changed.", "It never sees the sealed final exam while learning.", "The model's weights are never touched: a skill is written instructions."], es: ["Una habilidad a la vez, para saber exactamente qué cambió.", "Nunca ve el examen final sellado mientras aprende.", "Los pesos del modelo no se tocan: una habilidad son instrucciones escritas."] },
+      "c": "#ff6600",
+      "title": {
+        "en": "Researches",
+        "es": "Investiga"
+      },
+      "body": {
+        "en": "Every day it reads the most discussed AI stories on Hacker News: new models, techniques and benchmarks. With Muse Spark it judges each one from its headline and source and gives it one of three verdicts: Experiment (worth testing in the lab), Watch (interesting, not yet) or Skip. It also writes down what the idea could gain and what it would cost.",
+        "es": "Cada día lee las historias de IA más comentadas en Hacker News: modelos, técnicas y benchmarks nuevos. Con Muse Spark juzga cada una por su titular y su fuente y le da uno de tres veredictos: Experimentar (vale probarla en el laboratorio), Vigilar (interesante, pero todavía no) o Descartar. También anota qué podría ganar la idea y qué costaría."
+      },
+      "ex": {
+        "en": "Illustrative example, not a real result: “Tree search for game-playing agents”: Experiment, only for new games. It could find the rules in fewer tries, at several times the tokens, and it doesn't help on BrowseComp.",
+        "es": "Ejemplo ilustrativo, no es un resultado real: «Búsqueda en árbol para agentes que juegan»: Experimentar, solo en juegos nuevos. Podría descubrir las reglas en menos intentos, a cambio de varias veces más tokens, y no ayuda en BrowseComp."
+      },
+      "list": {
+        "en": [
+          "Stories are data, never instructions.",
+          "It judges the headline and source; it doesn't invent what it didn't read.",
+          "“Experiment” isn't “adopt”: the idea still has to pass the tests in phase 4."
+        ],
+        "es": [
+          "Las historias son datos, nunca instrucciones.",
+          "Juzga titular y fuente; no inventa lo que no leyó.",
+          "«Experimentar» no es «adoptar»: la idea igual tiene que pasar las pruebas de la fase 4."
+        ]
+      }
     },
     {
-      c: "#0081fb", img: "img/step2.webp",
-      title: { en: "Tests it", es: "La pone a prueba" },
-      body: { en: "The new skill is compared against the current version on tasks it has never seen, including the ones it already solved. If it helps in one place but breaks another, it doesn't pass.", es: "La habilidad nueva se compara contra la versión actual en tareas que nunca ha visto, incluidas las que ya resolvía. Si ayuda en un lado pero rompe otro, no pasa." },
-      ex: { en: "“Explore first” improves the puzzles, but we also rerun BrowseComp, where searching the web is exactly what's needed, to make sure nothing broke.", es: "«Primero explora» mejora los acertijos, pero también se vuelve a correr BrowseComp, donde buscar en la web es justo lo necesario, para confirmar que nada se rompió." },
-      list: { en: ["Success criteria are written before the experiment, so they can't be adjusted afterwards.", "Results come with ranges, and inconclusive ones are marked as such.", "The cost of trying counts too, including the ideas that were discarded."], es: ["Los criterios de éxito se escriben antes del experimento, para no acomodarlos después.", "Los resultados llevan rangos y los no concluyentes se marcan como tales.", "También cuenta el costo de intentar, incluidas las ideas descartadas."] },
+      "c": "#f0533c",
+      "title": {
+        "en": "Learns from its mistakes",
+        "es": "Aprende de sus errores"
+      },
+      "body": {
+        "en": "From the practice exam it takes the questions it got wrong, together with the correct answer for each, and groups them by pattern. Then a second model call, the planner, writes one new skill: a short set of instructions (up to 1,500 characters) aimed at the most common pattern. Remember that a skill is plain text added to the prompt; it doesn't change the model.",
+        "es": "Del examen de práctica toma las preguntas que falló, junto con la respuesta correcta de cada una, y las agrupa por patrón. Después una segunda llamada al modelo, el planificador, escribe una sola habilidad nueva: un conjunto corto de instrucciones (hasta 1,500 caracteres) dirigido al patrón más común. Recuerda que una habilidad es texto que se suma al prompt; no cambia el modelo."
+      },
+      "ex": {
+        "en": "Illustrative example, not a real result: of its 14 wrong answers, 9 mislabeled card payments as bank fees. New skill, written by the planner: “If the description mentions a card terminal, label it as a payment, not a fee.”",
+        "es": "Ejemplo ilustrativo, no es un resultado real: de sus 14 respuestas incorrectas, 9 etiquetaron pagos con tarjeta como comisiones. Habilidad nueva, escrita por el planificador: «Si la descripción menciona una terminal de tarjeta, etiquétalo como pago, no como comisión»."
+      },
+      "list": {
+        "en": [
+          "One skill at a time, so we know exactly what changed.",
+          "It never sees the validation or sealed answers while learning.",
+          "The model's weights are never touched."
+        ],
+        "es": [
+          "Una habilidad a la vez, para saber exactamente qué cambió.",
+          "Nunca ve las respuestas de validación ni del examen sellado mientras aprende.",
+          "Los pesos del modelo no se tocan."
+        ]
+      }
     },
     {
-      c: "#22b864", img: "img/step3.webp",
-      title: { en: "Keeps it", es: "Se la queda" },
-      body: { en: "If it improves without breaking anything and a person approves it, the skill is sewn on with a label: where it applies (its scope) and which version of the rules it was tested with (its validity).", es: "Si mejora sin romper nada y una persona la aprueba, la habilidad se cose con una etiqueta: dónde aplica (su alcance) y con qué versión de las reglas se probó (su vigencia)." },
-      ex: { en: "“Explore first” is sewn on only for new puzzle games. In web research, Agentztein keeps searching as before.", es: "«Primero explora» se cose solo para juegos nuevos. En investigación web, Agentztein sigue buscando como antes." },
-      list: { en: ["A person approves every new piece.", "The skill only activates where it proved it works.", "Everything goes into a log that can't be edited."], es: ["Una persona aprueba cada pieza nueva.", "La habilidad solo se activa donde demostró funcionar.", "Todo queda en un registro que no se puede editar."] },
+      "c": "#0081fb",
+      "title": {
+        "en": "Tests the new skill",
+        "es": "Prueba la habilidad nueva"
+      },
+      "body": {
+        "en": "The validation exam is answered twice: once with the skills it has now, and once with the new skill added. The harness (the set of automatic checks described below) compares both runs situation by situation. The new skill passes only if the score goes up where it was meant to help, and it does not go down in any situation where the agent was already right.",
+        "es": "El examen de validación se contesta dos veces: una con las habilidades que tiene ahora y otra con la habilidad nueva añadida. El arnés (el conjunto de controles automáticos que se explica más abajo) compara las dos corridas situación por situación. La habilidad nueva pasa solo si la calificación sube donde debía ayudar y no baja en ninguna situación en la que el agente ya acertaba."
+      },
+      "ex": {
+        "en": "Illustrative example, not a real result: without the new skill it gets 26 of 40; with it, 31 of 40. In the situations where it was already right, nothing dropped. The skill passes.",
+        "es": "Ejemplo ilustrativo, no es un resultado real: sin la habilidad nueva saca 26 de 40; con ella, 31 de 40. En las situaciones donde ya acertaba no bajó nada. La habilidad pasa."
+      },
+      "list": {
+        "en": [
+          "The pass rule is fixed before the experiment, so it can't be adjusted afterwards.",
+          "If the result is too close to call, it is marked inconclusive and the skill does not pass.",
+          "The cost of trying counts too, including ideas that were discarded."
+        ],
+        "es": [
+          "La regla para pasar se fija antes del experimento, para no acomodarla después.",
+          "Si el resultado es demasiado parejo, se marca como no concluyente y la habilidad no pasa.",
+          "También cuenta el costo de intentar, incluidas las ideas descartadas."
+        ]
+      }
     },
     {
-      c: "#ffa928", img: "img/step4.webp",
-      title: { en: "Keeps up to date", es: "Se mantiene al día" },
-      body: { en: "Benchmarks change: new versions, new rules, new judges. When that happens, only the skills whose label covers the change go back to review. Nothing is deleted: old versions are kept in case they're needed again.", es: "Los benchmarks cambian: versiones nuevas, reglas nuevas, jueces nuevos. Cuando pasa, solo vuelven a revisión las habilidades cuya etiqueta cubre ese cambio. Nada se borra: las versiones viejas se guardan por si hacen falta." },
-      ex: { en: "If Benchmark v2 turns the internet off, the skills that depend on searching go back to the lab. Code and terminal skills keep working untouched.", es: "Si el Benchmark v2 apaga internet, las habilidades que dependen de buscar vuelven al laboratorio. Las de código y terminal siguen intactas." },
-      list: { en: ["Changes are declared explicitly; nothing is guessed.", "Any change can be undone without losing history.", "We measure how long it takes to recover after a change."], es: ["Los cambios se declaran de forma explícita; nada se adivina.", "Cualquier cambio se puede deshacer sin perder el historial.", "Medimos cuánto tarda en recuperarse después de un cambio."] },
+      "c": "#22b864",
+      "title": {
+        "en": "Switches on, with approval",
+        "es": "Se activa con aprobación"
+      },
+      "body": {
+        "en": "A skill that passed the tests is not active yet: it waits in the app for a person to approve or reject it. Only after an approval is it saved as the next version of that skill, labeled with its scope (the situation where it applies) and its validity (the version of the rules it was tested under). From then on, whenever that situation comes up, its text is added to the agent's prompt. A rejected skill changes nothing, and any active skill can be switched off later to go back to how things were.",
+        "es": "Una habilidad que pasó las pruebas todavía no está activa: espera en la app a que una persona la apruebe o la rechace. Solo después de una aprobación se guarda como la siguiente versión de esa habilidad, etiquetada con su alcance (la situación donde aplica) y su vigencia (la versión de las reglas con la que se probó). Desde ese momento, cada vez que aparece esa situación, su texto se suma al prompt del agente. Una habilidad rechazada no cambia nada, y cualquier habilidad activa se puede apagar después para volver a como estaban las cosas."
+      },
+      "ex": {
+        "en": "Illustrative example, not a real result: the “card terminal” skill is approved and saved as version 2 of the bank-reconciliation skill. Scope: bank statements. Validity: rules v1. In any other exercise it stays off.",
+        "es": "Ejemplo ilustrativo, no es un resultado real: la habilidad de la «terminal de tarjeta» se aprueba y se guarda como versión 2 de la habilidad de conciliación bancaria. Alcance: estados de cuenta. Vigencia: reglas v1. En cualquier otro ejercicio permanece apagada."
+      },
+      "list": {
+        "en": [
+          "A person approves every new skill; nothing switches itself on.",
+          "The skill only activates in the scope where it proved it works.",
+          "Every decision goes into a log that can't be edited."
+        ],
+        "es": [
+          "Una persona aprueba cada habilidad nueva; nada se activa solo.",
+          "La habilidad solo se activa en el alcance donde demostró funcionar.",
+          "Cada decisión queda en un registro que no se puede editar."
+        ]
+      }
     },
+    {
+      "c": "#ffa928",
+      "title": {
+        "en": "Keeps up to date",
+        "es": "Se mantiene al día"
+      },
+      "body": {
+        "en": "Benchmarks change: new versions, new rules, new judges. When someone declares such a change, only the skills whose label covers it go back to phase 4 to be tested again under the new rules. The rest keep working untouched. Nothing is deleted: old versions are saved in case they are needed again. This phase is part of the design and is not running in the app yet.",
+        "es": "Los benchmarks cambian: versiones nuevas, reglas nuevas, jueces nuevos. Cuando alguien declara un cambio así, solo las habilidades cuya etiqueta lo cubre regresan a la fase 4 para probarse otra vez con las reglas nuevas. Las demás siguen funcionando sin cambios. Nada se borra: las versiones viejas se guardan por si hacen falta. Esta fase es parte del diseño y todavía no corre en la app."
+      },
+      "ex": {
+        "en": "Illustrative example, not a real result: if Benchmark v2 turns the internet off, the skills labeled as needing web search go back to be tested. The code and terminal skills keep working untouched.",
+        "es": "Ejemplo ilustrativo, no es un resultado real: si el Benchmark v2 apaga internet, las habilidades etiquetadas como dependientes de la búsqueda web vuelven a probarse. Las de código y terminal siguen intactas."
+      },
+      "list": {
+        "en": [
+          "Changes are declared explicitly; the agent doesn't guess them.",
+          "Any change can be undone without losing history.",
+          "We measure how long it takes to recover after a change."
+        ],
+        "es": [
+          "Los cambios se declaran de forma explícita; el agente no los adivina.",
+          "Cualquier cambio se puede deshacer sin perder el historial.",
+          "Medimos cuánto tarda en recuperarse después de un cambio."
+        ]
+      }
+    }
   ];
   const dlg = $("#stepDlg");
   let stepIx = 0;
@@ -1262,7 +1413,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
     dlg.style.setProperty("--c", s.c);
     document.dispatchEvent(new CustomEvent("step:open", { detail: i }));
     $("#dlgKicker").textContent = L(T.stepOf)(i + 1);
-    $("#dlgLiveWrap").hidden = i !== 0;
+    $("#dlgLiveWrap").hidden = i !== 1;
     $("#dlgTitle").textContent = L(s.title);
     $("#dlgBody").textContent = L(s.body);
     $("#dlgEx").textContent = L(s.ex);

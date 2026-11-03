@@ -1,4 +1,4 @@
-/* The self-development cycle: five phases on a ring around Agentztein, with equal weight. It advances on its own while it
+/* The self-development cycle: six phases on a ring around Agentztein, with equal weight. It advances on its own while it
    is on screen; the dot travels from one phase to the next in step with the timer. It only stops with the pause button,
    when the page is hidden or with reduced motion.
    Tabs, arrows, swipe and the arrow keys move between phases. No auto-advance with reduced motion. */
@@ -43,7 +43,7 @@ if (cyc) {
     says.forEach((v, k) => v.classList.toggle("on", k === i));
     cyc.style.setProperty("--c", tabs[i].style.getPropertyValue("--c"));
     if (runner) {
-      runner.style.setProperty("--from", `${i * 72}deg`);
+      runner.style.setProperty("--from", `${i * (360 / tabs.length)}deg`);
       runner.style.animation = "none"; void runner.getBoundingClientRect(); runner.style.animation = "";
     }
     if (focus) tabs[i].focus();
@@ -78,7 +78,7 @@ if (cyc) {
   document.addEventListener("lang:change", label);
   new IntersectionObserver(([e]) => { inView = e.isIntersecting; schedule(); }, { threshold: 0.35 }).observe(cyc);
   // the hero badge ("watches Hacker News") lands on the research phase
-  document.querySelector(".hn-pill")?.addEventListener("click", () => show(0));
+  document.querySelector(".hn-pill")?.addEventListener("click", () => show(1));
   label();
   show(0);
 }

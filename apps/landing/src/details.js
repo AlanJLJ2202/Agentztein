@@ -188,7 +188,7 @@ function renderLive() {
 // The live feed lives in the "Researches" phase detail; it loads the first time that detail opens.
 let requested = false;
 document.addEventListener("step:open", (e) => {
-  if (!live || e.detail !== 0 || requested) return;
+  if (!live || e.detail !== 1 || requested) return;
   requested = true;
   fetchAiStories({ limit: 5, signal: AbortSignal.timeout(9000) })
     .then((s) => { stories = s; fetchedAt = new Date(); })
