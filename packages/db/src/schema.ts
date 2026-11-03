@@ -342,3 +342,52 @@ export const harnessRuns = app.table(
   },
   (t) => [index("harness_runs_user_created").on(t.userId, t.createdAt)],
 );
+
+/**
+ * The agent's own skills: versioned instructions it wrote for itself, scoped to one scenario context.
+ * The text of a version never changes (trigger in migration 0007); only its status moves, and only an
+ * "active" skill is used by the agent. Candidates wait for a person's approval.
+ */
+export const agentSkills = app.table(
+  "agent_skills",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    scenario: text("scenario").notNull(),
+    context: text("context").notNull(),
+    version: integer("version").notNull(),
+    instructions: text("instructions").notNull(),
+    rationale: text("rationale").notNull(),
+    parentId: uuid("parent_id"),
+    model: text("model").notNull(),
+    noteId: text("note_id"),
+    jobId: uuid("job_id"),
+    status: text("status").notNull().default("candidate"),
+    verdict: jsonb("verdict"),
+    createdAt: createdAt(),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("agent_skills_version").on(t.userId, t.scenario, t.context, t.version),
+    index("agent_skills_user").on(t.userId, t.scenario),
+    check("agent_skills_status_chk", sql`${t.status} in ('candidate', 'active', 'rejected', 'retired')`),
+  ],
+);
+
+/** One improvement cycle, advanced one model call at a time (serverless-friendly). */
+export const agentJobs = app.table(
+  "agent_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    scenario: text("scenario").notNull(),
+    executor: text("executor").notNull(),
+    planner: text("planner").notNull(),
+    effort: text("effort"),
+    phase: text("phase").notNull(),
+    state: jsonb("state").notNull().default(sql`'{}'::jsonb`),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("agent_jobs_user").on(t.userId, t.createdAt)],
+);

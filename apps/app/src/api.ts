@@ -24,6 +24,69 @@ export type Note = {
   decidedAt: string | null;
 };
 export type Budget = { monthly: number; spent: number; runs: number };
+export type Scores = Record<string, { correct: number; total: number }>;
+export type BenchScenario = {
+  id: string;
+  title: string;
+  industry: string;
+  task: string;
+  labels: { id: string; meaning: string }[];
+  contexts: { id: string; name: string }[];
+  sizes: Record<string, number>;
+};
+export type SkillStatus = "candidate" | "active" | "rejected" | "retired";
+export type HarnessVerdict = { pass: boolean; reason: "improves" | "no-gain" | "regression"; target: string; deltas: Record<string, number>; needed: number; before: Scores; after: Scores };
+export type Skill = {
+  id: string;
+  scenario: string;
+  context: string;
+  version: number;
+  instructions: string;
+  rationale: string;
+  parentId: string | null;
+  model: string;
+  noteId: string | null;
+  jobId: string | null;
+  status: SkillStatus;
+  verdict: HarnessVerdict | null;
+  createdAt: string;
+  decidedAt: string | null;
+};
+export type Phase = "baseline" | "propose" | "validate" | "awaiting" | "done";
+export type Mistake = { context: string; fields: Record<string, unknown>; truth: string; given: string | null };
+export type Job = {
+  id: string;
+  scenario: string;
+  executor: string;
+  planner: string;
+  effort: string | null;
+  phase: Phase;
+  running: boolean;
+  state: {
+    guidance?: string;
+    cost?: number;
+    error?: string | null;
+    outcome?: "nothing-to-learn" | "planner-failed" | "harness-rejected" | "approved" | "rejected";
+    detail?: string;
+    before?: { practice: Scores; validation: Scores; answered: number; total: number };
+    after?: Scores;
+    verdict?: HarnessVerdict;
+    candidate?: Skill & { parentInstructions: string | null };
+    skillsUsed?: { context: string; version: number }[];
+    mistakes: Mistake[];
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+export type AgentState = {
+  bench: BenchScenario[];
+  skills: Skill[];
+  jobs: Job[];
+  key: { model: string | null; models: string[] } | null;
+  families: { family: string; name: string; id: string | null }[];
+  budget: Budget;
+};
+export type Exam = { scenario: string; bare: boolean; scores: Scores; answered: number; total: number; cost: number; model: string };
 
 export class ApiError extends Error {
   constructor(
@@ -73,6 +136,15 @@ export function api(supabase: SupabaseClient) {
       }),
     decide: (id: string, decision: "approved" | "rejected") =>
       call<{ note: Note }>("/api/radar", { method: "PATCH", body: JSON.stringify({ id, decision }) }),
+    agent: () => call<AgentState>("/api/agent"),
+    agentOp: <T = { job: Job }>(body: Record<string, unknown>) => call<T>("/api/agent", { method: "POST", body: JSON.stringify(body) }),
+    transcribe: (audio: Blob, seconds: number, lang: string) =>
+      call<{ text: string; cost: number }>(`/api/media?kind=voice&seconds=${Math.ceil(seconds)}&lang=${lang}`, {
+        method: "POST",
+        body: audio,
+        headers: { "content-type": audio.type || "audio/webm" },
+      }),
+    emblem: (skillId: string) => call<{ image: string; cost: number }>("/api/media?kind=image", { method: "POST", body: JSON.stringify({ skillId }) }),
     limits: () => call<Budget>("/api/limits"),
     setLimit: (monthly: number) => call<Budget>("/api/limits", { method: "PUT", body: JSON.stringify({ monthly }) }),
   };

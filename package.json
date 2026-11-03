@@ -14,12 +14,13 @@
     "db:generate": "pnpm --filter @skillab/db generate",
     "db:migrate": "pnpm --filter @skillab/db migrate",
     "datasets:generate": "tsx packages/scenarios/src/cli/generate.ts",
-    "datasets:verify": "tsx packages/scenarios/src/cli/generate.ts --verify",
+    "datasets:verify": "tsx packages/scenarios/src/cli/generate.ts --verify && tsx scripts/evalset.ts --verify",
     "env:conflict": "tsx packages/env-recon/src/cli/conflict.ts",
     "datasets:review": "tsx packages/scenarios/src/cli/review.ts",
     "build:panel": "pnpm --filter @skillab/panel build",
     "build:site": "pnpm build:panel && pnpm build:app && pnpm --filter @skillab/landing build && rm -rf site && mkdir -p site/panel site/app && cp -r apps/landing/dist/. site/ && cp -r apps/panel/dist/. site/panel/ && cp -r apps/app/dist/. site/app/",
-    "build:app": "pnpm --filter @skillab/app build"
+    "build:app": "pnpm --filter @skillab/app build",
+    "evalset": "tsx scripts/evalset.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
@@ -30,7 +31,9 @@
     "tsx": "^4.23.15",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.72.1",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "@skillab/scenarios": "workspace:*",
+    "@skillab/contracts": "workspace:*"
   },
   "dependencies": {
     "@skillab/research": "workspace:*",

@@ -18,6 +18,12 @@ importers:
       '@eslint/js':
         specifier: ^9.39.5
         version: 9.39.5
+      '@skillab/contracts':
+        specifier: workspace:*
+        version: link:packages/contracts
+      '@skillab/scenarios':
+        specifier: workspace:*
+        version: link:packages/scenarios
       '@types/node':
         specifier: 22.20.5
         version: 22.20.5

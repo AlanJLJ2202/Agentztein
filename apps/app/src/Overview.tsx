@@ -25,10 +25,10 @@ export function Overview({ name, keys, notesCount, go, client, onKeys, onNotes }
     "done",
     keys?.length ? "done" : "todo",
     notesCount > 0 ? "done" : "todo",
-    "soon",
+    keys?.length ? "todo" : "soon",
     "phase2",
   ];
-  const target: Array<Tab | null> = [null, "brain", "radar", null, null];
+  const target: Array<Tab | null> = [null, "brain", "radar", "agent", null];
   return (
     <section>
       <h1 className="h1">{t(T.hello)}{name ? `, ${name}` : ""}.</h1>

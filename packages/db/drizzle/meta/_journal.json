@@ -50,6 +50,13 @@
       "when": 1793665995503,
       "tag": "0006_harness",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793667388355,
+      "tag": "0007_agent",
+      "breakpoints": true
     }
   ]
 }

@@ -309,3 +309,27 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
     Las ideas "experimentar" del radar esperan la decisión de la persona (`decision`, `decided_at`).
   - Landing de Meta: las siete piezas con su papel (planifica, ejecuta, crea imágenes, escucha, ubica
     objetos, corre en tu equipo), iconos SVG (sin emojis) y la imagen fija que sigue el scroll.
+
+## ADR-024 — El agente se mejora a sí mismo de verdad, dentro de la app
+- **Contexto (3 nov 2026):** Alan pidió que, con la sesión iniciada, el agente haga de verdad lo que promete
+  la landing: investigar, evaluar, modificar su propio código e integrar otras familias de Meta. Hay $150 USD
+  de créditos de Meta para pruebas.
+- **Decisión:**
+  - **Banco real y autocalificado:** `scripts/evalset.ts` genera `api/_data/evalset.js` a partir de cuatro
+    escenarios sintéticos (manufactura, devoluciones, mensajes, envíos), con sets de práctica, validación y
+    examen sellado (perfil reservado). Las respuestas viven solo en el servidor; `pnpm datasets:verify`
+    comprueba que el archivo esté al día.
+  - **Ciclo de mejora** (`/api/agent`, un paso = una llamada al modelo, para caber en una función serverless):
+    examen inicial con las skills activas → el planificador (Muse Wonder por defecto) lee los errores de
+    práctica con la respuesta correcta y escribe una skill con alcance de un contexto → examen de validación
+    con la candidata → el arnés compara: debe mejorar su contexto (≥ 2 casos) sin empeorar otro (> 1 caso de
+    ruido). Si no pasa, se rechaza sola; si pasa, espera la aprobación de la persona.
+  - **"Modificar su propio código"** significa reescribir sus skills: versiones congeladas por trigger
+    (`app.agent_skills`, migración `0007`), solo se agregan versiones nuevas y se mueve su estado
+    (candidata → activa/rechazada, activa → retirada). No toca el código de la app ni los pesos del modelo.
+  - **Investigar:** las ideas del radar que la persona aprobó llegan al planificador como pistas.
+  - **Otras familias:** Wonder planifica, Spark ejecuta (cualquier id que tenga la llave, con esfuerzo),
+    Muse Voice Transcribe convierte tu voz en guía para el planificador y Muse Image dibuja un emblema por
+    skill (`/api/media`). Voz e imagen son experimentales: si la llave no tiene acceso, el error lo dice.
+  - Todo pasa por el arnés existente: peor caso contra el presupuesto antes de llamar y registro append-only.
+  - Costo estimado por ciclo con Spark + Wonder: unos centavos de dólar; los $150 alcanzan para miles.

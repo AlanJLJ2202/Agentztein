@@ -57,6 +57,7 @@ export const T = {
     overview: { en: "Overview", es: "Resumen" },
     brain: { en: "Brain", es: "Cerebro" },
     radar: { en: "Research radar", es: "Radar de investigación" },
+    agent: { en: "Agent", es: "Agente" },
   },
   hello: { en: "Hi", es: "Hola" },
   overviewLead: {
@@ -67,7 +68,7 @@ export const T = {
     { t: { en: "Account created", es: "Cuenta creada" }, d: { en: "Your notes and keys are yours only.", es: "Tus notas y llaves son solo tuyas." } },
     { t: { en: "Connect its brain", es: "Conéctale el cerebro" }, d: { en: "Add your Meta Model API key: Muse Spark does the thinking.", es: "Agrega tu llave de la Meta Model API: Muse Spark es quien piensa." } },
     { t: { en: "Run the research radar", es: "Corre el radar de investigación" }, d: { en: "It reads Hacker News and decides what deserves an experiment.", es: "Lee Hacker News y decide qué merece un experimento." } },
-    { t: { en: "Run it on a benchmark", es: "Córrelo en un benchmark" }, d: { en: "Coming with the next stage of the lab.", es: "Llega con la siguiente etapa del laboratorio." } },
+    { t: { en: "Let it improve itself", es: "Deja que se mejore solo" }, d: { en: "It takes a real exam, writes itself a skill and asks for your approval.", es: "Presenta un examen real, se escribe una skill y te pide aprobación." } },
     { t: { en: "Buy AI credits", es: "Compra créditos de IA" }, d: { en: "Phase 2: use Agentztein without your own key.", es: "Fase 2: usa Agentztein sin tu propia llave." } },
   ],
   done: { en: "Done", es: "Listo" },
