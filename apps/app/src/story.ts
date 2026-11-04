@@ -5,10 +5,12 @@ import type { Text } from "./i18n.js";
 
 export const E = (en: string, es: string): Text => ({ en, es });
 
-export type ToolId = "director" | "radar" | "exam" | "grader" | "planner" | "library" | "harness" | "human" | "voice" | "image" | "code";
+export type ToolId = "dream" | "memory" | "director" | "radar" | "exam" | "grader" | "planner" | "library" | "harness" | "human" | "voice" | "image" | "code";
 export type ToolInfo = { name: Text; does: Text; icon: string; color: string; room: string };
 
 export const TOOLS: Record<ToolId, ToolInfo> = {
+  dream: { name: E("Dream · Muse Wonder", "Sueño · Muse Wonder"), does: E("rereads finished cycles and keeps only the lessons", "relee los ciclos terminados y se queda solo con las lecciones"), icon: "☾", color: "#4f5bd5", room: "cuna" },
+  memory: { name: E("Memory", "Memoria"), does: E("gives each step only the lessons that matter, within a budget", "le da a cada paso solo las lecciones que importan, con un presupuesto"), icon: "◎", color: "#7a6cf0", room: "taller" },
   director: { name: E("Director · Muse Wonder", "Director · Muse Wonder"), does: E("decides what to work on and with which model", "decide en qué trabajar y con qué modelo"), icon: "✦", color: "#6d5ce8", room: "horizon" },
   radar: { name: E("Research radar", "Radar de investigación"), does: E("reads Hacker News, arXiv, Hugging Face and GitHub for ideas", "lee Hacker News, arXiv, Hugging Face y GitHub para sacar ideas"), icon: "Y", color: "#ff6600", room: "research" },
   exam: { name: E("Exam · Muse Spark", "Examen · Muse Spark"), does: E("answers the exam questions", "contesta las preguntas del examen"), icon: "✓", color: "#0081fb", room: "exam" },
@@ -49,13 +51,19 @@ export const roomFor = (e: { tool: string }, scenario: string) => {
   return r === "exam" ? EXAM_ROOM[scenario] ?? "cuna" : r;
 };
 
-export const RUNNING_PHASES = ["plan", "baseline", "propose", "validate"];
+export const RUNNING_PHASES = ["dream", "plan", "baseline", "propose", "validate"];
 export const isRunning = (j: Job | null | undefined) => Boolean(j && RUNNING_PHASES.includes(j.phase) && !j.state.error);
 
 /** One plain sentence, in its own voice, for a step of the trace. */
 export function say(e: TraceEntry, job: Job): Text {
   const m = e.model ? ` (${e.model})` : "";
   switch (e.tool) {
+    case "dream":
+      return job.state.dream?.summary
+        ? E(`I dreamt about ${e.note ?? "my"} cycles: ${job.state.dream.summary}`, `Soñé con ${e.note ?? "mis"} ciclos: ${job.state.dream.summary}`)
+        : E(`I dreamt about ${e.note ?? "my"} finished cycles and tidied up what I remember.`, `Soñé con ${e.note ?? "mis"} ciclos terminados y ordené lo que recuerdo.`);
+    case "memory":
+      return E(`I remembered ${e.note ?? "some"} lessons from earlier cycles.`, `Recordé ${e.note ?? "algunas"} lecciones de ciclos anteriores.`);
     case "director":
       if (e.note === "handed-over") return E("You let me decide. Let me think what's worth it…", "Me dejaste decidir. Déjame pensar qué conviene…");
       return e.note ? E(`Decided: ${e.note}`, `Decidí: ${e.note}`) : E("I made a plan.", "Ya tengo un plan.");
@@ -84,6 +92,7 @@ export function say(e: TraceEntry, job: Job): Text {
 /** What the agent is about to do next, while a step runs (the trace only has what already happened). */
 export function nextUp(job: Job): { tool: ToolId; text: Text } | null {
   switch (job.phase) {
+    case "dream": return { tool: "dream", text: E("Dreaming: turning my last cycles into lessons…", "Soñando: convirtiendo mis últimos ciclos en lecciones…") };
     case "plan": return { tool: "director", text: E("Deciding what to work on…", "Decidiendo en qué trabajar…") };
     case "baseline": return { tool: "exam", text: E("Taking the exam to see where I stand…", "Presentando el examen para ver dónde estoy…") };
     case "propose": return { tool: "planner", text: E("Studying my mistakes…", "Estudiando mis errores…") };

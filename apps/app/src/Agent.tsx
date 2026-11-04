@@ -9,6 +9,7 @@ import { useT, type Lang, type Text } from "./i18n.js";
 import { MetaMark } from "./Logos.js";
 import { CAP_KEY, savedCap } from "./Companion.js";
 import { useLive } from "./live.js";
+import { Memory } from "./Memory.js";
 import { RunGraph } from "./RunGraph.js";
 
 const E = (en: string, es: string): Text => ({ en, es });
@@ -59,7 +60,7 @@ const L = {
   capability: { vision: E("See images", "Ver imágenes"), image: E("Draw", "Dibujar"), voice: E("Listen", "Escuchar"), code: E("Change its code", "Cambiar su código"), web: E("Search the web", "Buscar en la web"), memory: E("Remember more", "Recordar más") } as Record<string, Text>,
   watch: E("Watch it in 3D", "Verlo en 3D"),
   phases: [
-    { id: "plan", t: E("Decides", "Decide"), d: E("only when you let it choose", "solo si lo dejas elegir") },
+    { id: "plan", t: E("Decides", "Decide"), d: E("only when you let it choose; it may dream first", "solo si lo dejas elegir; antes puede soñar") },
     { id: "baseline", t: E("First exam", "Primer examen"), d: E("practice + validation, with today's skills", "práctica + validación, con las habilidades de hoy") },
     { id: "propose", t: E("Writes a skill", "Escribe una habilidad"), d: E("the planner studies the practice mistakes", "el planificador estudia los errores de práctica") },
     { id: "validate", t: E("Exam again", "Examen de nuevo"), d: E("validation, now with the candidate", "validación, ahora con la candidata") },
@@ -109,7 +110,7 @@ const L = {
   ),
 };
 
-const RUNNING = ["plan", "baseline", "propose", "validate"];
+const RUNNING = ["dream", "plan", "baseline", "propose", "validate"];
 const pct = (s?: { correct: number; total: number }) => (s && s.total ? Math.round((100 * s.correct) / s.total) : 0);
 
 function Icon({ d, size = 18 }: { d: string; size?: number }) {
@@ -319,7 +320,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
     { key: "voice", name: "Muse Voice Transcribe", id: null },
     { key: "image", name: "Muse Image", id: null },
   ];
-  const phaseIdx = job ? (job.phase === "done" ? (job.state.verdict ? 5 : job.state.candidate ? 4 : job.state.before ? 2 : 1) : ["plan", "baseline", "propose", "validate", "awaiting"].indexOf(job.phase)) : -1;
+  const phaseIdx = job ? (job.phase === "done" ? (job.state.verdict ? 5 : job.state.candidate ? 4 : job.state.before ? 2 : 1) : ["plan", "baseline", "propose", "validate", "awaiting"].indexOf(job.phase === "dream" ? "plan" : job.phase)) : -1;
   const runs = (live.agent?.jobs ?? data.jobs).filter((j) => j.state.trace?.length);
   const skillsBy = (sid: string) => data.skills.filter((s) => s.scenario === sid);
   const verdict = job?.state.verdict;
@@ -579,6 +580,8 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
           </aside>
         </div>
       )}
+
+      {hasKey && data.memory && <Memory client={client} memory={data.memory} bench={data.bench} lang={lang} onChange={load} />}
     </section>
   );
 }

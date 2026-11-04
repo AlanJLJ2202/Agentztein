@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigserial,
+  boolean,
   check,
   foreignKey,
   index,
@@ -388,8 +389,61 @@ export const agentJobs = app.table(
     state: jsonb("state").notNull().default(sql`'{}'::jsonb`),
     createdAt: createdAt(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    /** When a dream digested this cycle into lessons (null: not yet). */
+    dreamtAt: timestamp("dreamt_at", { withTimezone: true }),
   },
   (t) => [index("agent_jobs_user").on(t.userId, t.createdAt)],
+);
+
+/**
+ * The agent's semantic memory (ADR-031): short lessons it wrote while dreaming over its finished cycles, scoped to
+ * the whole lab, one exam or one situation. A lesson's text and scope never change (trigger in migration 0009): a
+ * dream that corrects one supersedes it with a new row (parent_id). `strength` (0–5) rises when a dream keeps it and
+ * falls when it is neither kept nor used; at 0 it fades. A person can pin it (never fades) or forget it. Never
+ * deleted. Only the planner, the director and the talk read it; the executor never does.
+ */
+export const agentMemories = app.table(
+  "agent_memories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    scope: text("scope").notNull(),
+    kind: text("kind").notNull(),
+    text: text("text").notNull(),
+    evidence: jsonb("evidence").notNull().default(sql`'[]'::jsonb`),
+    strength: integer("strength").notNull().default(2),
+    pinned: boolean("pinned").notNull().default(false),
+    status: text("status").notNull().default("active"),
+    parentId: uuid("parent_id"),
+    dreamId: uuid("dream_id"),
+    uses: integer("uses").notNull().default(0),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("agent_memories_user").on(t.userId, t.status),
+    check("agent_memories_status_chk", sql`${t.status} in ('active', 'faded', 'superseded', 'forgotten')`),
+    check("agent_memories_kind_chk", sql`${t.kind} in ('rule', 'dead-end', 'strategy', 'fact')`),
+    check("agent_memories_strength_chk", sql`${t.strength} between 0 and 5`),
+  ],
+);
+
+/** One dream: which cycles it digested, with which model, what it cost and what changed in memory. Append-only. */
+export const agentDreams = app.table(
+  "agent_dreams",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    model: text("model").notNull(),
+    jobs: jsonb("jobs").notNull().default(sql`'[]'::jsonb`),
+    summary: text("summary").notNull().default(""),
+    stats: jsonb("stats").notNull().default(sql`'{}'::jsonb`),
+    costUsd: numeric("cost_usd", { precision: 12, scale: 6 }).notNull().default("0"),
+    jobId: uuid("job_id"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("agent_dreams_user").on(t.userId, t.createdAt)],
 );
 
 /**

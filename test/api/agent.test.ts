@@ -50,7 +50,7 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
   let limits: typeof LimitsApi;
   let talk: typeof TalkApi;
   let dbUrl = "";
-  const chats: Array<{ model: string; system: string }> = [];
+  const chats: Array<{ model: string; system: string; prompt: string }> = [];
 
   const sc = scenarioOf(SC);
   if (!sc) throw new Error("missing scenario");
@@ -96,8 +96,19 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
         const body = JSON.parse(String(init?.body));
         const system = body.messages[0].content as string;
         const prompt = body.messages[1].content as string;
-        chats.push({ model: body.model, system });
-        const content = system.includes("planificador")
+        chats.push({ model: body.model, system, prompt });
+        const content = system.includes("soñando")
+          ? JSON.stringify(prompt.includes("Todavía no recuerdas nada")
+            ? {
+              keep: [], rewrite: [], forget: [], summary: "Soñé con mis primeros ciclos.",
+              add: [
+                { scope: `${SC}:${ctxB}`, kind: "rule", text: "En esta situación la cobertura nunca puede bajar.", evidence: ["c1"] },
+                { scope: "global", kind: "dead-end", text: "Escribir para un contexto de otro examen siempre falla.", evidence: ["c2"] },
+                { scope: "global", kind: "rule", text: "El registro i_0123456789ab siempre es rechazar." },
+              ],
+            }
+            : { keep: ["m2"], rewrite: [{ id: "m1", text: "En esta situación la cobertura nunca puede bajar, ni por un punto." }], forget: [], add: [], summary: "Afiné una regla." })
+          : system.includes("planificador")
           ? JSON.stringify({ context: ctxB, instructions: "REGLA-OK: en este repositorio la cobertura no puede bajar.", rationale: "Los rechazos bajan la cobertura", noteId: null })
           : system.includes("director de Agentztein")
             ? JSON.stringify({ scenario: "investigacion", executor: "spark", effort: "high", why: "Ahí hay más que ganar.", steps: [{ tool: "exam", why: "medirme" }], proposals: [{ capability: "vision", model: "spark", idea: "Ver fotos de los paquetes", why: "Las devoluciones traen fotos" }] })
@@ -232,6 +243,58 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
     expect(s2.status).toBe(200);
     expect(s2.body.job).toMatchObject({ phase: "done", state: { outcome: "run-budget" } });
     expect(chats.length).toBe(n);
+  });
+
+  it("dreams on its finished cycles before deciding, and the director and planner read what it remembers", async () => {
+    expect((await (await agent.GET(req())).json()).memory).toMatchObject({ active: [], dreams: [], undigested: 4, dreamAfter: 3 });
+    const start = await post({ op: "start", auto: true, maxCost: 1, lang: "es" });
+    expect(start.body.job.phase).toBe("dream");
+    const jobId = start.body.job.id;
+    const dreamt = (await post({ op: "step", jobId })).body.job;
+    expect(dreamt.phase).toBe("plan");
+    expect(dreamt.state.trace.at(-1)).toMatchObject({ tool: "dream", model: "muse-wonder-1.0", note: "4" });
+    // the lesson that named a concrete record was dropped
+    expect(dreamt.state.dream).toMatchObject({ jobs: 4, summary: "Soñé con mis primeros ciclos.", stats: { added: 2, fixes: ["add"] } });
+    // the dream reread each cycle as one line, never a validation or sealed answer
+    const dreamPrompt = chats.at(-1)?.prompt ?? "";
+    expect(dreamPrompt).toContain("c4 · ");
+    expect(dreamPrompt).not.toContain("truth");
+
+    let job = dreamt;
+    while (["dream", "plan", "baseline", "propose", "validate"].includes(job.phase)) job = (await post({ op: "step", jobId })).body.job;
+    const director = chats.find((c) => c.system.includes("director de Agentztein") && c.prompt.includes("Lo que recuerdas"));
+    expect(director?.prompt).toContain("Escribir para un contexto de otro examen siempre falla.");
+    // the planner worked on investigacion: it got the lab-wide lesson, not codigo's
+    const planner = chats.filter((c) => c.system.includes("planificador")).at(-1)?.prompt ?? "";
+    expect(planner).toContain("[dead-end · global]");
+    expect(planner).not.toContain("cobertura nunca");
+    expect(job.state.trace.map((e: { tool: string }) => e.tool)).toContain("memory");
+
+    const overview = await (await agent.GET(req())).json();
+    expect(overview.memory.undigested).toBe(1);
+    expect(overview.memory.dreams).toHaveLength(1);
+    const rule = overview.memory.active.find((m: { kind: string }) => m.kind === "rule");
+    expect(rule).toMatchObject({ scope: `${SC}:${ctxB}`, strength: 2, pinned: false });
+
+    // a person pins one lesson and forgets the other
+    expect((await post({ op: "memory", id: rule.id, action: "pin" })).body.memory.pinned).toBe(true);
+    const deadEnd = overview.memory.active.find((m: { kind: string }) => m.kind === "dead-end");
+    expect((await post({ op: "memory", id: deadEnd.id, action: "forget" })).body.memory.status).toBe("forgotten");
+
+    // dreaming again on demand: the pinned rule is not rewritten, only found to still hold
+    const again = await post({ op: "dream", lang: "es" });
+    expect(again.status).toBe(200);
+    expect(again.body.dream).toMatchObject({ jobs: 1, summary: "Afiné una regla.", stats: { rewritten: 0, strengthened: 1 } });
+    expect(again.body.memory).toEqual([expect.objectContaining({ id: rule.id, strength: 3, pinned: true })]);
+    expect((await post({ op: "dream" })).body).toMatchObject({ reason: "nothing-to-dream" });
+    expect((await post({ op: "memory", id: deadEnd.id, action: "pin" })).status).toBe(404);
+
+    const c = new pg.Client({ connectionString: dbUrl });
+    await c.connect();
+    await expect(c.query("UPDATE app.agent_memories SET text = 'x'")).rejects.toThrow(/supersedes/);
+    await expect(c.query("DELETE FROM app.agent_memories")).rejects.toThrow(/append-only/);
+    await expect(c.query("DELETE FROM app.agent_dreams")).rejects.toThrow(/append-only/);
+    await c.end();
   });
 
   it("talks as itself, knowing the lab, and only suggests actions", async () => {

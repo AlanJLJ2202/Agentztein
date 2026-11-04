@@ -127,3 +127,14 @@ pnpm check
   que el anteproyecto pide registrar (§06).
 - **Salida:** corrida de A (frozen) en las 3 familias con FakeModelClient, resultados y coste persistidos,
   test que fuerza timeout/JSON inválido. Calibración con modelo real solo tras confirmar precios y API key.
+
+## Memoria y sueños (2026-11-04, ADR-031)
+- `api/_lib/memory.js`: lecciones con alcance, tipo y fuerza; el sueño relee los ciclos terminados comprimidos en
+  una línea cada uno y el servidor aplica su respuesta con reglas fijas (reforzar, reescribir como versión nueva,
+  desvanecer lo que no se conserva ni se usa, máximo 40). Planificador, director y charla reciben las lecciones con
+  su propio presupuesto de caracteres; el ejecutor nunca.
+- Migración `0009_memory`: `app.agent_memories`, `app.agent_dreams` (congeladas por trigger) y `agent_jobs.dreamt_at`.
+- `/api/agent`: `op: "dream"`, `op: "memory"` (fijar, soltar, olvidar) y fase `dream` en ciclos autónomos con ≥3 ciclos
+  sin digerir. `/api/talk` conoce la memoria y puede sugerir `dream`.
+- App: panel "Memoria y sueños" en la pestaña Agente; herramientas `dream` y `memory` en la traza y la narración.
+- Tests: `test/api/memory.test.ts` (reglas puras) y el ciclo que sueña de punta a punta en `test/api/agent.test.ts`.

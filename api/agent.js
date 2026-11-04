@@ -7,6 +7,8 @@
 //   POST { op: "decide", skillId, decision }   a person approves or rejects a candidate that passed the harness
 //   POST { op: "retire", skillId }       takes an active skill out of use (rollback)
 //   POST { op: "exam", scenario, bare? } the sealed held-out exam, with the active skills (or none, to compare)
+//   POST { op: "dream", maxCost? }       it dreams now: digests its finished cycles into lessons (api/_lib/memory.js)
+//   POST { op: "memory", id, action }    a person pins, unpins or forgets one lesson
 import * as core from "@skillab/agent-core";
 import { EFFORTS, familyOf, META_MODELS, pickId } from "@skillab/research";
 import {
@@ -18,6 +20,7 @@ import {
   plannerPrompt,
   scenarioOf,
   scoreAnswers,
+  targetOf,
 } from "./_lib/agent.js";
 import { requireUser } from "./_lib/auth.js";
 import { db } from "./_lib/db.js";
@@ -26,10 +29,26 @@ import { harnessed, keyOf, MODEL_TIMEOUT_MS } from "./_lib/harnessed.js";
 import { HttpError, handle, json, readJson } from "./_lib/http.js";
 import { activeCore } from "./_lib/cores.js";
 import { DIRECTOR_SYSTEM, directorPrompt, estimateCycle, parseDirection, usableFamilies } from "./_lib/director.js";
+import {
+  activeMemories,
+  BUDGETS,
+  consolidate,
+  DREAM_AFTER,
+  DREAM_CAP,
+  DREAM_SYSTEM,
+  dreamInput,
+  dreamOut,
+  markUsed,
+  memoryOut,
+  parseDream,
+  recall,
+  saveDream,
+  undigested,
+} from "./_lib/memory.js";
 import { materialize, runSandboxed } from "./_lib/sandbox.js";
 import { publicScenario, runCore } from "./_lib/solver.js";
 
-const RUNNING = ["plan", "baseline", "propose", "validate"];
+const RUNNING = ["dream", "plan", "baseline", "propose", "validate"];
 /** Per-cycle spending cap: default, and the range a person can choose (USD). */
 export const RUN_CAP = { default: 0.5, min: 0.05, max: 20 };
 const TRACE_MAX = 60;
@@ -137,11 +156,14 @@ function effortFor(model, wanted, fallback) {
 export const GET = handle(async (request) => {
   const user = await requireUser(request);
   const pool = db();
-  const [skills, jobs, keys, budget] = await Promise.all([
+  const [skills, jobs, keys, budget, memories, dreams, pending] = await Promise.all([
     pool.query("SELECT * FROM app.agent_skills WHERE user_id = $1 ORDER BY scenario, context, version DESC", [user.id]),
     pool.query("SELECT * FROM app.agent_jobs WHERE user_id = $1 ORDER BY created_at DESC LIMIT 12", [user.id]),
     pool.query("SELECT model, models FROM app.provider_keys WHERE user_id = $1 AND provider = 'meta' LIMIT 1", [user.id]),
     budgetOf(pool, user.id),
+    activeMemories(pool, user.id),
+    pool.query("SELECT * FROM app.agent_dreams WHERE user_id = $1 ORDER BY created_at DESC LIMIT 5", [user.id]),
+    undigested(pool, user.id),
   ]);
   const key = keys.rows[0];
   const models = key && Array.isArray(key.models) ? key.models.map(String) : [];
@@ -154,6 +176,7 @@ export const GET = handle(async (request) => {
     key: key ? { model: key.model, models } : null,
     families,
     budget,
+    memory: { active: memories.map(memoryOut), dreams: dreams.rows.map(dreamOut), undigested: pending, dreamAfter: DREAM_AFTER, cap: DREAM_CAP },
   });
 });
 
@@ -187,10 +210,12 @@ async function post(request) {
       [user.id, RUNNING],
     );
     if (busy[0]) throw new HttpError(409, "A cycle is already running; finish it first", { reason: "busy", job: jobOut(busy[0]) });
+    // letting it decide: with enough cycles it hasn't digested, it sleeps on them first, then plans with the lessons
+    const sleepy = auto && (await undigested(pool, user.id)) >= DREAM_AFTER;
     const { rows } = await pool.query(
       `INSERT INTO app.agent_jobs (user_id, scenario, executor, planner, effort, phase, state)
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [user.id, sc.id, executor, planner, effort, auto ? "plan" : "baseline", JSON.stringify({
+      [user.id, sc.id, executor, planner, effort, sleepy ? "dream" : auto ? "plan" : "baseline", JSON.stringify({
         guidance, cost: 0, maxCost, auto, lang,
         trace: [{ at: new Date().toISOString(), tool: auto ? "director" : "human", note: auto ? "handed-over" : "started" }],
       })],
@@ -310,6 +335,32 @@ async function post(request) {
     return json({ scenario: sc.id, bare: Boolean(body.bare), skills: skills.map((s) => ({ context: s.context, version: s.version })), scores: run.scores.sealed ?? {}, answered: run.answered, total: run.rows.length, cost: run.cost, model, core: run.core });
   }
 
+  if (op === "dream") {
+    if ((await undigested(pool, user.id)) === 0) throw new HttpError(409, "Nothing new to dream about: finish a cycle first", { reason: "nothing-to-dream" });
+    const k = await keyOf(pool, user.id);
+    const wonder = META_MODELS.find((f) => f.family === "wonder");
+    const model = typeof body.model === "string" && MODEL_ID.test(body.model) ? body.model : (wonder && pickId(wonder, k.models)) || k.model;
+    if (!model) throw new HttpError(409, "Choose which model to use first", { reason: "no-model" });
+    const asked = Number(body.maxCost);
+    const cap = Number.isFinite(asked) && asked > 0 ? Math.min(RUN_CAP.max, Math.max(RUN_CAP.min, asked)) : DREAM_CAP;
+    const out = await dreamNow(pool, user.id, k, { model, cap, lang: body.lang === "es" ? "es" : "en", jobId: null });
+    return json({ dream: out?.dream ?? null, cost: out?.cost ?? 0, memory: (await activeMemories(pool, user.id)).map(memoryOut) });
+  }
+
+  if (op === "memory") {
+    const id = typeof body.id === "string" && /^[0-9a-f-]{36}$/i.test(body.id) ? body.id : "";
+    const action = ["pin", "unpin", "forget"].includes(body.action) ? body.action : "";
+    if (!id || !action) throw new HttpError(400, "Send the lesson and what to do with it (pin, unpin or forget)");
+    const { rows } = await pool.query(
+      action === "forget"
+        ? "UPDATE app.agent_memories SET status = 'forgotten', pinned = false, updated_at = now() WHERE id = $1 AND user_id = $2 AND status = 'active' RETURNING *"
+        : "UPDATE app.agent_memories SET pinned = $3, updated_at = now() WHERE id = $1 AND user_id = $2 AND status = 'active' RETURNING *",
+      action === "forget" ? [id, user.id] : [id, user.id, action === "pin"],
+    );
+    if (!rows[0]) throw new HttpError(404, "That lesson isn't in its active memory");
+    return json({ memory: memoryOut(rows[0]) });
+  }
+
   throw new HttpError(400, "Unknown operation");
 }
 
@@ -323,6 +374,17 @@ async function runPhase(pool, userId, job, state) {
   // what is left of this cycle's own cap (cycles from before caps existed have none)
   const left = () => (typeof state.maxCost === "number" ? state.maxCost - Number(state.cost ?? 0) : undefined);
   const rec = (/** @type {Record<string, unknown>} */ e) => trace(state, { phase: job.phase, ...e });
+
+  if (job.phase === "dream") {
+    const t0 = Date.now();
+    const out = await dreamNow(pool, userId, k, { model: job.planner, cap: left(), lang: String(state.lang ?? "en"), jobId: job.id });
+    if (out) {
+      spend(out.cost);
+      rec({ tool: "dream", model: job.planner, cost: out.cost, ms: Date.now() - t0, note: `${out.dream.jobs}` });
+      state.dream = { id: out.dream.id, jobs: out.dream.jobs, summary: out.dream.summary, stats: out.dream.stats };
+    }
+    return "plan";
+  }
 
   if (job.phase === "plan") {
     const t0 = Date.now();
@@ -365,7 +427,13 @@ async function runPhase(pool, userId, job, state) {
       [userId],
     );
     if (ideas.length) rec({ tool: "radar", note: `${ideas.length}` });
-    const { prompt } = plannerPrompt(sc, active, state.practice ?? [], ideas, String(state.guidance ?? ""));
+    // what it remembers about this exam (and this situation first), within the planner's budget
+    const memory = recall(await activeMemories(pool, userId), { budget: BUDGETS.planner, scenario: sc.id, context: targetOf(sc, state.practice ?? []) });
+    if (memory.ids.length) {
+      await markUsed(pool, memory.ids);
+      rec({ tool: "memory", note: `${memory.ids.length}` });
+    }
+    const { prompt } = plannerPrompt(sc, active, state.practice ?? [], ideas, String(state.guidance ?? ""), memory.text);
     const effort = effortFor(job.planner, "high", "high");
     const t0 = Date.now();
     const run = await harnessed(pool, userId, k, { kind: "propose", model: job.planner, effort, system: PLANNER_SYSTEM, prompt, cap: left() });
@@ -436,11 +504,14 @@ function trace(/** @type {Record<string, any>} */ state, /** @type {Record<strin
  */
 async function direct(pool, userId, k, job, state, cap) {
   const bench = benchSummary().filter((b) => !b.legacy);
-  const [{ rows: jobs }, { rows: skills }, { rows: ideas }] = await Promise.all([
+  const [{ rows: jobs }, { rows: skills }, { rows: ideas }, memories] = await Promise.all([
     pool.query("SELECT scenario, executor, state FROM app.agent_jobs WHERE user_id = $1 AND id <> $2 ORDER BY created_at DESC LIMIT 20", [userId, job.id]),
     pool.query("SELECT scenario, COUNT(*)::int AS n FROM app.agent_skills WHERE user_id = $1 AND status = 'active' GROUP BY scenario", [userId]),
     pool.query("SELECT title FROM app.research_notes WHERE user_id = $1 AND decision = 'approved' AND verdict = 'experiment' ORDER BY decided_at DESC LIMIT 5", [userId]),
+    activeMemories(pool, userId),
   ]);
+  const memory = recall(memories, { budget: BUDGETS.director });
+  await markUsed(pool, memory.ids);
   const pctOf = (/** @type {any} */ s) => {
     const t = Object.values(s ?? {}).reduce((/** @type {{ c: number, t: number }} */ a, /** @type {any} */ b) => ({ c: a.c + b.correct, t: a.t + b.total }), { c: 0, t: 0 });
     return t.t ? (t.c / t.t) * 100 : null;
@@ -457,13 +528,29 @@ async function direct(pool, userId, k, job, state, cap) {
   if (!families.length) throw new HttpError(409, "Your key doesn't list a Meta model the agent can choose", { reason: "no-model" });
   const capNow = typeof cap === "number" ? cap : Number(state.maxCost ?? RUN_CAP.default);
   const weakest = [...standing].sort((a, b) => (a.validation ?? -1) - (b.validation ?? -1))[0]?.id ?? job.scenario;
-  const prompt = directorPrompt({ bench, standing, families, cap: capNow, ideas, guidance: String(state.guidance ?? ""), lang: String(state.lang ?? "en") });
+  const prompt = directorPrompt({ bench, standing, families, cap: capNow, ideas, guidance: String(state.guidance ?? ""), lang: String(state.lang ?? "en"), memory: memory.text });
   const run = await harnessed(pool, userId, k, { kind: "direct", model: job.planner, effort: effortFor(job.planner, "medium", "medium"), system: DIRECTOR_SYSTEM, prompt, cap });
   const plan = parseDirection(run.text, {
     scenarios: bench.map((b) => b.id), families, cap: Math.max(0, capNow - run.cost),
     fallback: { scenario: weakest, family: families.find((f) => f.family === "spark") ? "spark" : (families[0]?.family ?? "spark") },
   });
   return { plan, cost: run.cost };
+}
+
+/**
+ * One dream: reread the finished cycles it hasn't digested and its lessons, ask the model what to keep, rewrite,
+ * add or forget, and apply that by the fixed rules of api/_lib/memory.js. Null when there is nothing to digest.
+ * @param {import("pg").Pool} pool @param {string} userId @param {Awaited<ReturnType<typeof keyOf>>} k
+ * @param {{ model: string, cap: number | undefined, lang: string, jobId: string | null }} o
+ */
+async function dreamNow(pool, userId, k, o) {
+  const input = await dreamInput(pool, userId, o.lang);
+  if (!input.episodes.length) return null;
+  const run = await harnessed(pool, userId, k, { kind: "dream", model: o.model, effort: effortFor(o.model, "medium", "medium"), system: DREAM_SYSTEM, prompt: input.prompt, cap: o.cap });
+  const parsed = parseDream(run.text, input);
+  const plan = consolidate(input.memories.map((m) => m.row), parsed, input.lastDreamAt);
+  const dream = await saveDream(pool, userId, { model: o.model, cost: run.cost, jobIds: input.episodes.map((e) => e.id), summary: parsed.summary, plan, fixes: parsed.fixes, jobId: o.jobId });
+  return { dream: dreamOut(dream), cost: run.cost };
 }
 
 export const POST = handle(post);

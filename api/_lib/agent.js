@@ -129,16 +129,25 @@ export const PLANNER_SYSTEM =
   "a registros nuevos. Nunca memorices ids ni registros concretos: la skill se prueba con otros registros que no ves. " +
   'Responde SOLO con JSON: {"context": "<id del contexto>", "instructions": "<la skill completa>", "rationale": "<qué patrón viste y por qué>", "noteId": "<id de la idea del radar que usaste o null>"}';
 
+/** Practice mistakes per context. @param {Scenario} sc @param {{ context: string, ok: boolean }[]} practice */
+const errorsByContext = (sc, practice) => new Map(sc.contexts.map((c) => [c.id, practice.filter((r) => r.context === c.id && !r.ok).length]));
+
+/** The context with the most practice mistakes: where the planner should write. @param {Scenario} sc @param {{ context: string, ok: boolean }[]} practice */
+export function targetOf(sc, practice) {
+  return [...errorsByContext(sc, practice).entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? sc.contexts[0]?.id ?? "";
+}
+
 /**
+ * `memory` is the block of lessons it consolidated while dreaming (api/_lib/memory.js), already cut to its budget.
  * @param {Scenario} sc
  * @param {SkillText[]} skills
  * @param {ReturnType<typeof scoreAnswers>["marked"]} practice
  * @param {{ id: string, title: string, gain: string }[]} ideas
  * @param {string} guidance
  */
-export function plannerPrompt(sc, skills, practice, ideas, guidance) {
-  const errorsBy = new Map(sc.contexts.map((c) => [c.id, practice.filter((r) => r.context === c.id && !r.ok).length]));
-  const target = [...errorsBy.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? sc.contexts[0]?.id ?? "";
+export function plannerPrompt(sc, skills, practice, ideas, guidance, memory = "") {
+  const errorsBy = errorsByContext(sc, practice);
+  const target = targetOf(sc, practice);
   const rowLine = (/** @type {typeof practice[number]} */ r) =>
     `- ${Object.entries(r.fields).map(([k, v]) => `${k}=${fieldText(v)}`).join("; ")} → correcta: ${r.truth}; el ejecutor dijo: ${r.given ?? "(nada)"}${r.ok ? " (bien)" : " (MAL)"}`;
   const parts = [
@@ -150,6 +159,7 @@ export function plannerPrompt(sc, skills, practice, ideas, guidance) {
     ...sc.contexts.map((c) => `Práctica del contexto ${c.id} (todas, con la respuesta correcta):\n${practice.filter((r) => r.context === c.id).map(rowLine).join("\n")}`),
   ];
   if (ideas.length) parts.push(`Ideas que una persona aprobó en el radar de investigación (úsalas solo si ayudan):\n${ideas.map((i) => `- [${i.id}] ${i.title}: ${i.gain}`).join("\n")}`);
+  if (memory) parts.push(`Lo que recuerdas de ciclos anteriores (lecciones que consolidaste al soñar; no repitas un dead-end, parte de las rule):\n${memory}`);
   if (guidance) parts.push(`Guía de la persona: ${guidance}`);
   parts.push(`Si ya existe una skill para ese contexto, reescríbela completa como versión nueva. Máximo ${MAX_INSTRUCTIONS} caracteres.`);
   return { prompt: parts.join("\n\n"), target };

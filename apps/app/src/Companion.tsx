@@ -158,6 +158,13 @@ export function Companion({ tab, go, client, lang }: { tab: Tab; go: (t: Tab) =>
       } catch (err) { setError((err as Error).message); }
       return;
     }
+    if (action === "dream") {
+      try {
+        const r = await client.agentOp<{ dream: { summary: string } | null }>({ op: "dream", lang });
+        setMsgs((m) => [...m, { role: "assistant", content: r.dream?.summary || t(E("I dreamt, but nothing changed in what I remember.", "Soñé, pero no cambió nada de lo que recuerdo.")) }]);
+      } catch (err) { setError((err as Error).message); }
+      return;
+    }
     if (action.startsWith("open:")) go(action.slice(5) as Tab);
   };
 
@@ -311,6 +318,8 @@ export function Companion({ tab, go, client, lang }: { tab: Tab; go: (t: Tab) =>
                   <button type="button" className="btn small" onClick={() => void doAction(m.action ?? "")}>
                     {m.action === "auto-cycle"
                       ? t(E(`Yes, improve yourself (cap $${savedCap().toFixed(2)})`, `Sí, mejórate tú solo (tope $${savedCap().toFixed(2)})`))
+                      : m.action === "dream"
+                      ? t(E("Yes, dream on it", "Sí, duerme y ordénalo"))
                       : t(E(`Open ${t(TAB_NAME[m.action.slice(5)] ?? E("it", "eso"))}`, `Abrir ${t(TAB_NAME[m.action.slice(5)] ?? E("it", "eso"))}`))}
                   </button>
                 )}
