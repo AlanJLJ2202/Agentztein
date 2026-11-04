@@ -82,7 +82,7 @@ export type Skill = {
 };
 export type Phase = "dream" | "plan" | "baseline" | "propose" | "validate" | "awaiting" | "done";
 /** One thing the agent did in a cycle: which tool or model, what it cost, how long it took. */
-export type TraceEntry = { at: string; phase?: string; tool: string; model?: string; cost?: number; ms?: number; tokens?: number; note?: string; idea?: string | null };
+export type TraceEntry = { at: string; phase?: string; tool: string; model?: string; cost?: number; ms?: number; tokens?: number; note?: string; idea?: string | null; /** the lessons it recalled (memory steps) */ ids?: string[] };
 /** What the director (Muse Wonder) decided when the person let the agent choose. */
 export type Plan = {
   scenario: string;

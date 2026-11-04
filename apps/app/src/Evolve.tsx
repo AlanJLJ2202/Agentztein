@@ -6,6 +6,7 @@ import { ApiError, type Api, type CoreVersion, type EvolveRun, type EvolveState 
 import type { Tab } from "./App.js";
 import { useT, type Text } from "./i18n.js";
 import { MetaMark } from "./Logos.js";
+import { ChangeTag } from "./Process.js";
 import { SetupAlerts } from "./SetupAlerts.js";
 
 const E = (en: string, es: string): Text => ({ en, es });
@@ -193,7 +194,7 @@ function RunItem({ r }: { r: EvolveRun }) {
   const live = r.status === "queued" || r.status === "building";
   return (
     <li className={`evo-${r.status === "passed" ? "merged" : r.status === "rejected" || r.status === "failed" ? "closed" : "open"}`}>
-      <span>{live && <span className="spin" aria-hidden="true" />} <b>{r.proposal.title}</b></span>
+      <span className="row" style={{ gap: 8, flexWrap: "wrap" }}><ChangeTag kind="code" />{live && <span className="spin" aria-hidden="true" />} <b>{r.proposal.title}</b></span>
       <span className="small muted">
         {t(L.status[r.status] ?? E(r.status, r.status))}{r.stage && live ? ` · ${r.stage}` : ""} · {r.builder}
         {r.verdict && <> · {score(r.base)} → {score(r.head)} ({r.verdict.gain >= 0 ? "+" : ""}{r.verdict.gain}) · {t(L.reasons[r.verdict.reason] ?? E(r.verdict.reason, r.verdict.reason))}</>}

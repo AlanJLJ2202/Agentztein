@@ -138,3 +138,11 @@ pnpm check
   sin digerir. `/api/talk` conoce la memoria y puede sugerir `dream`.
 - App: panel "Memoria y sueños" en la pestaña Agente; herramientas `dream` y `memory` en la traza y la narración.
 - Tests: `test/api/memory.test.ts` (reglas puras) y el ciclo que sueña de punta a punta en `test/api/agent.test.ts`.
+
+## El proceso del agente (2026-11-04, ADR-032)
+- `apps/app/src/Process.tsx`: pestaña "Proceso" (vista por defecto; Lab 3D como alternativa) con TL;DR del ciclo,
+  decisiones resaltadas, tarjeta "Lo que estás aprobando" (dónde aplica, qué reemplaza, evidencia, texto y por qué),
+  pensamiento paso a paso con lo que usó cada paso, "Su mente en este ciclo" y la red de la corrida.
+- Etiqueta de tipo de cambio (`ChangeTag`): nueva habilidad, mejora de habilidad, cambio de código, nueva herramienta.
+- `/api/agent`: el paso `memory` de la traza guarda los ids de las lecciones recordadas (también las del director).
+- La pestaña Agente muestra el TL;DR compacto y la aprobación; la guía, Inicio y la charla llevan al proceso.

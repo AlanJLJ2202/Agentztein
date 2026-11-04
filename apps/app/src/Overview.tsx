@@ -418,7 +418,7 @@ function Doors({ go }: { go: (t: Tab) => void }) {
   const t = useT();
   const doors: { to: Tab; icon: string; title: Text; text: Text; color: string }[] = [
     { to: "mind", icon: "✺", color: "#6d5ce8", title: E("See its brain", "Ver su cerebro"), text: E("Every dot it learned, connected, and the tools it uses.", "Cada cosa que aprendió, conectada, y las herramientas que usa.") },
-    { to: "lab", icon: "⌂", color: "#0081fb", title: E("Walk into its lab", "Entrar a su laboratorio"), text: E("The 3D building: follow it from room to room while it works.", "El edificio en 3D: síguelo de cuarto en cuarto mientras trabaja.") },
+    { to: "lab", icon: "⌂", color: "#0081fb", title: E("See its process", "Ver su proceso"), text: E("A TL;DR of what it did, what it decided and what you approve; also as a 3D building.", "Un TL;DR de lo que hizo, qué decidió y qué apruebas; también como edificio en 3D.") },
     { to: "agent", icon: "▶", color: "#22b864", title: E("Put it to practice", "Ponerlo a practicar"), text: E("Choose the exam yourself, or let it decide with a spending cap.", "Elige tú el examen o déjalo decidir con un tope de gasto.") },
   ];
   return (

@@ -531,3 +531,35 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
   cada vez); dejar que el sueño edite habilidades (saltaría el arnés).
 - **Pendiente de medir:** si con memoria bajan los ciclos rechazados por el arnés y los tokens del planificador por
   habilidad aprobada. No hay números todavía; el registro está listo (`memory` en la traza, `app.agent_dreams`).
+
+## ADR-032 — El proceso del agente como vista principal: TL;DR, decisiones resaltadas, qué apruebas y tipo de cambio
+- **Contexto (4 nov 2026):** Alan corrió un ciclo autónomo y dijo que el proceso era confuso: la app le pedía aprobar
+  sin decir *qué* aprobaba, lo que el agente decidió quedaba escondido entre barras y tarjetas, y no se veía cómo
+  pensaba ni qué memoria usaba. Pidió una interfaz propia para el proceso, con un TL;DR y su aprobación, el
+  pensamiento y las decisiones resaltados, sus neuronas y su memoria a la vista, y el Lab 3D como vista alternativa.
+  También pidió una etiqueta que diga si un cambio es de código, una habilidad nueva o una herramienta nueva.
+- **Decisión:**
+  - **Pestaña "Proceso"** (antes "Lab 3D", mismo id `lab`, ahora entre las esenciales junto a Agente): vista por
+    defecto *Proceso*, alternativa *Lab 3D* (`#lab3d` la abre directo). Iniciar un ciclo desde Agente, Inicio, la
+    guía o la charla lleva aquí.
+  - **TL;DR** (`summarize` en `apps/app/src/Process.tsx`): una frase de estado y una línea por lo que hizo, armadas
+    solo con el estado del ciclo (sin llamadas extra al modelo, sin costo). Las líneas que son decisiones suyas
+    (qué practicar y con qué modelo, qué habilidad escribir, el veredicto del arnés) llevan la marca "Decidió".
+  - **"Lo que estás aprobando":** la tarjeta dice en palabras dónde se aplicará la habilidad (examen y situación), si
+    reemplaza una versión anterior (que queda guardada) o es la primera, que no toca su código ni los modelos, la
+    evidencia por situación antes/después con la regla del arnés, el texto palabra por palabra y por qué la escribió.
+  - **Pensamiento paso a paso:** la traza agrupada (un examen en lotes es un paso), cada paso abrible con lo que usó:
+    razonamiento y plan del director, lecciones que recordó, errores que estudió, calificaciones por situación y
+    deltas del arnés. Las decisiones se resaltan y se abren solas; mientras corre, el paso siguiente aparece como
+    "pensando ahora". Al lado, "Su mente en este ciclo": gasto contra el tope, modelos que llamó (sus neuronas),
+    memoria y habilidades en juego; debajo, la red 3D de la corrida (`RunGraph`).
+  - **Tipo de cambio** (`ChangeTag`): *Nueva habilidad* / *Mejora de habilidad* (texto que lee; la v1 de una situación
+    o una versión nueva), *Cambio de código* (reescribe su núcleo, con juez; pestaña Su código) y *Nueva herramienta*
+    (capacidad que pide el director; solo propuesta). Aparece en el TL;DR, la aprobación, la traza, la lista de
+    habilidades, las corridas de Su código y en "Todos los cambios que ha propuesto".
+  - **La traza guarda qué lecciones recordó** (`ids` en el paso `memory`, máx. 12), también cuando las recuerda el
+    director, para poder mostrarlas; antes solo guardaba cuántas.
+  - La pestaña Agente queda para configurar e iniciar: muestra el TL;DR compacto (solo decisiones y cambios) y la
+    misma tarjeta de aprobación, con un enlace al proceso completo.
+- **Alternativas descartadas:** pedir al modelo un resumen del ciclo (cuesta y puede inventar; el estado ya tiene
+  todo); dejar el Lab 3D como vista principal (es bonito pero no dice qué decidió ni qué apruebas).

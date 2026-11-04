@@ -10,7 +10,7 @@ import { Overview } from "./Overview.js";
 import { Radar } from "./Radar.js";
 import { SignIn } from "./SignIn.js";
 import { Companion } from "./Companion.js";
-import { Lab3D } from "./Lab3D.js";
+import { Process } from "./Process.js";
 import { LiveProvider } from "./live.js";
 import { Mind } from "./Mind.js";
 import { Path, showPath } from "./Path.js";
@@ -18,20 +18,20 @@ import { Path, showPath } from "./Path.js";
 export type Tab = "overview" | "mind" | "lab" | "agent" | "evolve" | "radar" | "brain";
 const TABS: Tab[] = ["overview", "mind", "lab", "agent", "evolve", "radar", "brain"];
 // the nav puts what you need to start first, then the places to explore
-const ESSENTIAL: Tab[] = ["overview", "agent", "brain"];
-const EXPLORE: Tab[] = ["mind", "lab", "radar", "evolve"];
+const ESSENTIAL: Tab[] = ["overview", "agent", "lab", "brain"];
+const EXPLORE: Tab[] = ["mind", "radar", "evolve"];
 const TAB_HINT: Record<Tab, { en: string; es: string }> = {
   overview: { en: "Your board: how it's doing and what's next", es: "Tu tablero: cómo va y qué sigue" },
   agent: { en: "Put it to practice and see each cycle as a network", es: "Ponlo a practicar y ve cada corrida como red" },
   brain: { en: "Your Meta key, your budget and its voice", es: "Tu llave de Meta, tu presupuesto y su voz" },
   mind: { en: "Everything it learned, as a graph", es: "Todo lo que aprendió, como grafo" },
-  lab: { en: "Follow it room by room in 3D", es: "Síguelo cuarto por cuarto en 3D" },
+  lab: { en: "Watch it think: what it did, what it decided and what it asks you to approve (or in 3D)", es: "Míralo pensar: qué hizo, qué decidió y qué te pide aprobar (o en 3D)" },
   radar: { en: "AI news it reads for ideas", es: "Noticias de IA que lee para sacar ideas" },
   evolve: { en: "It rewrites its own code, behind a judge", es: "Reescribe su propio código, con un juez" },
 };
 const tabFromHash = (): Tab => {
   const raw = location.hash.slice(1);
-  const h = raw === "workshop" ? "lab" : raw; // the old 2D workshop became the 3D lab
+  const h = raw === "workshop" || raw === "lab3d" ? "lab" : raw; // the old 2D workshop and the 3D lab live in the process tab
   return (TABS as string[]).includes(h) ? (h as Tab) : "overview";
 };
 
@@ -196,7 +196,7 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
         {tab === "agent" && <Agent client={client} go={go} lang={lang} />}
         {tab === "evolve" && <Evolve client={client} go={go} />}
         {tab === "mind" && <Mind go={go} />}
-        {tab === "lab" && <Lab3D go={go} lang={lang} />}
+        {tab === "lab" && <Process client={client} go={go} lang={lang} />}
         {tab === "radar" && <Radar client={client} keys={keys} onKeys={setKeys} onNotes={setNotesCount} go={go} lang={lang} />}
       </main>
       <Companion tab={tab} go={go} client={client} lang={lang} />

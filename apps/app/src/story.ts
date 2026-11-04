@@ -63,7 +63,7 @@ export function say(e: TraceEntry, job: Job): Text {
         ? E(`I dreamt about ${e.note ?? "my"} cycles: ${job.state.dream.summary}`, `Soñé con ${e.note ?? "mis"} ciclos: ${job.state.dream.summary}`)
         : E(`I dreamt about ${e.note ?? "my"} finished cycles and tidied up what I remember.`, `Soñé con ${e.note ?? "mis"} ciclos terminados y ordené lo que recuerdo.`);
     case "memory":
-      return E(`I remembered ${e.note ?? "some"} lessons from earlier cycles.`, `Recordé ${e.note ?? "algunas"} lecciones de ciclos anteriores.`);
+      return e.note === "1" ? E("I remembered 1 lesson from earlier cycles.", "Recordé 1 lección de ciclos anteriores.") : E(`I remembered ${e.note ?? "some"} lessons from earlier cycles.`, `Recordé ${e.note ?? "algunas"} lecciones de ciclos anteriores.`);
     case "director":
       if (e.note === "handed-over") return E("You let me decide. Let me think what's worth it…", "Me dejaste decidir. Déjame pensar qué conviene…");
       return e.note ? E(`Decided: ${e.note}`, `Decidí: ${e.note}`) : E("I made a plan.", "Ya tengo un plan.");

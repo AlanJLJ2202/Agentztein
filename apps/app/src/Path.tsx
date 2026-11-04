@@ -71,26 +71,26 @@ export function Path({ tab, go, keys }: { tab: Tab; go: (t: Tab, anchor?: string
       cta: E("Start the cycle now", "Iniciar la corrida ahora"),
       act: async () => {
         setBusy(true);
-        try { await live.start({ auto: true, maxCost: savedCap(), lang }); go("agent", "corrida"); } catch { go("agent"); } finally { setBusy(false); }
+        try { await live.start({ auto: true, maxCost: savedCap(), lang }); go("lab"); } catch { go("agent"); } finally { setBusy(false); }
       },
     },
     {
-      id: "watch", tab: "agent", done: finished || flag(PATH_FLAGS.graph),
+      id: "watch", tab: "lab", done: finished || flag(PATH_FLAGS.graph),
       title: E("Watch it work", "Míralo trabajar"),
-      what: E("Each cycle draws itself as a network: every call to the model, every tool and what each gave back, with the cost against the cap. It grows live.", "Cada corrida se dibuja como una red: cada llamada al modelo, cada herramienta y lo que devolvió, con el costo contra el tope. Crece en vivo."),
+      what: E("The Process tab shows a TL;DR of what it did, every decision it made highlighted, its thinking step by step and its network of calls, with the cost against the cap. It grows live.", "La pestaña Proceso muestra un TL;DR de lo que hizo, cada decisión que tomó resaltada, su pensamiento paso a paso y su red de llamadas, con el costo contra el tope. Crece en vivo."),
       why: E("So you see exactly what it did and what it spent, step by step.", "Para que veas exactamente qué hizo y cuánto gastó, paso a paso."),
-      cta: E("Open the cycle's network", "Abrir la red de la corrida"),
-      act: () => { markPath("graph"); go("agent", "corrida"); },
+      cta: E("Open its process", "Abrir su proceso"),
+      act: () => { markPath("graph"); go("lab"); },
     },
     {
-      id: "decide", tab: "agent", done: decided,
+      id: "decide", tab: "lab", done: decided,
       title: E("Decide", "Decide"),
       what: waiting
-        ? E("It wrote a skill and the harness passed it. Read it and approve it or reject it.", "Escribió una habilidad y el arnés la aprobó. Léela y apruébala o recházala.")
+        ? E("It wrote a skill and the harness passed it. The Process tab tells you exactly what you approve: the text, where it applies and the evidence.", "Escribió una habilidad y el arnés la aprobó. La pestaña Proceso te dice exactamente qué apruebas: el texto, dónde aplica y la evidencia.")
         : E("When the harness passes a skill, you decide whether it stays. If the harness throws it out, there's nothing to decide: run another cycle.", "Cuando el arnés aprueba una habilidad, tú decides si se queda. Si el arnés la descarta, no hay nada que decidir: corre otra."),
       why: E("Nothing changes in the agent without you.", "Nada cambia en el agente sin ti."),
       cta: waiting ? E("Review and decide", "Revisar y decidir") : E("See the result", "Ver el resultado"),
-      act: () => go("agent"),
+      act: () => go("lab"),
     },
     {
       id: "talk", tab: tab, done: flag(PATH_FLAGS.talked), optional: true,
@@ -126,7 +126,7 @@ export function Path({ tab, go, keys }: { tab: Tab; go: (t: Tab, anchor?: string
           ) : (
             <div className="path-now">
               <p className="path-k">{t(E(`${doneCount} of ${steps.length} done`, `${doneCount} de ${steps.length} listos`))}</p>
-              <p><b>{t(E("You know the basics.", "Ya sabes lo básico."))}</b> {t(E("Next ideas: run the radar for AI news, walk into the 3D lab, or let it change its own code.", "Siguientes ideas: corre el radar de noticias de IA, entra al laboratorio 3D o deja que cambie su propio código."))}</p>
+              <p><b>{t(E("You know the basics.", "Ya sabes lo básico."))}</b> {t(E("Next ideas: run the radar for AI news, walk into the 3D lab (Process tab), or let it change its own code.", "Siguientes ideas: corre el radar de noticias de IA, entra al laboratorio 3D (pestaña Proceso) o deja que cambie su propio código."))}</p>
             </div>
           )}
           <div className="path-act">

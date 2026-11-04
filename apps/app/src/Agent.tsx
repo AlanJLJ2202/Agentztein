@@ -10,7 +10,7 @@ import { MetaMark } from "./Logos.js";
 import { CAP_KEY, savedCap } from "./Companion.js";
 import { useLive } from "./live.js";
 import { Memory } from "./Memory.js";
-import { RunGraph } from "./RunGraph.js";
+import { Approval, ChangeTag, skillKind, Tldr } from "./Process.js";
 
 const E = (en: string, es: string): Text => ({ en, es });
 const L = {
@@ -152,19 +152,6 @@ function Bars({ scores, contexts, label }: { scores?: Scores; contexts: { id: st
   );
 }
 
-function Diff({ before, after }: { before: string | null; after: string }) {
-  const old = new Set((before ?? "").split("\n").map((l) => l.trim()).filter(Boolean));
-  const next = after.split("\n");
-  const fresh = new Set(next.map((l) => l.trim()));
-  const gone = [...old].filter((l) => !fresh.has(l));
-  return (
-    <pre className="diff">
-      {gone.map((l, i) => <span key={`g${i}`} className="del">- {l}{"\n"}</span>)}
-      {next.map((l, i) => <span key={`n${i}`} className={old.size && !old.has(l.trim()) ? "add" : ""}>{old.size && !old.has(l.trim()) ? "+ " : "  "}{l}{"\n"}</span>)}
-    </pre>
-  );
-}
-
 /** Records up to two minutes of audio in the browser. */
 function useRecorder() {
   const [recording, setRecording] = useState(false);
@@ -253,6 +240,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
       try { localStorage.setItem(CAP_KEY, String(maxCost)); } catch { /* private mode */ }
       const body = auto ? { auto: true, planner, guidance, maxCost, lang } : { scenario, executor, planner, effort, guidance, maxCost, lang };
       const r = await client.agentOp({ op: "start", ...body });
+      go("lab");
       await drive(r.job);
     } catch (err) {
       if (err instanceof ApiError && err.reason === "busy" && err.detail?.job) setJob(err.detail.job as Job);
@@ -321,10 +309,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
     { key: "image", name: "Muse Image", id: null },
   ];
   const phaseIdx = job ? (job.phase === "done" ? (job.state.verdict ? 5 : job.state.candidate ? 4 : job.state.before ? 2 : 1) : ["plan", "baseline", "propose", "validate", "awaiting"].indexOf(job.phase === "dream" ? "plan" : job.phase)) : -1;
-  const runs = (live.agent?.jobs ?? data.jobs).filter((j) => j.state.trace?.length);
   const skillsBy = (sid: string) => data.skills.filter((s) => s.scenario === sid);
-  const verdict = job?.state.verdict;
-  const candId = job?.state.candidate?.id;
   const delta = (s: Skill) => (s.verdict ? s.verdict.deltas[s.verdict.target] ?? 0 : 0);
 
   return (
@@ -417,7 +402,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
               {busy ? <span className="spin light" aria-hidden="true" /> : <Icon d={I.play} size={16} />}
               {busy ? t(L.running) : t(L.start)}
             </button>
-            {!busy && <p className="fine">{t(E("What happens next: it takes an exam, studies its mistakes, writes a skill and tests it. You watch it live in the network below, and only you approve the result.", "Qué pasa después: presenta un examen, estudia sus errores, escribe una habilidad y la prueba. Lo ves en vivo en la red de abajo y solo tú apruebas el resultado."))}</p>}
+            {!busy && <p className="fine">{t(E("What happens next: it takes an exam, studies its mistakes, writes a skill and tests it. You watch it live in the Process tab (a TL;DR, its thinking and its network), and only you approve the result.", "Qué pasa después: presenta un examen, estudia sus errores, escribe una habilidad y la prueba. Lo ves en vivo en la pestaña Proceso (un TL;DR, su pensamiento y su red) y solo tú apruebas el resultado."))}</p>}
             <p className="muted small">${data.budget.spent.toFixed(4)} / ${data.budget.monthly.toFixed(2)} {t(L.spent)}</p>
             {error && <p className="error" role="alert">{error}</p>}
           </div>
@@ -435,104 +420,15 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
                   ))}
                 </ol>
                 <p className="small muted">{jobSc.title} · {job.planner} → {job.executor}{job.effort ? ` (${job.effort})` : ""} · ${Number(job.state.cost ?? 0).toFixed(4)}{job.state.maxCost ? ` / $${job.state.maxCost.toFixed(2)}` : ""} {t(L.cost)}</p>
-                <div className="row gap" style={{ flexWrap: "wrap" }}>
-                  <a className="btn small ghost" href="#corrida" onClick={(e) => { e.preventDefault(); document.getElementById("corrida")?.scrollIntoView({ behavior: "smooth" }); }}>{t(E("See it as a network", "Verla como red"))} ↓</a>
-                  {RUNNING.includes(job.phase) && busy && <button type="button" className="btn small ghost" onClick={() => go("lab")}>{t(L.watch)} →</button>}
-                </div>
-                {job.state.plan && (
-                  <div className="plan">
-                    <p className="small"><b>✦ {t(L.planTitle)}:</b> {job.state.plan.why || "—"}{job.state.plan.estimate ? ` (≈ $${job.state.plan.estimate.toFixed(3)})` : ""}</p>
-                    {job.state.plan.proposals.length > 0 && (
-                      <>
-                        <p className="small"><b>{t(L.proposals)}</b></p>
-                        <ul>
-                          {job.state.plan.proposals.map((p, i) => (
-                            <li key={i}><span className="pill">{t(L.capability[p.capability] ?? E(p.capability, p.capability))}{p.model ? ` · ${p.model}` : ""}</span> {p.idea} <span className="muted">— {p.why}</span></li>
-                          ))}
-                        </ul>
-                        <p className="fine">{t(L.proposalNote)}</p>
-                      </>
-                    )}
-                  </div>
-                )}
-                {job.state.guidance && <p className="small">“{job.state.guidance}”</p>}
-                {job.state.error && <p className="error">{job.state.error}</p>}
+                <Tldr job={job} sc={jobSc} compact />
                 {RUNNING.includes(job.phase) && !busy && <button type="button" className="btn small ghost" onClick={() => void resume()}>{t(L.resume)}</button>}
-
-                {job.state.before && (
-                  <div className="scores">
-                    <Bars scores={job.state.before.validation} contexts={jobSc.contexts} label={`${t(L.before)} · ${t(L.validation)}`} />
-                    {job.state.after && <Bars scores={job.state.after} contexts={jobSc.contexts} label={t(L.after)} />}
-                  </div>
-                )}
-
-                {job.state.mistakes.length > 0 && !job.state.after && (
-                  <details className="mist">
-                    <summary>{t(L.mistakes)}</summary>
-                    <ul>
-                      {job.state.mistakes.map((m, i) => (
-                        <li key={i}>
-                          <code>{m.context}</code> {Object.entries(m.fields).map(([k, v]) => `${k}=${String(v)}`).join("; ")}
-                          <span className="bad"> {t(L.said)} {m.given ?? "—"}</span> · <span className="good">{t(L.right)} {m.truth}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-
-                {job.state.candidate && (
-                  <div className="cand">
-                    <p className="row between"><b>{t(L.candidate)} v{job.state.candidate.version} {t(L.forCtx)} {jobSc.contexts.find((c) => c.id === job.state.candidate?.context)?.name}</b><span className="pill">{job.state.candidate.model}</span></p>
-                    <Diff before={job.state.candidate.parentInstructions} after={job.state.candidate.instructions} />
-                    <p className="small"><b>{t(L.why)}:</b> {job.state.candidate.rationale}</p>
-                  </div>
-                )}
-
-                {verdict && (
-                  <p className={`gate ${verdict.pass ? "pass" : "fail"}`}>
-                    <Icon d={I.shield} size={18} />
-                    {verdict.pass ? t(L.verdictPass) : verdict.reason === "regression" ? t(L.verdictRegression) : t(L.verdictNoGain)}
-                  </p>
-                )}
-                {job.phase === "awaiting" && candId && (
-                  <div className="decide">
-                    <button type="button" className="btn small" onClick={() => void decide(candId, "approved")}><Icon d={I.check} size={16} />{t(L.approve)}</button>
-                    <button type="button" className="btn small ghost" onClick={() => void decide(candId, "rejected")}><Icon d={I.x} size={16} />{t(L.reject)}</button>
-                  </div>
-                )}
-                {job.phase === "done" && job.state.outcome && <p className={`decided ${job.state.outcome === "approved" ? "approved" : "rejected"}`}>{t(L.outcome[job.state.outcome] ?? E("", ""))}{job.state.detail ? ` (${job.state.detail})` : ""}</p>}
+                <Approval job={job} sc={jobSc} onDecide={decide} />
+                <button type="button" className="btn small" onClick={() => go("lab")}>{t(E("See its whole process: thinking, memory and network", "Ver su proceso completo: pensamiento, memoria y red"))} →</button>
               </>
             ) : (
               <p className="empty">{t(L.lead)}</p>
             )}
           </div>
-        </div>
-      )}
-
-      {hasKey && runs.length > 0 && job && (
-        <div className="runs" id="corrida">
-          <div className="runs-head">
-            <div>
-              <h2 className="h2">{t(E("Each cycle, as a network", "Cada corrida, como red"))}</h2>
-              <p className="muted small">{t(E("Pick a cycle to see what it did step by step: which model it called, which tools it used, what each gave back and how much it spent.", "Elige una corrida para ver qué hizo paso a paso: a qué modelo llamó, qué herramientas usó, qué le devolvió cada una y cuánto gastó."))}</p>
-            </div>
-          </div>
-          <ul className="runs-list" aria-label={t(E("Cycles", "Corridas"))}>
-            {runs.slice(0, 12).map((r, i) => {
-              const title = data.bench.find((b) => b.id === r.scenario)?.title ?? r.scenario;
-              const state = RUNNING.includes(r.phase) && !r.state.error ? "live" : r.phase === "awaiting" ? "wait" : r.state.outcome === "approved" || r.state.outcome === "nothing-to-learn" ? "ok" : "bad";
-              return (
-                <li key={r.id}>
-                  <button type="button" aria-pressed={job.id === r.id} onClick={() => setJob(r)} className={state}>
-                    <b>#{runs.length - i} · {title}</b>
-                    <small>{new Date(r.createdAt).toLocaleString(lang === "es" ? "es-MX" : "en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} · ${Number(r.state.cost ?? 0).toFixed(3)}</small>
-                    <em>{state === "live" ? t(E("running", "en curso")) : state === "wait" ? t(E("waiting for you", "te espera")) : t(L.outcome[r.state.outcome ?? ""] ?? E("ended", "terminó")).split(/[.:]/)[0]}</em>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <RunGraph key={job.id} job={job} bench={data.bench} lang={lang} />
         </div>
       )}
 
@@ -550,7 +446,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
                   {skillsBy(b.id).map((s: Skill) => (
                     <article key={s.id} className={`skill ${s.status}`}>
                       <div className="row between">
-                        <b>{b.contexts.find((c) => c.id === s.context)?.name} · v{s.version}</b>
+                        <span className="row" style={{ gap: 8, flexWrap: "wrap" }}><ChangeTag kind={skillKind(s)} /><b>{b.contexts.find((c) => c.id === s.context)?.name} · v{s.version}</b></span>
                         <span className={`st ${s.status}`}>{t(L.status[s.status] ?? E("", ""))}</span>
                       </div>
                       <pre>{s.instructions}</pre>

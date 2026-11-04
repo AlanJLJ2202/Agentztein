@@ -56,7 +56,7 @@ export const T = {
   tabs: {
     overview: { en: "Home", es: "Inicio" },
     mind: { en: "Brain", es: "Cerebro" },
-    lab: { en: "3D lab", es: "Lab 3D" },
+    lab: { en: "Process", es: "Proceso" },
     agent: { en: "Agent", es: "Agente" },
     evolve: { en: "Its code", es: "Su código" },
     radar: { en: "Radar", es: "Radar" },

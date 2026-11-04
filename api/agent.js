@@ -390,6 +390,7 @@ async function runPhase(pool, userId, job, state) {
     const t0 = Date.now();
     const decided = await direct(pool, userId, k, job, state, left());
     spend(decided.cost);
+    if (decided.recalled.length) rec({ tool: "memory", note: `${decided.recalled.length}`, ids: decided.recalled.slice(0, 12) });
     rec({ tool: "director", model: job.planner, cost: decided.cost, ms: Date.now() - t0, note: decided.plan.why });
     job.scenario = decided.plan.scenario;
     job.executor = decided.plan.executor || job.executor;
@@ -431,7 +432,7 @@ async function runPhase(pool, userId, job, state) {
     const memory = recall(await activeMemories(pool, userId), { budget: BUDGETS.planner, scenario: sc.id, context: targetOf(sc, state.practice ?? []) });
     if (memory.ids.length) {
       await markUsed(pool, memory.ids);
-      rec({ tool: "memory", note: `${memory.ids.length}` });
+      rec({ tool: "memory", note: `${memory.ids.length}`, ids: memory.ids.slice(0, 12) });
     }
     const { prompt } = plannerPrompt(sc, active, state.practice ?? [], ideas, String(state.guidance ?? ""), memory.text);
     const effort = effortFor(job.planner, "high", "high");
@@ -534,7 +535,7 @@ async function direct(pool, userId, k, job, state, cap) {
     scenarios: bench.map((b) => b.id), families, cap: Math.max(0, capNow - run.cost),
     fallback: { scenario: weakest, family: families.find((f) => f.family === "spark") ? "spark" : (families[0]?.family ?? "spark") },
   });
-  return { plan, cost: run.cost };
+  return { plan, cost: run.cost, recalled: memory.ids };
 }
 
 /**
