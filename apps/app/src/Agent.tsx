@@ -7,6 +7,8 @@ import { ApiError, type AgentState, type Api, type Exam, type Job, type Scores, 
 import type { Tab } from "./App.js";
 import { useT, type Lang, type Text } from "./i18n.js";
 import { MetaMark } from "./Logos.js";
+import { CAP_KEY, savedCap } from "./Companion.js";
+import { useLive } from "./live.js";
 
 const E = (en: string, es: string): Text => ({ en, es });
 const L = {
@@ -41,8 +43,22 @@ const L = {
   start: E("Start a cycle", "Iniciar un ciclo"),
   running: E("Working…", "Trabajando…"),
   resume: E("Continue", "Continuar"),
-  needKey: E("Connect your Meta key in Brain first.", "Primero conecta tu llave de Meta en Cerebro."),
+  needKey: E("Connect your Meta key in Settings first.", "Primero conecta tu llave de Meta en Ajustes."),
+  modeMine: E("I choose", "Yo elijo"),
+  modeAuto: E("Let it decide", "Que él decida"),
+  autoLead: E(
+    "Muse Wonder looks at where it fails most, which Meta models your key has and what each would cost, and picks the exam, the model and the effort by itself. It can also propose new abilities (seeing images, listening…). It never goes over the cap.",
+    "Muse Wonder mira dónde falla más, qué modelos de Meta tiene tu llave y cuánto costaría cada uno, y elige solo el examen, el modelo y el esfuerzo. También puede proponer habilidades nuevas (ver imágenes, escuchar…). Nunca pasa del tope.",
+  ),
+  cap: E("Spending cap for this cycle (USD)", "Tope de gasto de este ciclo (USD)"),
+  capHelp: E("If a step could go over it, the cycle stops cleanly. Your monthly budget still applies.", "Si un paso pudiera pasarlo, el ciclo se detiene limpio. Tu presupuesto mensual sigue aplicando."),
+  planTitle: E("What it decided", "Lo que decidió"),
+  proposals: E("It proposes", "Propone"),
+  proposalNote: E("Proposals only: nothing new switches on without a person.", "Solo propuestas: nada nuevo se enciende sin una persona."),
+  capability: { vision: E("See images", "Ver imágenes"), image: E("Draw", "Dibujar"), voice: E("Listen", "Escuchar"), code: E("Change its code", "Cambiar su código"), web: E("Search the web", "Buscar en la web"), memory: E("Remember more", "Recordar más") } as Record<string, Text>,
+  watch: E("Watch it in 3D", "Verlo en 3D"),
   phases: [
+    { id: "plan", t: E("Decides", "Decide"), d: E("only when you let it choose", "solo si lo dejas elegir") },
     { id: "baseline", t: E("First exam", "Primer examen"), d: E("practice + validation, with today's skills", "práctica + validación, con las skills de hoy") },
     { id: "propose", t: E("Writes a skill", "Escribe una skill"), d: E("the planner studies the practice mistakes", "el planificador estudia los errores de práctica") },
     { id: "validate", t: E("Exam again", "Examen de nuevo"), d: E("validation, now with the candidate", "validación, ahora con la candidata") },
@@ -70,6 +86,7 @@ const L = {
     "harness-rejected": E("The harness threw this candidate out. Nothing changed.", "El arnés descartó esta candidata. No cambió nada."),
     approved: E("Approved: the agent now uses this skill.", "Aprobada: el agente ya usa esta skill."),
     rejected: E("You rejected it. Nothing changed.", "La rechazaste. No cambió nada."),
+    "run-budget": E("It reached this cycle's spending cap and stopped. Nothing changed.", "Llegó al tope de gasto de este ciclo y se detuvo. No cambió nada."),
   } as Record<string, Text>,
   cost: E("this cycle", "este ciclo"),
   skills: E("Its skills (its own code, versioned)", "Sus skills (su propio código, versionado)"),
@@ -91,7 +108,7 @@ const L = {
   ),
 };
 
-const RUNNING = ["baseline", "propose", "validate"];
+const RUNNING = ["plan", "baseline", "propose", "validate"];
 const pct = (s?: { correct: number; total: number }) => (s && s.total ? Math.round((100 * s.correct) / s.total) : 0);
 
 function Icon({ d, size = 18 }: { d: string; size?: number }) {
@@ -179,6 +196,9 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
   const [planner, setPlanner] = useState("");
   const [effort, setEffort] = useState("medium");
   const [guidance, setGuidance] = useState("");
+  const [auto, setAuto] = useState(true);
+  const [cap, setCap] = useState(() => savedCap().toFixed(2));
+  const live = useLive();
   const [job, setJob] = useState<Job | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -209,24 +229,28 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
     else setError((err as Error).message);
   };
 
+  // the cycle runs in the app-wide runner, so it keeps going on other tabs (the 3D lab, the brain graph)
   const drive = async (j: Job) => {
-    let cur = j;
-    setJob(cur);
-    while (alive.current && RUNNING.includes(cur.phase)) {
-      const r = await client.agentOp({ op: "step", jobId: cur.id });
-      cur = r.job;
-      setJob(cur);
-      if (cur.running) await new Promise((res) => setTimeout(res, 4000));
-    }
-    await load();
+    setJob(j);
+    await live.drive(j);
+    if (alive.current) await load();
   };
+  // follow the runner's copy of this cycle while it advances
+  useEffect(() => {
+    const lj = live.job;
+    if (lj) setJob((cur) => (!cur || cur.id === lj.id || RUNNING.includes(lj.phase) ? lj : cur));
+  }, [live.job]);
+  useEffect(() => { if (live.error) setError(live.error); }, [live.error]);
 
   const start = async () => {
     setBusy(true);
     setError("");
     setExam(null);
     try {
-      const r = await client.agentOp({ op: "start", scenario, executor, planner, effort, guidance });
+      const maxCost = Math.max(0.05, Math.min(20, Number(cap) || 0.5));
+      try { localStorage.setItem(CAP_KEY, String(maxCost)); } catch { /* private mode */ }
+      const body = auto ? { auto: true, planner, guidance, maxCost, lang } : { scenario, executor, planner, effort, guidance, maxCost, lang };
+      const r = await client.agentOp({ op: "start", ...body });
       await drive(r.job);
     } catch (err) {
       if (err instanceof ApiError && err.reason === "busy" && err.detail?.job) setJob(err.detail.job as Job);
@@ -294,7 +318,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
     { key: "voice", name: "Muse Voice Transcribe", id: null },
     { key: "image", name: "Muse Image", id: null },
   ];
-  const phaseIdx = job ? (job.phase === "done" ? (job.state.verdict ? 4 : job.state.candidate ? 3 : job.state.before ? 1 : 0) : ["baseline", "propose", "validate", "awaiting"].indexOf(job.phase)) : -1;
+  const phaseIdx = job ? (job.phase === "done" ? (job.state.verdict ? 5 : job.state.candidate ? 4 : job.state.before ? 2 : 1) : ["plan", "baseline", "propose", "validate", "awaiting"].indexOf(job.phase)) : -1;
   const skillsBy = (sid: string) => data.skills.filter((s) => s.scenario === sid);
   const verdict = job?.state.verdict;
   const candId = job?.state.candidate?.id;
@@ -327,6 +351,12 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
       ) : (
         <div className="agent-grid">
           <div className="runbox agent-ctl">
+            <div className="seg" role="tablist" aria-label={t(L.modeAuto)}>
+              <button type="button" role="tab" aria-selected={auto} onClick={() => setAuto(true)} disabled={busy}>✦ {t(L.modeAuto)}</button>
+              <button type="button" role="tab" aria-selected={!auto} onClick={() => setAuto(false)} disabled={busy}>{t(L.modeMine)}</button>
+            </div>
+            {auto && <p className="small muted">{t(L.autoLead)}</p>}
+            {!auto && <>
             <label className="field">
               <span>{t(L.scenario)}</span>
               <div className="scen">
@@ -361,6 +391,12 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
                 </div>
               </label>
             )}
+            </>}
+            <label className="field">
+              <span>{t(L.cap)}</span>
+              <input type="number" inputMode="decimal" min={0.05} max={20} step={0.05} value={cap} onChange={(e) => setCap(e.target.value)} disabled={busy} />
+              <small className="fine">{t(L.capHelp)}</small>
+            </label>
             <label className="field">
               <span className="row between">
                 {t(L.guidance)}
@@ -383,15 +419,32 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
             {job && jobSc ? (
               <>
                 <ol className="steps">
-                  {L.phases.map((p, i) => (
+                  {L.phases.map((p, i) => (job.state.auto || i > 0) && (
                     <li key={p.id} className={i < phaseIdx ? "done" : i === phaseIdx ? (job.phase === "done" ? "done" : "now") : ""}>
-                      <span className="sn">{i < phaseIdx || (i === phaseIdx && job.phase === "done") ? <Icon d={I.check} size={14} /> : i + 1}</span>
+                      <span className="sn">{i < phaseIdx || (i === phaseIdx && job.phase === "done") ? <Icon d={I.check} size={14} /> : job.state.auto ? i + 1 : i}</span>
                       <div><b>{t(p.t)}</b><small>{t(p.d)}</small></div>
                       {i === phaseIdx && RUNNING.includes(job.phase) && busy && <span className="spin" aria-hidden="true" />}
                     </li>
                   ))}
                 </ol>
-                <p className="small muted">{jobSc.title} · {job.planner} → {job.executor}{job.effort ? ` (${job.effort})` : ""} · ${Number(job.state.cost ?? 0).toFixed(4)} {t(L.cost)}</p>
+                <p className="small muted">{jobSc.title} · {job.planner} → {job.executor}{job.effort ? ` (${job.effort})` : ""} · ${Number(job.state.cost ?? 0).toFixed(4)}{job.state.maxCost ? ` / $${job.state.maxCost.toFixed(2)}` : ""} {t(L.cost)}</p>
+                {RUNNING.includes(job.phase) && busy && <button type="button" className="btn small ghost" onClick={() => go("lab")}>{t(L.watch)} →</button>}
+                {job.state.plan && (
+                  <div className="plan">
+                    <p className="small"><b>✦ {t(L.planTitle)}:</b> {job.state.plan.why || "—"}{job.state.plan.estimate ? ` (≈ $${job.state.plan.estimate.toFixed(3)})` : ""}</p>
+                    {job.state.plan.proposals.length > 0 && (
+                      <>
+                        <p className="small"><b>{t(L.proposals)}</b></p>
+                        <ul>
+                          {job.state.plan.proposals.map((p, i) => (
+                            <li key={i}><span className="pill">{t(L.capability[p.capability] ?? E(p.capability, p.capability))}{p.model ? ` · ${p.model}` : ""}</span> {p.idea} <span className="muted">— {p.why}</span></li>
+                          ))}
+                        </ul>
+                        <p className="fine">{t(L.proposalNote)}</p>
+                      </>
+                    )}
+                  </div>
+                )}
                 {job.state.guidance && <p className="small">“{job.state.guidance}”</p>}
                 {job.state.error && <p className="error">{job.state.error}</p>}
                 {RUNNING.includes(job.phase) && !busy && <button type="button" className="btn small ghost" onClick={() => void resume()}>{t(L.resume)}</button>}

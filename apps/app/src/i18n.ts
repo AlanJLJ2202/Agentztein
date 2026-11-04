@@ -55,12 +55,14 @@ export const T = {
   signOut: { en: "Sign out", es: "Salir" },
   tabs: {
     overview: { en: "Home", es: "Inicio" },
-    brain: { en: "Brain", es: "Cerebro" },
-    radar: { en: "Research radar", es: "Radar de investigación" },
+    mind: { en: "Brain", es: "Cerebro" },
+    lab: { en: "3D lab", es: "Lab 3D" },
     agent: { en: "Agent", es: "Agente" },
     evolve: { en: "Its code", es: "Su código" },
-    workshop: { en: "Workshop", es: "Taller" },
+    radar: { en: "Radar", es: "Radar" },
+    brain: { en: "Settings", es: "Ajustes" },
   },
+
   hello: { en: "Hi", es: "Hola" },
   overviewLead: {
     en: "This is your Agentztein. Get it ready in three steps; the rest arrives as the lab grows.",

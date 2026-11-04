@@ -54,6 +54,17 @@ const pulse = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.c
 const STATION_OF = { codigo: "swe", terminal: "terminal", razonamiento: "arc", web: "web", investigacion: "research" };
 let room = null;
 let roomQueue = null;
+let roomSay = null;
+/* Embedded in the app: the app tells the agent where to go and what to say while its real cycle runs. */
+const EMBED = root.classList.contains("embed");
+if (EMBED) {
+  window.addEventListener("message", (e) => {
+    if (e.origin !== location.origin || !e.data || typeof e.data !== "object") return;
+    const { type, room: to, text } = e.data;
+    if (type === "agz:goto" && typeof to === "string") { if (room) room.goTo(to); else roomQueue = to; }
+    if (type === "agz:say" && typeof text === "string") roomSay?.(text.slice(0, 220), 6000);
+  });
+}
 
 /* The card under the lab doubles as the guide: it explains the room or the exhibit in front of Agentztein. */
 let lastGuide = null;
@@ -158,7 +169,9 @@ function startRoom() {
     document.addEventListener("room:goto", (e) => room.goTo(e.detail));
     document.addEventListener("room:react", (e) => room.react(e.detail));
     document.addEventListener("room:key", (e) => room.press(e.detail.k, e.detail.down));
+    roomSay = (text, ms) => b.say(text, ms);
     if (roomQueue) { room.goTo(roomQueue); roomQueue = null; }
+    if (EMBED && window.parent !== window) window.parent.postMessage({ type: "agz:ready" }, location.origin);
   } catch (err) {
     console.warn("3D room unavailable", err);
   }
@@ -249,8 +262,10 @@ if (musBtn) {
 }
 
 if (hasWebGL()) {
-  // the hero starts right away (the room waits for the page to load and to come near the screen)
-  requestAnimationFrame(startHero);
+  // the hero starts right away (the room waits for the page to load and to come near the screen);
+  // embedded in the app there is no hero, only the room, right away
+  if (EMBED) requestAnimationFrame(startRoom);
+  else requestAnimationFrame(startHero);
   const go = () => {
     const near = new IntersectionObserver(([e]) => { if (e.isIntersecting) { startRoom(); near.disconnect(); } }, { rootMargin: "600px 0px" });
     near.observe($("#room3d"));

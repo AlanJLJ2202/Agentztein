@@ -376,3 +376,37 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
     cada usuario (no escala y mezclaría agentes), y Vercel Sandbox + Workflow para construir (Actions ya trae
     terminal y deja al juez fuera del alcance del agente).
   - Detalle, configuración y riesgos: `docs/EVOLVE.md`.
+
+## ADR-027 — Agentztein acompaña, decide su ciclo con tope de gasto, se ve trabajar y se le puede hablar
+- **Contexto (4 nov 2026):** Alan notó que la app abrumaba (muchos recuadros y texto) y pidió que Agentztein esté más
+  presente y sea didáctico para gente no técnica; que pueda elegir solo qué modelos y herramientas de Muse usar
+  (y proponer otras, como visión); ver su "cerebro" como grafo conectándose, con las herramientas que usa; topes de
+  gasto por corrida; ver en 3D cómo va al cuarto donde trabaja; entrar al laboratorio de la landing con sesión; y
+  hablarle en vivo.
+- **Decisión:**
+  - **Compañero:** Agentztein vive en una esquina de todas las pestañas: explica cada pantalla una vez por visita,
+    narra cada paso de un ciclo y se abre para platicar. `/api/talk` contesta en primera persona, corto y sencillo,
+    con el estado del laboratorio como contexto y el modelo diario de la llave (Spark), por el mismo arnés. Puede
+    sugerir una acción (iniciar un ciclo autónomo o abrir una pestaña) que solo corre si la persona la confirma.
+  - **En vivo:** voz de manos libres: escucha hasta el silencio, Muse Voice Transcribe pasa la voz a texto, contesta
+    y el navegador lo lee en voz alta (`speechSynthesis`). Meta no ofrece hoy un modelo de voz de salida en esta API;
+    ElevenLabs se descartó para texto libre porque lo pagaría quien despliega, no el usuario.
+  - **Decide solo:** `op: "start", auto: true` añade una fase `plan`: Muse Wonder ve dónde falla más, qué familias
+    tiene la llave, el costo aproximado de un ciclo con cada una y el tope, y elige escenario, ejecutor y esfuerzo.
+    Puede proponer capacidades (visión, dibujo, voz, código, web, memoria): quedan como propuestas, no se encienden.
+    El servidor revisa el plan (escenario real, familia de la llave, nunca la *contributor*, nunca sobre el tope).
+  - **Tope por ciclo:** `maxCost` (0.05–20 USD, 0.50 por defecto); el arnés rechaza antes de llamar a Meta cualquier
+    paso cuyo peor caso no quepa en lo que queda. El ciclo termina con `run-budget` y ninguna candidata queda esperando.
+  - **Rastro:** cada ciclo guarda `state.trace` (herramienta o modelo, costo, tiempo, tokens). De ahí salen la
+    narración, el grafo y el recorrido 3D.
+  - **Corredor compartido:** el ciclo avanza desde un proveedor por encima de las pestañas, así sigue mientras la
+    persona ve el grafo o el 3D.
+  - **Cerebro:** grafo SVG que se construye en el orden real (escenarios, situaciones, cadenas de versiones, ideas del
+    radar que las inspiraron, herramientas con su uso); se repite el último ciclo con la herramienta encendida.
+  - **Lab 3D:** la landing acepta `?embed=lab` (solo el edificio) y mensajes `agz:goto`/`agz:say` del mismo origen.
+    La app lo muestra y, con "Seguir a Agentztein", lo manda al cuarto de cada paso (exámenes en los cuartos,
+    radar en el laboratorio científico, planificador en el taller central, arnés y decisión en la cuna). Con sesión,
+    la landing cambia "Entrar" por "Mi laboratorio".
+  - **Vista sencilla** por defecto en Inicio (su historia en sus palabras, tres números, tres puertas); "Todo el
+    detalle" conserva el tablero completo. La pestaña de la llave pasa a llamarse "Ajustes"; el taller 2D se
+    reemplazó por el Lab 3D.

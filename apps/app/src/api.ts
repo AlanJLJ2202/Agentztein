@@ -69,7 +69,21 @@ export type Skill = {
   createdAt: string;
   decidedAt: string | null;
 };
-export type Phase = "baseline" | "propose" | "validate" | "awaiting" | "done";
+export type Phase = "plan" | "baseline" | "propose" | "validate" | "awaiting" | "done";
+/** One thing the agent did in a cycle: which tool or model, what it cost, how long it took. */
+export type TraceEntry = { at: string; phase?: string; tool: string; model?: string; cost?: number; ms?: number; tokens?: number; note?: string; idea?: string | null };
+/** What the director (Muse Wonder) decided when the person let the agent choose. */
+export type Plan = {
+  scenario: string;
+  family: string;
+  executor: string;
+  effort: string | null;
+  why: string;
+  steps: { tool: string; why: string }[];
+  proposals: { capability: string; model: string; idea: string; why: string }[];
+  estimate: number | null;
+  fixes: string[];
+};
 export type Mistake = { context: string; fields: Record<string, unknown>; truth: string; given: string | null };
 export type Job = {
   id: string;
@@ -83,7 +97,11 @@ export type Job = {
     guidance?: string;
     cost?: number;
     error?: string | null;
-    outcome?: "nothing-to-learn" | "planner-failed" | "harness-rejected" | "approved" | "rejected";
+    outcome?: "nothing-to-learn" | "planner-failed" | "harness-rejected" | "approved" | "rejected" | "run-budget";
+    maxCost?: number;
+    auto?: boolean;
+    plan?: Plan;
+    trace?: TraceEntry[];
     detail?: string;
     before?: { practice: Scores; validation: Scores; answered: number; total: number };
     after?: Scores;
@@ -212,6 +230,8 @@ export function api(supabase: SupabaseClient) {
     evolve: () => call<EvolveState>("/api/evolve"),
     evolveOp: (body: Record<string, unknown>) => call<{ run?: EvolveRun } & Partial<EvolveState>>("/api/evolve", { method: "POST", body: JSON.stringify(body) }),
     coreFiles: (id: string) => call<{ core: CoreVersion; files: Record<string, string> }>(`/api/evolve?core=${encodeURIComponent(id)}`),
+    talk: (messages: { role: "user" | "assistant"; content: string }[], lang: string, tab: string) =>
+      call<{ say: string; action: string | null; cost: number; model: string }>("/api/talk", { method: "POST", body: JSON.stringify({ messages, lang, tab }) }),
     limits: () => call<Budget>("/api/limits"),
     setLimit: (monthly: number) => call<Budget>("/api/limits", { method: "PUT", body: JSON.stringify({ monthly }) }),
   };

@@ -3,8 +3,10 @@
 // matter (skills, cycles, best gain, budget, radar), where its latest self-improvement cycle is, how each cycle
 // scored, the latest changes and the map of what it already knows. Everything comes from /api/agent and /api/radar;
 // the only illustrated parts say so.
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import type { AgentState, Api, BenchScenario, HealthCheck, Job, Note, SavedKey, Scores, Skill } from "./api.js";
+import { savedCap } from "./Companion.js";
+import { useLive } from "./live.js";
 import { SetupAlerts } from "./SetupAlerts.js";
 import type { Tab } from "./App.js";
 import { AgentStage, type StageChip, type StageMood, type StageScreen } from "./AgentStage.js";
@@ -42,7 +44,7 @@ const frac = (s?: Scores) => {
   const x = sum(s);
   return x ? `${x.c}/${x.t}` : "—";
 };
-const RUNNING = new Set(["baseline", "propose", "validate"]);
+const RUNNING = new Set(["plan", "baseline", "propose", "validate"]);
 const isRunning = (j: Job) => RUNNING.has(j.phase) && !j.state.error;
 
 function ago(iso: string | null, lang: Lang) {
@@ -87,12 +89,14 @@ function statusOf(lab: Lab): Status {
     };
   if (j && isRunning(j)) {
     const say =
-      j.phase === "baseline"
+      j.phase === "plan"
+        ? E("You let me decide: I'm choosing what to practice and with which model…", "Me dejaste decidir: estoy eligiendo qué practicar y con qué modelo…")
+        : j.phase === "baseline"
         ? E("I'm taking the exam to see where I stand…", "Estoy presentando el examen para ver dónde estoy…")
         : j.phase === "propose"
           ? E(`I'm studying my ${j.state.mistakes.length} mistakes and writing myself a skill…`, `Estoy estudiando mis ${j.state.mistakes.length} errores y escribiéndome una habilidad…`)
           : E("I'm testing the new skill: does my score go up without breaking anything?", "Estoy probando la habilidad nueva: ¿sube mi calificación sin romper nada?");
-    return { mood: "think", screen: "test", say, to: "workshop", cta: E("Watch it work", "Verlo trabajar") };
+    return { mood: "think", screen: "test", say, to: "lab", cta: E("Watch it work", "Verlo trabajar") };
   }
   if (j?.phase === "awaiting") {
     const c = j.state.candidate;
@@ -133,6 +137,12 @@ function statusOf(lab: Lab): Status {
       say: E("On my last exam I made no mistakes I could study. Try a harder scenario.", "En mi último examen no tuve errores que estudiar. Prueba otro escenario."),
       cta: E("Choose another exam", "Elegir otro examen"),
     };
+  if (j?.state.outcome === "run-budget")
+    return {
+      mood: "idle", screen: "sync", to: "agent",
+      say: E("My last cycle reached its spending cap, so I stopped. Give me a bigger cap if you want me to go further.", "Mi último ciclo llegó a su tope de gasto y me detuve. Dame un tope más alto si quieres que llegue más lejos."),
+      cta: E("Adjust and try again", "Ajustar e intentar otra vez"),
+    };
   if (j?.state.outcome === "rejected")
     return {
       mood: "idle", screen: "pulse", to: "agent",
@@ -164,28 +174,29 @@ const TIPS: Text[] = [
 ];
 
 /* ---------- the dashboard ---------- */
+const VIEW_KEY = "agz-view";
+type View = "simple" | "full";
+const savedView = (): View => { try { return localStorage.getItem(VIEW_KEY) === "full" ? "full" : "simple"; } catch { return "simple"; } };
+
 export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
   const t = useT();
   const lang = useContext(LangContext);
-  const [agent, setAgent] = useState<AgentState | null>(null);
-  const [agentFailed, setAgentFailed] = useState(false);
-  const [notes, setNotes] = useState<Note[] | null>(null);
+  const live = useLive();
+  const agent = live.agent;
+  const agentFailed = live.failed;
+  const notes = live.notes;
   const [tip, setTip] = useState(-1);
+  const [view, setView] = useState<View>(savedView);
+  const pickView = (v: View) => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* private mode */ } };
   // what's missing for the agent to change its own code: the server checks it for real
   const [health, setHealth] = useState<HealthCheck[]>([]);
   useEffect(() => {
     client.evolve().then((s) => setHealth(s.health?.checks ?? [])).catch(() => setHealth([]));
   }, [client]);
-
-  const loadAgent = useCallback(
-    () => client.agent().then((a) => { setAgent(a); setAgentFailed(false); }).catch(() => setAgentFailed(true)),
-    [client],
-  );
   useEffect(() => {
     client.keys().then((r) => onKeys(r.keys)).catch(() => onKeys([]));
-    client.notes().then((r) => { setNotes(r.notes); onNotes(r.notes.length); }).catch(() => setNotes([]));
-    void loadAgent();
-  }, [client, onKeys, onNotes, loadAgent]);
+  }, [client, onKeys]);
+  useEffect(() => { if (notes) onNotes(notes.length); }, [notes, onNotes]);
 
   const lab: Lab = useMemo(() => {
     const skills = agent?.skills ?? [];
@@ -203,14 +214,6 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
     };
   }, [agent, keys, notes]);
 
-  // follow a cycle while it runs
-  const running = Boolean(lab.latest && isRunning(lab.latest));
-  useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => void loadAgent(), 5000);
-    return () => clearInterval(id);
-  }, [running, loadAgent]);
-
   // a tip stays a while, then the creature goes back to telling the lab's status
   useEffect(() => {
     if (tip < 0) return;
@@ -225,6 +228,12 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
     ...lab.candidates.map((s) => ({ color: parseInt(scColor(s.scenario).slice(1), 16), candidate: true })),
   ];
   const say = loading ? E("Waking up…", "Despertando…") : tip >= 0 ? (TIPS[tip % TIPS.length] as Text) : status.say;
+  const running = Boolean(lab.latest && isRunning(lab.latest));
+  const [starting, setStarting] = useState(false);
+  const improve = async () => {
+    setStarting(true);
+    try { await live.start({ auto: true, maxCost: savedCap(), lang }); go("lab"); } catch { /* the companion says why */ } finally { setStarting(false); }
+  };
 
   return (
     <section className="dash">
@@ -234,40 +243,141 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
           screen={loading ? "pulse" : status.screen}
           chips={chips}
           say={t(say)}
-          sayKey={`${tip}-${status.mood}-${lang}`}
+          sayKey={`${tip}-${status.mood}-${lang}-${t(status.say).length}`}
           label={t(E("Tap Agentztein to learn how it works", "Toca a Agentztein para aprender cómo funciona"))}
           onPoke={() => setTip((n) => n + 1)}
         />
         <div className="dhero-copy">
-          <p className="kicker">{t(E("Your lab, live", "Tu laboratorio, en vivo"))}</p>
+          <div className="seg viewseg" role="tablist" aria-label={t(E("View", "Vista"))}>
+            <button type="button" role="tab" aria-selected={view === "simple"} onClick={() => pickView("simple")}>{t(E("Simple", "Sencilla"))}</button>
+            <button type="button" role="tab" aria-selected={view === "full"} onClick={() => pickView("full")}>{t(E("All the detail", "Todo el detalle"))}</button>
+          </div>
           <h1 className="h1">{t(T.hello)}{name ? `, ${name}` : ""}.</h1>
           <p className="lead">
             {t(E(
-              "This is your Agentztein. Here you can see what it knows, what it's doing right now and how much it has improved itself.",
-              "Este es tu Agentztein. Aquí ves qué sabe, qué está haciendo ahorita y cuánto se ha mejorado a sí mismo.",
+              "This is your Agentztein, an AI that improves itself. It practices, learns from its mistakes and asks you before it changes.",
+              "Este es tu Agentztein, una IA que se mejora sola. Practica, aprende de sus errores y te pregunta antes de cambiar.",
             ))}
           </p>
           <div className="row" style={{ flexWrap: "wrap", gap: 10, marginTop: 22 }}>
-            <button type="button" className="btn" onClick={() => go(status.to)} disabled={loading}>{t(status.cta)} →</button>
+            {lab.hasKey && !running && status.to === "agent" && lab.latest?.phase !== "awaiting" ? (
+              <button type="button" className="btn" onClick={() => void improve()} disabled={loading || starting}>
+                ✦ {t(E("Improve yourself", "Mejórate tú solo"))}
+              </button>
+            ) : (
+              <button type="button" className="btn" onClick={() => go(status.to)} disabled={loading}>{t(status.cta)} →</button>
+            )}
             <button type="button" className="btn ghost" onClick={() => setTip((n) => n + 1)}>{t(E("Teach me something", "Enséñame algo"))}</button>
           </div>
-          <p className="fine" style={{ marginTop: 14 }}>
-            {t(E("Tip: tap the creature. Each chip around it is a real skill of yours.", "Tip: toca a la criatura. Cada ficha a su alrededor es una habilidad real tuya."))}
-          </p>
+          {lab.hasKey && !running && (
+            <p className="fine" style={{ marginTop: 14 }}>
+              {t(E(`“Improve yourself” lets it choose everything, with a cap of $${savedCap().toFixed(2)} for the cycle. You approve the result.`, `«Mejórate tú solo» lo deja elegir todo, con un tope de $${savedCap().toFixed(2)} por ciclo. Tú apruebas el resultado.`))}
+            </p>
+          )}
           {agentFailed && <p className="error small" style={{ marginTop: 14 }}>{t(E("Couldn't load the agent's data. The rest of the app still works.", "No se pudieron cargar los datos del agente. El resto de la app sigue funcionando."))}</p>}
         </div>
       </div>
 
       <SetupAlerts checks={health} go={go} />
       <FirstSteps lab={lab} go={go} />
-      <Kpis lab={lab} lang={lang} loading={loading} />
-      <CycleTrack lab={lab} lang={lang} go={go} />
-      <div className="dgrid">
-        <ScoreChart lab={lab} lang={lang} go={go} />
-        <Feed lab={lab} lang={lang} go={go} />
-      </div>
-      <SkillMap lab={lab} go={go} />
+      {view === "simple" ? (
+        <>
+          <Story lab={lab} lang={lang} go={go} />
+          <BigThree lab={lab} lang={lang} />
+          <Doors go={go} />
+        </>
+      ) : (
+        <>
+          <Kpis lab={lab} lang={lang} loading={loading} />
+          <CycleTrack lab={lab} lang={lang} go={go} />
+          <div className="dgrid">
+            <ScoreChart lab={lab} lang={lang} go={go} />
+            <Feed lab={lab} lang={lang} go={go} />
+          </div>
+          <SkillMap lab={lab} go={go} />
+        </>
+      )}
     </section>
+  );
+}
+
+/* ---------- simple view: it tells you, in its own words ---------- */
+function Story({ lab, lang, go }: { lab: Lab; lang: Lang; go: (t: Tab) => void }) {
+  const t = useT();
+  const ev = events(lab).slice(0, 4);
+  const first = lab.jobs.length === 0;
+  return (
+    <section className="dcard story" aria-labelledby="story-h">
+      <h2 id="story-h" className="h3">{t(E("What I've been up to", "Lo que he estado haciendo"))}</h2>
+      <ol>
+        {first && (
+          <li className="me">
+            <img src="/img/agent-ok.webp" alt="" width={36} height={54} />
+            <p>{t(E("Nothing yet! When I practice, I'll tell you here what I tried and what I learned, in plain words.", "¡Nada todavía! Cuando practique, aquí te cuento qué intenté y qué aprendí, con palabras sencillas."))}</p>
+          </li>
+        )}
+        {ev.map((e, i) => (
+          <li key={i} className="me">
+            {i === 0 ? <img src="/img/agent-ok.webp" alt="" width={36} height={54} /> : <span className="ico" style={{ ["--c" as string]: e.color }} aria-hidden="true">{e.icon}</span>}
+            <p>
+              {t(e.text)}.
+              <small>{ago(e.at, lang)}</small>
+            </p>
+            <button type="button" className="link small" onClick={() => go(e.to)}>{t(E("See", "Ver"))}</button>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function BigThree({ lab, lang }: { lab: Lab; lang: Lang }) {
+  const t = useT();
+  const contexts = lab.bench.flatMap((b) => b.contexts.map((c) => ({ sc: b.id, ctx: c.id })));
+  const covered = (sc: string, ctx: string) => lab.active.some((s) => s.scenario === sc && s.context === ctx);
+  const n = contexts.filter((c) => covered(c.sc, c.ctx)).length;
+  const best = lab.jobs.reduce<number | null>((top, j) => {
+    const b = pct(j.state.before?.validation), a = pct(j.state.after);
+    return b !== null && a !== null && j.state.outcome === "approved" && (top === null || a - b > top) ? a - b : top;
+  }, null);
+  const budget = lab.agent?.budget;
+  return (
+    <section className="big3" aria-label={t(E("In three numbers", "En tres números"))}>
+      <article>
+        <p className="big">{n}<small>/{contexts.length || 8}</small></p>
+        <p>{t(E("situations it already handles with a skill of its own", "situaciones que ya resuelve con una habilidad propia"))}</p>
+        {contexts.length > 0 && <div className="cells">{contexts.map((c) => <i key={c.sc + c.ctx} className={covered(c.sc, c.ctx) ? "on" : ""} style={{ ["--c" as string]: covered(c.sc, c.ctx) ? scColor(c.sc) : undefined }} />)}</div>}
+      </article>
+      <article>
+        <p className={`big${best && best > 0 ? " up" : ""}`}>{best === null ? "—" : `+${best.toFixed(0)}`}<small>{best === null ? "" : " pts"}</small></p>
+        <p>{best === null ? t(E("its best approved improvement will show here", "aquí verás su mejor mejora aprobada")) : t(E("its best approved improvement on an exam it never saw", "su mejor mejora aprobada, en un examen que nunca vio"))}</p>
+      </article>
+      <article>
+        <p className="big">{budget ? money(budget.spent, lang) : "—"}</p>
+        <p>{budget ? t(E(`spent this month, out of ${money(budget.monthly, lang)} you allowed`, `gastado este mes, de ${money(budget.monthly, lang)} que le permitiste`)) : t(E("what it spends with your key", "lo que gasta con tu llave"))}</p>
+        {budget && <div className="meter"><i style={{ width: `${Math.min(100, (budget.spent / Math.max(0.01, budget.monthly)) * 100)}%` }} /></div>}
+      </article>
+    </section>
+  );
+}
+
+function Doors({ go }: { go: (t: Tab) => void }) {
+  const t = useT();
+  const doors: { to: Tab; icon: string; title: Text; text: Text; color: string }[] = [
+    { to: "mind", icon: "✺", color: "#6d5ce8", title: E("See its brain", "Ver su cerebro"), text: E("Every dot it learned, connected, and the tools it uses.", "Cada cosa que aprendió, conectada, y las herramientas que usa.") },
+    { to: "lab", icon: "⌂", color: "#0081fb", title: E("Walk into its lab", "Entrar a su laboratorio"), text: E("The 3D building: follow it from room to room while it works.", "El edificio en 3D: síguelo de cuarto en cuarto mientras trabaja.") },
+    { to: "agent", icon: "▶", color: "#22b864", title: E("Put it to practice", "Ponerlo a practicar"), text: E("Choose the exam yourself, or let it decide with a spending cap.", "Elige tú el examen o déjalo decidir con un tope de gasto.") },
+  ];
+  return (
+    <nav className="doors" aria-label={t(E("Where to go", "A dónde ir"))}>
+      {doors.map((d) => (
+        <button key={d.to} type="button" onClick={() => go(d.to)} style={{ ["--c" as string]: d.color }}>
+          <span className="ico" aria-hidden="true">{d.icon}</span>
+          <b>{t(d.title)}</b>
+          <span>{t(d.text)}</span>
+        </button>
+      ))}
+    </nav>
   );
 }
 
@@ -566,7 +676,7 @@ function ScoreChart({ lab, lang, go }: { lab: Lab; lang: Lang; go: (t: Tab) => v
                 </div>
                 <div className="dplot">
                   {[25, 50, 75].map((g) => <i key={g} className="grid" style={{ left: `${g}%` }} />)}
-                  <i className={`seg ${tone}`} style={{ left: `${lo}%`, width: `${hi - lo}%` }} />
+                  <i className={`dseg ${tone}`} style={{ left: `${lo}%`, width: `${hi - lo}%` }} />
                   <i className="mk base" style={{ left: `${b}%` }} />
                   {a !== null && <i className={`mk after ${tone}`} style={{ left: `${a}%` }} />}
                   {hover === i && (
@@ -608,7 +718,7 @@ function events(lab: Lab): Ev[] {
     }
   }
   for (const j of lab.jobs) {
-    ev.push({ at: j.createdAt, icon: "▶", color: "#0081fb", sc: j.scenario, to: "workshop", text: E(`Started a cycle on “${scTitle(lab, j.scenario)}”`, `Inició un ciclo en «${scTitle(lab, j.scenario)}»`) });
+    ev.push({ at: j.createdAt, icon: "▶", color: "#0081fb", sc: j.scenario, to: "lab", text: E(`Started a cycle on “${scTitle(lab, j.scenario)}”`, `Inició un ciclo en «${scTitle(lab, j.scenario)}»`) });
     const o = j.state.outcome;
     if (o === "harness-rejected") ev.push({ at: j.updatedAt, icon: "⛨", color: "#f0533c", sc: j.scenario, to: "agent", text: E("The harness threw out the candidate: it didn't improve without breaking something", "El arnés descartó la candidata: no mejoró sin romper algo") });
     if (o === "nothing-to-learn") ev.push({ at: j.updatedAt, icon: "★", color: "#22b864", sc: j.scenario, to: "agent", text: E("No mistakes to study: nothing to write", "Sin errores que estudiar: nada que escribir") });

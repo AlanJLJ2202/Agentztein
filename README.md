@@ -49,7 +49,7 @@ packages/env-recon   entorno sintético de conciliación: generador, reglas R1/R
 packages/scenarios   marco común + 5 escenarios de negocio (conciliación, manufactura, devoluciones, mensajes, envíos)
 packages/db          esquema Drizzle + migraciones (tablas append-only, esquema `sealed`)
 apps/panel           panel estático de solo lectura (Vite + React): validación del entorno, sin agentes aún
-apps/app             app con sesión (Vite + React) en /app/: acceso con Google o correo + código; abre en un dashboard con Agentztein en 3D (sus habilidades reales orbitándolo), números clave, dónde va su ciclo de auto-desarrollo, calificación por ciclo y últimos ajustes; llave de Meta por usuario y radar de investigación
+apps/app             app con sesión (Vite + React) en /app/: acceso con Google o correo + código; Inicio en vista sencilla o completa con Agentztein en 3D; Agentztein como compañero en todas las pestañas (explica, narra y se le habla en voz alta, /api/talk); Cerebro (grafo de lo que sabe y las herramientas que usa); Lab 3D (el edificio de la landing, siguiendo al agente cuarto por cuarto); ciclos que él decide con tope de gasto (ADR-027); llave de Meta por usuario y radar
 api/                 funciones de Vercel: /api/config, /api/keys (llaves cifradas), /api/radar (Hacker News + triage con el modelo del usuario)
 packages/research    lógica compartida del radar: búsqueda en Hacker News, capacidades y triage (prompt + validación)
 apps/landing         landing de presentación: Agentztein en 3D (three.js); un edificio recorrible (cuna + un cuarto por benchmark, 1.ª/3.ª persona) y un laboratorio 3D por benchmark; `pnpm --filter @skillab/landing stills` regenera sus imágenes

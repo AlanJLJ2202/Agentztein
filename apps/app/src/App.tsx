@@ -9,12 +9,16 @@ import { initialLang, LangContext, saveLang, T, useT, type Lang } from "./i18n.j
 import { Overview } from "./Overview.js";
 import { Radar } from "./Radar.js";
 import { SignIn } from "./SignIn.js";
-import { Workshop } from "./Workshop.js";
+import { Companion } from "./Companion.js";
+import { Lab3D } from "./Lab3D.js";
+import { LiveProvider } from "./live.js";
+import { Mind } from "./Mind.js";
 
-export type Tab = "overview" | "brain" | "radar" | "agent" | "evolve" | "workshop";
-const TABS: Tab[] = ["overview", "brain", "radar", "agent", "evolve", "workshop"];
+export type Tab = "overview" | "mind" | "lab" | "agent" | "evolve" | "radar" | "brain";
+const TABS: Tab[] = ["overview", "mind", "lab", "agent", "evolve", "radar", "brain"];
 const tabFromHash = (): Tab => {
-  const h = location.hash.slice(1);
+  const raw = location.hash.slice(1);
+  const h = raw === "workshop" ? "lab" : raw; // the old 2D workshop became the 3D lab
   return (TABS as string[]).includes(h) ? (h as Tab) : "overview";
 };
 
@@ -128,7 +132,7 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
   const avatar = meta.avatar_url ?? meta.picture;
 
   return (
-    <>
+    <LiveProvider client={client}>
       <header className="bar">
         <div className="wrap row">
           <a className="word" href="/" aria-label="Agentztein"><img src="/img/logo.webp" alt="Agentztein" width={126} height={26} /></a>
@@ -161,9 +165,11 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
         {tab === "brain" && <Brain client={client} keys={keys} onKeys={setKeys} go={go} />}
         {tab === "agent" && <Agent client={client} go={go} lang={lang} />}
         {tab === "evolve" && <Evolve client={client} go={go} />}
-        {tab === "workshop" && <Workshop client={client} go={go} />}
+        {tab === "mind" && <Mind go={go} />}
+        {tab === "lab" && <Lab3D go={go} lang={lang} />}
         {tab === "radar" && <Radar client={client} keys={keys} onKeys={setKeys} onNotes={setNotesCount} go={go} lang={lang} />}
       </main>
-    </>
+      <Companion tab={tab} go={go} client={client} lang={lang} />
+    </LiveProvider>
   );
 }
