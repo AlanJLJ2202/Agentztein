@@ -148,10 +148,10 @@ function statusOf(lab: Lab): Status {
       say: E("You rejected my last skill, so nothing changed. That's how it should work.", "Rechazaste mi última habilidad y nada cambió. Así debe funcionar."),
       cta: E("Run another cycle", "Correr otro ciclo"),
     };
-  if (lab.notes.length === 0)
+  if (lab.notes.length === 0 && lab.jobs.length > 0)
     return {
       mood: "idle", screen: "pulse", to: "radar",
-      say: E("I'm awake! Let's start: run the radar and I'll read what's new in AI.", "¡Ya desperté! Empecemos: corre el radar y leo lo nuevo en IA."),
+      say: E("Want ideas for my next cycle? Run the radar and I'll read what's new in AI.", "¿Quieres ideas para mi siguiente corrida? Corre el radar y leo lo nuevo en IA."),
       cta: E("Run the radar", "Correr el radar"),
     };
   return {
@@ -280,7 +280,6 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
       </div>
 
       <SetupAlerts checks={health} go={go} />
-      <FirstSteps lab={lab} go={go} />
       {view === "simple" ? (
         <>
           <Story lab={lab} lang={lang} go={go} />
@@ -379,36 +378,6 @@ function Doors({ go }: { go: (t: Tab) => void }) {
         </button>
       ))}
     </nav>
-  );
-}
-
-/* ---------- first steps (only while something is missing) ---------- */
-function FirstSteps({ lab, go }: { lab: Lab; go: (t: Tab) => void }) {
-  const t = useT();
-  const [, key, radar, cycle] = T.steps;
-  const steps: { s: { t: Text; d: Text }; done: boolean; to: Tab }[] = [
-    { s: key ?? T.steps[0], done: lab.hasKey, to: "brain" },
-    { s: radar ?? T.steps[0], done: lab.notes.length > 0, to: "radar" },
-    { s: cycle ?? T.steps[0], done: lab.jobs.length > 0, to: "agent" },
-  ];
-  if (!lab.agent || steps.every((x) => x.done)) return null;
-  const next = steps.findIndex((x) => !x.done);
-  return (
-    <section className="dcard first" aria-labelledby="first-h">
-      <h2 id="first-h" className="h3">{t(E("Get it ready", "Déjalo listo"))} <span className="muted small">· {steps.filter((x) => x.done).length}/3</span></h2>
-      <ol>
-        {steps.map(({ s, done, to }, i) => (
-          <li key={i} className={done ? "done" : i === next ? "next" : ""}>
-            <span className="num" aria-hidden="true">{done ? <Check size={14} /> : i + 1}</span>
-            <div>
-              <b>{t(s.t)}</b>
-              <p>{t(s.d)}</p>
-            </div>
-            {!done && <button type="button" className={`btn small${i === next ? "" : " ghost"}`} onClick={() => go(to)}>{t(T.go)}</button>}
-          </li>
-        ))}
-      </ol>
-    </section>
   );
 }
 

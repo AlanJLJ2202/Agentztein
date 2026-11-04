@@ -436,3 +436,35 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
     ahora practica y se mejora en exámenes al estilo de los benchmarks; después, los benchmarks reales), marca como
     "Ya en la app" los controles que ya existen y cambia los ejemplos de conciliación bancaria por los nuevos
     exámenes. En español la app dice "habilidad", nunca "skill".
+
+## ADR-029 — La voz que sí transcribe, voz elegible, un grafo por corrida y un camino guiado
+- **Contexto (4 nov 2026):** al hablarle en voz alta, el compañero mostraba "Meta answered with an error (400)".
+  Alan pidió además que el inicio no dé nada por hecho (se perdía entre botones y no sabía cuál era el siguiente
+  paso), que las respuestas puedan leerse con la voz del navegador o con una API de voz que el cliente conecte, y
+  un grafo por cada corrida al estilo del de `control` ("Lo que decidió el agente"), además del grafo del cerebro.
+- **Causa del 400:** Muse Voice Transcribe recibe audio en `POST /v1/asr/transcribe`, solo WAV (PCM 16 bits, mono,
+  16 o 24 kHz), en multipart con una parte JSON `request` (`model`, `audioEncoding: "WAV"`, `mode`,
+  `languageBias`) y una parte `audio`; responde `transcript`. Enviábamos el WebM/Opus (o MP4) del navegador a la
+  ruta estilo OpenAI `/audio/transcriptions`, que Meta no tiene.
+- **Decisión:**
+  - **Oído:** la app convierte toda grabación a WAV 16 kHz mono antes de subirla (`apps/app/src/wav.ts`, Web Audio
+    + OfflineAudioContext). `api/_lib/voice.js` arma el multipart a mano, rechaza lo que no sea WAV (415) y, si Meta
+    rechaza la forma (400), reintenta sin `languageBias` y luego sin `mode`; los errores dicen la razón de Meta y
+    llevan un `reason` que la app traduce. Alternativa gratis: el reconocimiento de voz del navegador.
+  - **Voz:** Meta no tiene modelo de voz (Muse escucha, no habla). La respuesta se lee con la voz del navegador
+    (se elige cuál y la velocidad), con ElevenLabs y la llave del propio cliente (`provider = 'elevenlabs'` en
+    `app.provider_keys`, cifrada como las demás; `POST /api/media?kind=speak`; se cobra en su cuenta de ElevenLabs,
+    no en el presupuesto de Meta) o en silencio. Se pueden leer también las respuestas escritas y cada respuesta
+    tiene "Escuchar". Las preferencias viven en el dispositivo.
+  - **Grafo por corrida** (`RunGraph.tsx`, pestaña Agente, `#corrida`): red 3D en canvas armada solo con la traza y
+    el estado del ciclo — inicio, una neurona por llamada al modelo (columna), las herramientas que pidió cada una
+    (calificador, radar, biblioteca, arnés, tú) y lo que devolvió cada herramienta (calificación por situación,
+    errores de práctica, la habilidad candidata), hasta el final. Crece en vivo; un ciclo terminado se repite en
+    bucle. Medidor de costo contra el tope de la corrida, ámbar al 80% y rojo al pasarlo, con "Tope agotado · el
+    código detuvo al agente". Vista Lista como alternativa accesible. Un selector de corridas permite ver cualquiera.
+    El grafo del cerebro (pestaña Cerebro) se queda como la vista de todo lo aprendido.
+  - **Camino guiado** (`Path.tsx`): una barra bajo el encabezado en todas las pestañas con el paso actual (qué es,
+    para qué sirve y un solo botón para hacerlo) y la lista de pasos: conectar la llave, el presupuesto, la primera
+    corrida, verla trabajar, decidir y platicar. Al terminar lo básico se puede ocultar y se recupera con "Guía".
+    El menú pone primero lo esencial (Inicio, Agente, Ajustes) y separa lo de "Explorar"; los controles del Agente
+    van numerados (quién elige, cuánto gastar, guía opcional).

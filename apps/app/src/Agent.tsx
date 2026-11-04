@@ -9,6 +9,7 @@ import { useT, type Lang, type Text } from "./i18n.js";
 import { MetaMark } from "./Logos.js";
 import { CAP_KEY, savedCap } from "./Companion.js";
 import { useLive } from "./live.js";
+import { RunGraph } from "./RunGraph.js";
 
 const E = (en: string, es: string): Text => ({ en, es });
 const L = {
@@ -319,6 +320,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
     { key: "image", name: "Muse Image", id: null },
   ];
   const phaseIdx = job ? (job.phase === "done" ? (job.state.verdict ? 5 : job.state.candidate ? 4 : job.state.before ? 2 : 1) : ["plan", "baseline", "propose", "validate", "awaiting"].indexOf(job.phase)) : -1;
+  const runs = (live.agent?.jobs ?? data.jobs).filter((j) => j.state.trace?.length);
   const skillsBy = (sid: string) => data.skills.filter((s) => s.scenario === sid);
   const verdict = job?.state.verdict;
   const candId = job?.state.candidate?.id;
@@ -351,6 +353,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
       ) : (
         <div className="agent-grid">
           <div className="runbox agent-ctl">
+            <p className="stepq"><span>1</span>{t(E("Who chooses what it practices?", "¿Quién elige qué practica?"))}</p>
             <div className="seg" role="tablist" aria-label={t(L.modeAuto)}>
               <button type="button" role="tab" aria-selected={auto} onClick={() => setAuto(true)} disabled={busy}>✦ {t(L.modeAuto)}</button>
               <button type="button" role="tab" aria-selected={!auto} onClick={() => setAuto(false)} disabled={busy}>{t(L.modeMine)}</button>
@@ -392,11 +395,13 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
               </label>
             )}
             </>}
+            <p className="stepq"><span>2</span>{t(E("How much can it spend in this cycle?", "¿Cuánto puede gastar en esta corrida?"))}</p>
             <label className="field">
               <span>{t(L.cap)}</span>
               <input type="number" inputMode="decimal" min={0.05} max={20} step={0.05} value={cap} onChange={(e) => setCap(e.target.value)} disabled={busy} />
               <small className="fine">{t(L.capHelp)}</small>
             </label>
+            <p className="stepq"><span>3</span>{t(E("Anything to tell it? (optional)", "¿Algo que decirle? (opcional)"))}</p>
             <label className="field">
               <span className="row between">
                 {t(L.guidance)}
@@ -411,6 +416,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
               {busy ? <span className="spin light" aria-hidden="true" /> : <Icon d={I.play} size={16} />}
               {busy ? t(L.running) : t(L.start)}
             </button>
+            {!busy && <p className="fine">{t(E("What happens next: it takes an exam, studies its mistakes, writes a skill and tests it. You watch it live in the network below, and only you approve the result.", "Qué pasa después: presenta un examen, estudia sus errores, escribe una habilidad y la prueba. Lo ves en vivo en la red de abajo y solo tú apruebas el resultado."))}</p>}
             <p className="muted small">${data.budget.spent.toFixed(4)} / ${data.budget.monthly.toFixed(2)} {t(L.spent)}</p>
             {error && <p className="error" role="alert">{error}</p>}
           </div>
@@ -428,7 +434,10 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
                   ))}
                 </ol>
                 <p className="small muted">{jobSc.title} · {job.planner} → {job.executor}{job.effort ? ` (${job.effort})` : ""} · ${Number(job.state.cost ?? 0).toFixed(4)}{job.state.maxCost ? ` / $${job.state.maxCost.toFixed(2)}` : ""} {t(L.cost)}</p>
-                {RUNNING.includes(job.phase) && busy && <button type="button" className="btn small ghost" onClick={() => go("lab")}>{t(L.watch)} →</button>}
+                <div className="row gap" style={{ flexWrap: "wrap" }}>
+                  <a className="btn small ghost" href="#corrida" onClick={(e) => { e.preventDefault(); document.getElementById("corrida")?.scrollIntoView({ behavior: "smooth" }); }}>{t(E("See it as a network", "Verla como red"))} ↓</a>
+                  {RUNNING.includes(job.phase) && busy && <button type="button" className="btn small ghost" onClick={() => go("lab")}>{t(L.watch)} →</button>}
+                </div>
                 {job.state.plan && (
                   <div className="plan">
                     <p className="small"><b>✦ {t(L.planTitle)}:</b> {job.state.plan.why || "—"}{job.state.plan.estimate ? ` (≈ $${job.state.plan.estimate.toFixed(3)})` : ""}</p>
@@ -496,6 +505,33 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
               <p className="empty">{t(L.lead)}</p>
             )}
           </div>
+        </div>
+      )}
+
+      {hasKey && runs.length > 0 && job && (
+        <div className="runs" id="corrida">
+          <div className="runs-head">
+            <div>
+              <h2 className="h2">{t(E("Each cycle, as a network", "Cada corrida, como red"))}</h2>
+              <p className="muted small">{t(E("Pick a cycle to see what it did step by step: which model it called, which tools it used, what each gave back and how much it spent.", "Elige una corrida para ver qué hizo paso a paso: a qué modelo llamó, qué herramientas usó, qué le devolvió cada una y cuánto gastó."))}</p>
+            </div>
+          </div>
+          <ul className="runs-list" aria-label={t(E("Cycles", "Corridas"))}>
+            {runs.slice(0, 12).map((r, i) => {
+              const title = data.bench.find((b) => b.id === r.scenario)?.title ?? r.scenario;
+              const state = RUNNING.includes(r.phase) && !r.state.error ? "live" : r.phase === "awaiting" ? "wait" : r.state.outcome === "approved" || r.state.outcome === "nothing-to-learn" ? "ok" : "bad";
+              return (
+                <li key={r.id}>
+                  <button type="button" aria-pressed={job.id === r.id} onClick={() => setJob(r)} className={state}>
+                    <b>#{runs.length - i} · {title}</b>
+                    <small>{new Date(r.createdAt).toLocaleString(lang === "es" ? "es-MX" : "en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} · ${Number(r.state.cost ?? 0).toFixed(3)}</small>
+                    <em>{state === "live" ? t(E("running", "en curso")) : state === "wait" ? t(E("waiting for you", "te espera")) : t(L.outcome[r.state.outcome ?? ""] ?? E("ended", "terminó")).split(/[.:]/)[0]}</em>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <RunGraph key={job.id} job={job} bench={data.bench} lang={lang} />
         </div>
       )}
 

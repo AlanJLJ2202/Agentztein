@@ -81,7 +81,7 @@ const curve = (a: { x: number; y: number }, b: { x: number; y: number }, bend = 
   return `M${a.x},${a.y} Q${mx - dy * bend},${my + dx * bend} ${b.x},${b.y}`;
 };
 
-export function Mind({ go }: { go: (t: Tab) => void }) {
+export function Mind({ go }: { go: (t: Tab, anchor?: string) => void }) {
   const t = useT();
   const live = useLive();
   const bench = useMemo(() => (live.agent?.bench ?? []).filter((b) => !b.legacy), [live.agent]);
@@ -140,6 +140,7 @@ export function Mind({ go }: { go: (t: Tab) => void }) {
         <div className="row" style={{ gap: 8, flexWrap: "wrap", marginTop: 14 }}>
           <button type="button" className="btn small ghost" onClick={grow}>{t(E("▶ Watch it grow", "▶ Ver cómo creció"))}</button>
           <button type="button" className="btn small ghost" disabled={!trace.length || running} onClick={() => setReplay(0)}>{t(E("▶ Replay its last cycle", "▶ Repetir su último ciclo"))}</button>
+          <button type="button" className="btn small ghost" onClick={() => go("agent", "corrida")}>{t(E("Each cycle as a network →", "Cada corrida como red →"))}</button>
           <button type="button" className="btn small" onClick={() => go("lab")}>{t(E("Watch it in 3D", "Verlo en 3D"))}</button>
         </div>
       </div>

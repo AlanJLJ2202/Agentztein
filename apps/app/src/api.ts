@@ -1,6 +1,7 @@
 // Talks to the functions in /api with the user's Supabase session.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { T } from "./i18n.js";
+import { toWav16k } from "./wav.js";
 
 export type GoogleStatus = "ok" | "not-configured" | "disabled" | "mismatch" | "no-client-id" | "unknown";
 export type Config = {
@@ -20,6 +21,8 @@ export function dbText(problem: string | undefined): string | null {
   return texts[problem][document.documentElement.lang === "es" ? "es" : "en"];
 }
 export type ProviderInfo = { id: string; label: string; keysUrl: string };
+/** The person's ElevenLabs key for the agent's voice (never the key itself). */
+export type VoiceKey = { hint: string; voice: string | null; voices: { id: string; name: string }[]; verifiedAt: string | null };
 export type SavedKey = { provider: string; hint: string; model: string | null; models: string[]; verifiedAt: string | null; updatedAt: string };
 export type Verdict = "experiment" | "watch" | "skip";
 export type Note = {
@@ -212,7 +215,24 @@ export function api(supabase: SupabaseClient) {
     return body as T;
   }
   return {
-    keys: () => call<{ providers: ProviderInfo[]; keys: SavedKey[] }>("/api/keys"),
+    keys: () => call<{ providers: ProviderInfo[]; keys: SavedKey[]; voice?: VoiceKey | null }>("/api/keys"),
+    saveVoiceKey: (key: string) => call<{ voice: VoiceKey; verified: boolean }>("/api/keys", { method: "POST", body: JSON.stringify({ provider: "elevenlabs", key }) }),
+    setVoice: (voice: string) => call<{ voice: VoiceKey }>("/api/keys", { method: "PATCH", body: JSON.stringify({ provider: "elevenlabs", model: voice }) }),
+    /** The agent's answer read aloud by ElevenLabs with the person's own key: an mp3. */
+    speak: async (text: string, voice?: string): Promise<Blob> => {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      const res = await fetch("/api/media?kind=speak", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ text, voice }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string; reason?: string };
+        throw new ApiError(body.error ?? `Error ${res.status}`, res.status, body.reason, body);
+      }
+      return res.blob();
+    },
     saveKey: (provider: string, key: string) =>
       call<{ key: SavedKey; verified: boolean }>("/api/keys", { method: "POST", body: JSON.stringify({ provider, key }) }),
     setModel: (provider: string, model: string) =>
@@ -228,12 +248,20 @@ export function api(supabase: SupabaseClient) {
       call<{ note: Note }>("/api/radar", { method: "PATCH", body: JSON.stringify({ id, decision }) }),
     agent: () => call<AgentState>("/api/agent"),
     agentOp: <T = { job: Job }>(body: Record<string, unknown>) => call<T>("/api/agent", { method: "POST", body: JSON.stringify(body) }),
-    transcribe: (audio: Blob, seconds: number, lang: string) =>
-      call<{ text: string; cost: number }>(`/api/media?kind=voice&seconds=${Math.ceil(seconds)}&lang=${lang}`, {
+    /** Muse Voice Transcribe takes WAV only: the recording is converted to 16 kHz mono WAV first. */
+    transcribe: async (audio: Blob, seconds: number, lang: string) => {
+      let wav: Blob;
+      try {
+        wav = await toWav16k(audio);
+      } catch {
+        throw new ApiError(lang === "es" ? "No pude convertir tu grabación a WAV en este navegador." : "Couldn't convert your recording to WAV in this browser.", 0, "bad-audio");
+      }
+      return call<{ text: string; cost: number }>(`/api/media?kind=voice&seconds=${Math.ceil(seconds)}&lang=${lang}`, {
         method: "POST",
-        body: audio,
-        headers: { "content-type": audio.type || "audio/webm" },
-      }),
+        body: wav,
+        headers: { "content-type": "audio/wav" },
+      });
+    },
     emblem: (skillId: string) => call<{ image: string; cost: number }>("/api/media?kind=image", { method: "POST", body: JSON.stringify({ skillId }) }),
     evolve: () => call<EvolveState>("/api/evolve"),
     evolveOp: (body: Record<string, unknown>) => call<{ run?: EvolveRun } & Partial<EvolveState>>("/api/evolve", { method: "POST", body: JSON.stringify(body) }),

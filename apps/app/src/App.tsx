@@ -1,6 +1,6 @@
 // The signed-in side of Agentztein: Google sign-in through Supabase Auth, then the user's own lab.
 import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { api, dbText, getConfig, type Api, type Config, type SavedKey } from "./api.js";
 import { Agent } from "./Agent.js";
 import { Brain } from "./Brain.js";
@@ -13,9 +13,22 @@ import { Companion } from "./Companion.js";
 import { Lab3D } from "./Lab3D.js";
 import { LiveProvider } from "./live.js";
 import { Mind } from "./Mind.js";
+import { Path, showPath } from "./Path.js";
 
 export type Tab = "overview" | "mind" | "lab" | "agent" | "evolve" | "radar" | "brain";
 const TABS: Tab[] = ["overview", "mind", "lab", "agent", "evolve", "radar", "brain"];
+// the nav puts what you need to start first, then the places to explore
+const ESSENTIAL: Tab[] = ["overview", "agent", "brain"];
+const EXPLORE: Tab[] = ["mind", "lab", "radar", "evolve"];
+const TAB_HINT: Record<Tab, { en: string; es: string }> = {
+  overview: { en: "Your board: how it's doing and what's next", es: "Tu tablero: cómo va y qué sigue" },
+  agent: { en: "Put it to practice and see each cycle as a network", es: "Ponlo a practicar y ve cada corrida como red" },
+  brain: { en: "Your Meta key, your budget and its voice", es: "Tu llave de Meta, tu presupuesto y su voz" },
+  mind: { en: "Everything it learned, as a graph", es: "Todo lo que aprendió, como grafo" },
+  lab: { en: "Follow it room by room in 3D", es: "Síguelo cuarto por cuarto en 3D" },
+  radar: { en: "AI news it reads for ideas", es: "Noticias de IA que lee para sacar ideas" },
+  evolve: { en: "It rewrites its own code, behind a judge", es: "Reescribe su propio código, con un juez" },
+};
 const tabFromHash = (): Tab => {
   const raw = location.hash.slice(1);
   const h = raw === "workshop" ? "lab" : raw; // the old 2D workshop became the 3D lab
@@ -123,10 +136,19 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
   useEffect(() => {
     if (location.search.includes("code=")) history.replaceState(null, "", location.pathname + location.hash);
   }, []);
-  const go = (next: Tab) => {
+  const go = (next: Tab, anchor?: string) => {
     location.hash = next;
     setTab(next);
-    scrollTo({ top: 0 });
+    if (anchor) {
+      // wait for the tab to render, then bring the anchor into view
+      let tries = 0;
+      const find = () => {
+        const el = document.getElementById(anchor);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        else if (tries++ < 20) setTimeout(find, 150);
+      };
+      setTimeout(find, 80);
+    } else scrollTo({ top: 0 });
   };
   const meta = session.user.user_metadata as { full_name?: string; name?: string; avatar_url?: string; picture?: string };
   const name = meta.full_name ?? meta.name ?? session.user.email ?? "";
@@ -138,12 +160,18 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
         <div className="wrap row">
           <a className="word" href="/" aria-label="Agentztein"><img src="/img/logo.webp" alt="Agentztein" width={155} height={32} /></a>
           <nav className="tabs" aria-label={lang === "es" ? "Secciones" : "Sections"}>
-            {TABS.map((id) => (
-              <a key={id} href={`#${id}`} aria-current={tab === id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(id); }}>
-                {t(T.tabs[id])}
-              </a>
+            {[...ESSENTIAL, ...EXPLORE].map((id) => (
+              <Fragment key={id}>
+                {EXPLORE[0] === id && <span className="tabs-sep" aria-hidden="true">{lang === "es" ? "Explorar" : "Explore"}</span>}
+                <a href={`#${id}`} title={t(TAB_HINT[id])} aria-current={tab === id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(id); }}>
+                  {t(T.tabs[id])}
+                </a>
+              </Fragment>
             ))}
           </nav>
+          <button type="button" className="guide-btn" onClick={showPath} title={lang === "es" ? "Mostrar la guía paso a paso" : "Show the step-by-step guide"}>
+            ? <span>{lang === "es" ? "Guía" : "Guide"}</span>
+          </button>
           <LangSwitch lang={lang} setLang={setLang} />
           <div className="me">
             {avatar ? <img src={avatar} alt="" width={32} height={32} referrerPolicy="no-referrer" /> : <span className="initial" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>}
@@ -151,6 +179,7 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
           </div>
         </div>
       </header>
+      <Path tab={tab} go={go} keys={keys} />
       <main className="wrap page">
         {config.missing.length > 0 && (
           <p className="notice" role="status">

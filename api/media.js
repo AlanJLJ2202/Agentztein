@@ -1,6 +1,7 @@
 // /api/media: Meta's other model families, used by the agent with the user's own key.
-//   POST ?kind=voice   body: the recorded audio (≤ 2 min). Muse Voice Transcribe turns it into text: the person
-//                      tells the agent what to focus on, and that guidance reaches the planner.
+//   POST ?kind=voice   body: the recorded audio as 16 kHz mono WAV (≤ 2 min; the app converts it). Muse Voice
+//                      Transcribe turns it into text: what the person tells the agent (see _lib/voice.js).
+//   POST ?kind=speak   { text, voice? } the agent's answer read aloud by ElevenLabs with the person's own key.
 //   POST ?kind=image   { skillId } Muse Image draws an emblem for a skill the agent wrote.
 // Both are new on the Meta Model API and not every key has them yet: errors say so plainly. Each call goes
 // through the same harness (budget check first, append-only log after).
@@ -10,12 +11,16 @@ import { db } from "./_lib/db.js";
 import { budgetOf } from "./_lib/harness.js";
 import { HttpError, handle, json, readJson } from "./_lib/http.js";
 import { PROVIDERS } from "./_lib/providers.js";
+import { elevenSpeak, transcribe, VOICE_MODEL } from "./_lib/voice.js";
 
-export const VOICE_MODEL = "muse-voice-transcribe-1.0";
+export { VOICE_MODEL };
 export const IMAGE_MODEL = "muse-image-1.0";
 const VOICE_USD_PER_MIN = 0.003; // $3 per 1,000 minutes
 const IMAGE_USD_ESTIMATE = 0.04; // not published yet: a conservative estimate per image
-const MAX_AUDIO_BYTES = 4_000_000;
+const MAX_AUDIO_BYTES = 4_000_000; // two minutes of 16 kHz mono 16-bit WAV is about 3.8 MB
+const MAX_SPEAK_CHARS = 800;
+// "George", one of ElevenLabs' premade voices, when the person hasn't picked one
+const DEFAULT_ELEVEN_VOICE = "JBFqnCBsd6RMkjVDRZzb";
 
 /** @param {import("pg").Pool} pool @param {string} userId */
 async function keyOf(pool, userId) {
@@ -51,36 +56,34 @@ async function voice(request, url) {
   const user = await requireUser(request);
   const pool = db();
   const audio = await request.arrayBuffer();
-  if (!audio.byteLength) throw new HttpError(400, "No audio received");
+  if (!audio.byteLength) throw new HttpError(400, "No audio received", { reason: "empty" });
   if (audio.byteLength > MAX_AUDIO_BYTES) throw new HttpError(413, "Keep it under two minutes");
   const seconds = Math.min(120, Math.max(1, Number(url.searchParams.get("seconds")) || 60));
   const cost = (seconds / 60) * VOICE_USD_PER_MIN;
   await guard(pool, user.id, cost);
   const k = await keyOf(pool, user.id);
-  const base = PROVIDERS.meta?.base ?? "";
-  const type = request.headers.get("content-type") || "audio/webm";
-  const form = () => {
-    const f = new FormData();
-    f.append("file", new Blob([audio], { type }), `voice.${type.includes("wav") ? "wav" : type.includes("mp4") ? "m4a" : "webm"}`);
-    f.append("model", VOICE_MODEL);
-    if (url.searchParams.get("lang") === "es") f.append("language", "es");
-    return f;
-  };
-  const send = (/** @type {string} */ path) => fetch(`${base}${path}`, { method: "POST", headers: { authorization: `Bearer ${k.key}` }, body: form(), signal: AbortSignal.timeout(45_000) });
-  let res;
-  try {
-    // OpenAI-compatible route first, then Meta's own ASR route
-    res = await send("/audio/transcriptions");
-    if (res.status === 404) res = await send("/asr/transcribe");
-  } catch {
-    throw new HttpError(502, "Could not reach Meta");
-  }
-  if (!res.ok) throw metaError(res.status, "Muse Voice Transcribe");
-  const body = await res.json().catch(() => ({}));
-  const text = String(body?.text ?? body?.transcript ?? body?.results?.[0]?.transcript ?? "").trim();
-  if (!text) throw new HttpError(502, "Meta returned an empty transcript");
+  const lang = url.searchParams.get("lang") === "es" ? "es" : url.searchParams.get("lang") === "en" ? "en" : undefined;
+  const text = await transcribe({ base: PROVIDERS.meta?.base ?? "", key: k.key, wav: audio, lang });
   await log(pool, user.id, "voice", VOICE_MODEL, cost);
   return json({ text: text.slice(0, 500), model: VOICE_MODEL, cost });
+}
+
+/**
+ * Reads the agent's answer aloud with ElevenLabs and the person's own key (Meta has no voice model). The mp3 goes
+ * straight back; it is billed to their ElevenLabs account, not to the Meta budget.
+ * @param {Request} request
+ */
+async function speak(request) {
+  const user = await requireUser(request);
+  const body = await readJson(request);
+  const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_SPEAK_CHARS) : "";
+  if (!text) throw new HttpError(400, "Nothing to say");
+  const { rows } = await db().query("SELECT secret, model FROM app.provider_keys WHERE user_id = $1 AND provider = 'elevenlabs' LIMIT 1", [user.id]);
+  if (!rows[0]) throw new HttpError(409, "Connect your ElevenLabs key first", { reason: "no-voice-key" });
+  const key = open(rows[0].secret, { userId: user.id, provider: "elevenlabs" });
+  const wanted = typeof body.voice === "string" && /^[A-Za-z0-9]{8,40}$/.test(body.voice) ? body.voice : null;
+  const audio = await elevenSpeak({ key, voice: wanted ?? rows[0].model ?? DEFAULT_ELEVEN_VOICE, text });
+  return new Response(audio, { status: 200, headers: { "content-type": "audio/mpeg", "cache-control": "no-store" } });
 }
 
 /** @param {Request} request */
@@ -123,5 +126,6 @@ export const POST = handle(async (request) => {
   const kind = url.searchParams.get("kind");
   if (kind === "voice") return voice(request, url);
   if (kind === "image") return image(request);
+  if (kind === "speak") return speak(request);
   throw new HttpError(400, "Unknown media kind");
 });

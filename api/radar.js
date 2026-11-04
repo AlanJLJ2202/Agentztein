@@ -59,9 +59,10 @@ export const POST = handle(async (request) => {
 
   const wanted = isProvider(body.provider) ? body.provider : null;
   const { rows: keys } = await pool.query(
-    `SELECT provider, secret, model FROM app.provider_keys WHERE user_id = $1 ${wanted ? "AND provider = $2" : ""}
+    // only the brain's keys (an ElevenLabs voice key lives in the same table)
+    `SELECT provider, secret, model FROM app.provider_keys WHERE user_id = $1 AND provider = $2
      ORDER BY updated_at DESC LIMIT 1`,
-    wanted ? [user.id, wanted] : [user.id],
+    [user.id, wanted ?? "meta"],
   );
   const row = keys[0];
   if (!row) throw new HttpError(409, "Connect an API key first", { reason: "no-key" });
