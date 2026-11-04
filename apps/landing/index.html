@@ -130,12 +130,18 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 @keyframes blip { from { opacity: var(--zap, .3); } to { opacity: 0; } }
 @keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }
 .hero-copy-wrap { position: relative; z-index: 2; pointer-events: none; }
-.hero-copy { max-width: 600px; padding-block: 56px 88px; pointer-events: auto; }
-.hero .lockup { font-size: 1.0625rem; }
-.hero h1 { font-size: clamp(3rem, 1.2rem + 5vw, 6.2rem); letter-spacing: -.05em; line-height: .96; margin-top: 26px; }
+.hero-copy { max-width: 780px; padding-block: 40px 64px; pointer-events: auto; }
+/* the event badge: Meta and the hackathon, loud enough to be the first thing read */
+.hero .lockup { flex-wrap: wrap; font-size: clamp(1rem, .9rem + .35vw, 1.25rem); gap: 12px; padding: 9px 20px 9px 14px; border-radius: 999px; background: rgba(255, 255, 255, .9); box-shadow: 0 6px 24px rgba(28, 43, 51, .1), inset 0 0 0 1px rgba(0, 129, 251, .18); }
+.hero .lockup .meta-logo { width: 1.9em; }
+.hero .lockup > b { font-weight: 800; }
+.hero .lockup .ev { font-weight: 700; color: var(--ink); }
+.hero .lockup .sep { height: 1.3em; background: rgba(0, 129, 251, .3); }
+.hero h1 { font-size: clamp(2.2rem, .8rem + 3.9vw, 4.9rem); letter-spacing: -.045em; line-height: 1; margin-top: 28px; }
+.hero h1 .ln { display: block; white-space: nowrap; }
 .hero h1 .w { display: inline-block; }
-.hero .lead { margin-top: 26px; max-width: 30em; color: var(--muted); }
-.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.hero .lead { margin-top: 22px; max-width: 27em; color: var(--muted); font-size: clamp(1.125rem, 1rem + .45vw, 1.4rem); line-height: 1.45; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 .js .hero-copy > *, .js .hero h1 .w { opacity: 0; transform: translateY(26px); }
 .alive .hero-copy > *, .alive .hero h1 .w { opacity: 1; transform: none; transition: opacity .9s var(--ease), transform .9s var(--ease); }
 .alive .hero-copy > :nth-child(1) { transition-delay: .05s; }
@@ -160,10 +166,10 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
   .hero-stage { height: min(62svh, 500px); }
   .scroll-cue { display: none; }
 }
-@media (max-width: 520px) { .hero .lockup .ev, .hero .lockup .sep { display: none; } }
+@media (max-width: 520px) { .hero .lockup { justify-content: center; gap: 8px 10px; padding: 8px 16px; border-radius: 18px; } .hero .lockup .sep { display: none; } .hero .lockup .ev { flex-basis: 100%; text-align: center; font-size: .9375rem; } .hero h1 { font-size: min(8.6vw, 2.6rem); } }
 /* Without 3D, the still sits in the free space right of the copy instead of behind it */
 @media (min-width: 901px) { .hero-stage .still { left: auto; right: 0; width: 58%; object-fit: contain; object-position: 50% 60%; } }
-@media (min-width: 901px) and (max-width: 1320px) { .hero-copy { max-width: 470px; } .hero h1 { font-size: clamp(3rem, .6rem + 5vw, 5rem); } }
+@media (min-width: 901px) and (max-width: 1320px) { .hero-copy { max-width: 620px; } .hero h1 { font-size: clamp(2.4rem, .2rem + 4.2vw, 4.1rem); } }
 
 /* Speech bubble that follows Agentztein's head */
 .bubble { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; opacity: 0; will-change: transform; }
@@ -935,10 +941,9 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
   <div class="flash" id="heroFlash" aria-hidden="true"></div>
   <div class="wrap hero-copy-wrap">
     <div class="hero-copy">
-      <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#metalogo"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Global AI Developer Hackathon 2026</span></span>
-      <img class="hero-logo" src="img/logo.webp" alt="Agentztein" width="1665" height="344" />
-      <h1 data-es='<span class="w">El</span> <span class="w">Agente AI</span> <span class="w">que</span> <span class="w">se</span> <span class="w">desarrolla</span> <span class="w">solo</span>'><span class="w">The</span> <span class="w">AI agent</span> <span class="w">that</span> <span class="w">builds</span> <span class="w">itself</span></h1>
-      <p class="lead" data-es="No es un modelo ni un chatbot: Agentztein es un agente de investigación de IA. Se escribe sus propias habilidades y hasta su código, los pone a prueba en exámenes al estilo de los benchmarks de frontera y solo se queda con lo que el arnés demuestra que lo hace mejor, sin olvidar lo que ya sabía.">Not a model, not a chatbot: Agentztein is an AI research agent. It writes its own skills and even its own code, tests them on exams in the style of the frontier benchmarks and keeps only what the harness proves makes it better, without forgetting what it already knew.</p>
+      <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#metalogo"/></svg><b>Meta</b><span class="sep" aria-hidden="true"></span><span class="ev">Global AI Developer Hackathon 2026</span></span>
+      <h1 data-es='<span class="ln"><span class="w">El</span> <span class="w">Agente AI</span> <span class="w">que se</span></span> <span class="ln"><span class="w">desarrolla</span> <span class="w">solo</span></span>'><span class="ln"><span class="w">The</span> <span class="w">AI agent</span></span> <span class="ln"><span class="w">that builds</span> <span class="w">itself</span></span></h1>
+      <p class="lead" data-es="Escribe sus propias habilidades y hasta su código, las pone a prueba y solo se queda con lo que lo hace mejor.">It writes its own skills and even its own code, puts them to the test and keeps only what makes it better.</p>
       <div class="cta">
         <a class="btn" href="#labStage"><span data-es="Entra a su laboratorio">Enter its lab</span>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
