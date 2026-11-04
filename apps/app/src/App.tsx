@@ -1,6 +1,6 @@
 // The signed-in side of Agentztein: Google sign-in through Supabase Auth, then the user's own lab.
 import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, dbText, getConfig, type Api, type Config, type SavedKey } from "./api.js";
 import { Agent } from "./Agent.js";
 import { Brain } from "./Brain.js";
@@ -69,6 +69,40 @@ export function App() {
         <Authed supabase={supabase} config={config} lang={lang} setLang={setLang} />
       )}
     </LangContext.Provider>
+  );
+}
+
+type MenuItem = { key: string; title: string; sub?: string; on?: boolean; act: () => void };
+/** A button that opens a short list: the places to explore, or your account. Closes on a pick, a click outside or Esc. */
+function Menu({ label, items, current, face, head, className = "", align = "left" }: { label: string; items: MenuItem[]; current?: string | null; face?: ReactNode; head?: string; className?: string; align?: "left" | "right" }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const out = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    addEventListener("mousedown", out);
+    addEventListener("keydown", esc);
+    return () => { removeEventListener("mousedown", out); removeEventListener("keydown", esc); };
+  }, [open]);
+  return (
+    <div className={`menu ${className}`} ref={box}>
+      <button type="button" className={`menu-btn${current ? " on" : ""}${face ? " face" : ""}`} aria-haspopup="true" aria-expanded={open} aria-label={face ? label : undefined} title={face ? label : undefined} onClick={() => setOpen((o) => !o)}>
+        {face ?? (current ?? label)}
+        <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      {open && (
+        <div className={`menu-pop ${align}`} role="menu">
+          {head && <p className="menu-head">{head}</p>}
+          {items.map((it) => (
+            <button key={it.key} type="button" role="menuitem" aria-current={it.on ? "page" : undefined} onClick={() => { setOpen(false); it.act(); }}>
+              <b>{it.title}</b>
+              {it.sub && <small>{it.sub}</small>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -182,28 +216,30 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
         <div className="wrap row">
           <a className="word" href="/" aria-label="Agentztein"><img src="/img/logo.webp" alt="Agentztein" width={155} height={32} /></a>
           <nav className="tabs" aria-label={lang === "es" ? "Secciones" : "Sections"}>
-            {[...ESSENTIAL, ...EXPLORE].map((id) => (
-              <Fragment key={id}>
-                {EXPLORE[0] === id && <span className="tabs-sep" aria-hidden="true">{lang === "es" ? "Explorar" : "Explore"}</span>}
-                <a href={`#${id}`} title={t(TAB_HINT[id])} aria-current={tab === id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(id); }}>
-                  {t(T.tabs[id])}
-                </a>
-              </Fragment>
-            ))}
-            {admin && (
-              <a href="#traffic" title={t(TAB_HINT.traffic)} aria-current={tab === "traffic" ? "page" : undefined} onClick={(e) => { e.preventDefault(); go("traffic"); }}>
-                {t(T.tabs.traffic)}
+            {ESSENTIAL.filter((id) => id !== "brain").map((id) => (
+              <a key={id} href={`#${id}`} title={t(TAB_HINT[id])} aria-current={tab === id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(id); }}>
+                {t(T.tabs[id])}
               </a>
-            )}
+            ))}
+            <Menu
+              label={lang === "es" ? "Explorar" : "Explore"}
+              current={[...EXPLORE, "traffic"].includes(tab) ? t(T.tabs[tab]) : null}
+              items={[...EXPLORE, ...(admin ? (["traffic"] as Tab[]) : [])].map((id) => ({ key: id, title: t(T.tabs[id]), sub: t(TAB_HINT[id]), on: tab === id, act: () => go(id) }))}
+            />
           </nav>
-          <button type="button" className="guide-btn" onClick={showPath} title={lang === "es" ? "Mostrar la guía paso a paso" : "Show the step-by-step guide"}>
-            ? <span>{lang === "es" ? "Guía" : "Guide"}</span>
-          </button>
           <LangSwitch lang={lang} setLang={setLang} />
-          <div className="me">
-            {avatar ? <img src={avatar} alt="" width={32} height={32} referrerPolicy="no-referrer" /> : <span className="initial" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>}
-            <button type="button" className="link" onClick={() => void supabase.auth.signOut()}>{t(T.signOut)}</button>
-          </div>
+          <Menu
+            className="me"
+            align="right"
+            label={lang === "es" ? "Tu cuenta" : "Your account"}
+            face={avatar ? <img src={avatar} alt="" width={32} height={32} referrerPolicy="no-referrer" /> : <span className="initial" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>}
+            head={name}
+            items={[
+              { key: "brain", title: t(T.tabs.brain), sub: t(TAB_HINT.brain), on: tab === "brain", act: () => go("brain") },
+              { key: "guide", title: lang === "es" ? "Guía paso a paso" : "Step-by-step guide", sub: lang === "es" ? "Qué sigue y por qué" : "What's next and why", act: showPath },
+              { key: "out", title: t(T.signOut), act: () => void supabase.auth.signOut() },
+            ]}
+          />
         </div>
       </header>
       <Path tab={tab} go={go} keys={keys} />

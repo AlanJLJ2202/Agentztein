@@ -78,7 +78,8 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 
 /* Wordmark (same as the landing) */
 .word { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.25rem; letter-spacing: -.035em; text-decoration: none; color: var(--ink); }
-.word img { display: block; height: 32px; width: auto; }
+.word { flex: none; }
+.word img { display: block; height: 32px; width: auto; max-width: none; flex: none; }
 .splash-logo { height: 44px; width: auto; margin-bottom: 8px; }
 .word.big img { height: 42px; }
 .hero-logo { height: 30px; width: auto; margin-bottom: 14px; }
@@ -130,11 +131,28 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 .me img, .me .initial { width: 32px; height: 32px; border-radius: 50%; }
 .me .initial { display: grid; place-items: center; background: var(--sky); color: var(--blue); font-weight: 800; }
 .page { padding-block: clamp(28px, 4vw, 56px) 80px; }
-@media (max-width: 1180px) {
-  .bar .row { flex-wrap: wrap; height: auto; padding-block: 10px; row-gap: 8px; }
-  .tabs { order: 3; width: 100%; margin: 0; overflow-x: auto; scrollbar-width: none; }
+/* the nav: three tabs, "Explore" and your account as small menus */
+.menu { position: relative; flex: none; }
+.menu-btn { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; color: var(--muted); font-weight: 600; white-space: nowrap; cursor: pointer; }
+.menu-btn:hover, .menu-btn[aria-expanded="true"] { background: var(--soft); color: var(--ink); }
+.menu-btn.on { background: var(--ink); color: #fff; }
+.menu-btn:focus-visible { outline: 3px solid var(--meta); outline-offset: 2px; }
+.menu-btn.face { padding: 3px 8px 3px 3px; }
+.menu-btn.face img, .menu-btn.face .initial { width: 32px; height: 32px; border-radius: 50%; }
+.menu-btn.face .initial { display: grid; place-items: center; background: var(--sky); color: var(--blue); font-weight: 800; }
+.menu-pop { position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; min-width: 260px; max-width: min(320px, calc(100vw - 24px)); padding: 6px; border-radius: 16px; background: #fff; border: 1px solid var(--line); box-shadow: 0 16px 40px rgba(28, 43, 51, .14); display: grid; gap: 2px; }
+.menu-pop.right { left: auto; right: 0; }
+.menu-head { padding: 8px 12px 6px; font-size: .8125rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-pop button { all: unset; box-sizing: border-box; display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; cursor: pointer; }
+.menu-pop button:hover, .menu-pop button:focus-visible { background: var(--soft); }
+.menu-pop button[aria-current="page"] { background: var(--sky); }
+.menu-pop b { font-weight: 700; color: var(--ink); }
+.menu-pop small { font-size: .8125rem; color: var(--muted); line-height: 1.35; }
+@media (max-width: 760px) {
+  .bar .row { flex-wrap: wrap; height: auto; padding-block: 10px; row-gap: 8px; gap: 12px; }
+  .tabs { order: 3; width: 100%; margin: 0; }
+  .tabs .menu-pop { left: auto; right: 0; }
   .lang { margin-left: auto; }
-  .me .link { font-size: .875rem; }
 }
 
 /* ---------- Overview ---------- */

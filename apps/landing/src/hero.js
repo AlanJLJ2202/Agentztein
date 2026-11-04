@@ -59,11 +59,15 @@ export function createHero(canvas, { reduced = false, onPhase = () => {}, onSay 
     if (w > 900) {
       // Wide screens: the copy sits on the left. Centre the lab in the free space to its right and step
       // back until the coils and every skill chip (about 6.4 units across) fit inside that space.
+      // measure where the copy really ends (its widest line), not the box it may grow into
       const copy = canvas.closest(".hero")?.querySelector(".hero-copy");
-      const copyRight = copy ? copy.getBoundingClientRect().right - canvas.getBoundingClientRect().left : w * 0.45;
+      const left = canvas.getBoundingClientRect().left;
+      const parts = copy ? [...copy.querySelectorAll(".lockup, .hero-logo, h1 .ln, .lead, .cta, .hn-pill")] : [];
+      const copyRight = parts.length ? Math.max(...parts.map((el) => el.getBoundingClientRect().right)) - left : w * 0.45;
       const free = Math.max(w - copyRight - 24, w * 0.42);
       dist = Math.max(dist, (6.4 * h) / (2 * vt * free));
-      shift = copyRight + free / 2 - w / 2;
+      // centred in the free space, but never pushed past ~72% of the width
+      shift = Math.min(copyRight + free / 2, w * 0.72) - w / 2;
     } else {
       shift = 0;
       dist = Math.max(dist, 2.3 / (vt * camera.aspect));

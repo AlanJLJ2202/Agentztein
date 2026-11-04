@@ -137,7 +137,8 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 .hero .lockup > b { font-weight: 700; }
 .hero .lockup .sep { height: 1.3em; }
 .hero h1 { font-size: clamp(2.2rem, .8rem + 3.9vw, 4.9rem); letter-spacing: -.045em; line-height: 1; margin-top: 24px; }
-.hero h1 .ln { display: block; white-space: nowrap; }
+.hero h1 .ln { display: block; width: fit-content; white-space: nowrap; }
+@media (max-width: 900px) { .hero h1 .ln { margin-inline: auto; } }
 .hero h1 .w { display: inline-block; }
 .hero .lead { margin-top: 22px; max-width: 27em; color: var(--muted); font-size: clamp(1.125rem, 1rem + .45vw, 1.4rem); line-height: 1.45; }
 .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
