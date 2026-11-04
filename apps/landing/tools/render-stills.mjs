@@ -34,7 +34,7 @@ await page.evaluate(() => document.fonts.load("700 40px Figtree"));
 
 const shots = {
   lab: 1000, room: 1000, muse: 900, stepD: 900, step0: 900, step1: 900, step2: 900, step3: 900, step4: 900, step5: 900,
-  "bench-swe": 700, "bench-terminal": 700, "bench-arc": 700, "bench-web": 700, "bench-research": 700, "bench-horizon": 700,
+  "bench-swe": 700, "bench-terminal": 700, "bench-arc": 700, "bench-web": 700, "bench-research": 700, "bench-horizon": 700, "agent-sleep": 900,
 };
 const only = process.argv.slice(2);
 for (const [name, size] of Object.entries(shots).filter(([n]) => !only.length || only.includes(n))) {

@@ -57,6 +57,18 @@ export function renderStill(canvas, which, size = 900) {
     ped.position.y = -0.1; ped.receiveShadow = true;
     scene.add(ped, makeBench(which.slice(6)));
     look(0, 1.7, 4.3, 0, 0.6, 0);
+  } else if (which === "agent-sleep") {
+    // Agentztein asleep (the app's memory card): eyes almost shut, head down, power low, no floor, transparent.
+    // img/agent-sleep.webp is this still cropped to its outline and scaled to 563 px tall, like agent-ok.webp.
+    const agent = makeAgent();
+    const u = agent.userData;
+    u.power = 0.18;
+    u.look.set(0, -0.4);
+    for (let i = 0; i < 40; i++) pose(agent, "sleep", 0, 0.05);
+    setArms(agent, -0.05, 0.05);
+    paintScreen(u.screenTex, "off", 0);
+    scene.add(agent);
+    look(0.35, 2.1, 9.8, 0, 1.6, 0);
   } else if (which === "muse") {
     const agent = makeAgent();
     agent.userData.look.set(0.25, 0.1);

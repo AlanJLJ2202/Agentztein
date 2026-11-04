@@ -395,7 +395,7 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 @media (max-width: 760px) { .first ol { grid-template-columns: minmax(0, 1fr); } }
 
 /* key numbers */
-.kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
 .kpis.loading { opacity: .5; }
 .kpi { padding: 18px; border-radius: 22px; background: var(--soft); display: grid; gap: 6px; align-content: start; min-width: 0; }
 .kpi h3 { font-size: .875rem; font-weight: 700; color: var(--muted); letter-spacing: 0; }
@@ -873,3 +873,59 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 .mem-dots { letter-spacing: 1px; color: var(--violet); }
 .mem-dreams ul { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .mem-dreams li { display: grid; gap: 2px; padding-left: 12px; border-left: 2px solid var(--soft-2); }
+
+/* Memory and dreams on the dashboard: a night card that stands out from the day cards (ADR-031) */
+.attn-item.dream { --tone: #4f5bd5; --tone-bg: #eef0ff; }
+.attn-item.dream .attn-ico { animation: attnPulse 2.4s ease-in-out infinite; }
+.kpi.dream { background: #f1f0ff; border-color: #cbc6ff; box-shadow: 0 8px 24px rgba(79, 91, 213, .14); }
+.pill.dream { background: #e4e2ff; color: #3d3fb0; }
+.memcard { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 0; padding: 0; overflow: hidden; border: 0; background: #fff; box-shadow: 0 18px 50px rgba(36, 32, 92, .16); }
+.memcard-night { position: relative; display: grid; gap: 14px; align-content: start; padding: clamp(20px, 2.6vw, 32px); color: #eef0ff; background:
+  radial-gradient(circle at 85% 12%, rgba(155, 140, 255, .35), transparent 38%),
+  radial-gradient(circle at 10% 90%, rgba(92, 184, 255, .18), transparent 40%),
+  linear-gradient(160deg, #1b1a4a, #2a2470 55%, #3a2f8f); }
+.memcard-night .kicker { color: #b9b0ff; margin: 0; }
+.memcard-night .h2 { color: #fff; max-width: 18ch; }
+.memcard-lead { color: #cfd2ff; line-height: 1.5; max-width: 52ch; }
+.memcard-night .fine { color: #a7abe0; }
+.memcard-night .link { color: #c9c2ff; }
+.memcard-night .error { background: rgba(255, 255, 255, .92); }
+.memcard-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: end; }
+.sleeper { position: relative; width: clamp(92px, 11vw, 132px); margin: -6px 4px -10px 0; }
+.sleeper img { width: 100%; height: auto; filter: drop-shadow(0 10px 18px rgba(8, 6, 40, .55)) saturate(.85) brightness(.92); transform-origin: 50% 90%; animation: breathe 4.2s ease-in-out infinite; }
+.sleeper::after { content: ""; position: absolute; left: 12%; right: 12%; bottom: 2%; height: 14%; border-radius: 50%; background: radial-gradient(closest-side, rgba(155, 140, 255, .35), transparent); z-index: -1; }
+.moon { position: absolute; top: -10px; left: -34px; font-size: 2.25rem; line-height: 1; color: #ffe8a3; text-shadow: 0 0 28px rgba(255, 232, 163, .55); }
+.moon i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; opacity: .7; animation: twinkle 3s ease-in-out infinite; }
+.moon i:nth-child(1) { top: -8px; left: 30px; }
+.moon i:nth-child(2) { top: 36px; left: -10px; animation-delay: 1s; }
+.moon i:nth-child(3) { top: 54px; left: 22px; animation-delay: 2s; }
+.zzz { position: absolute; top: 4%; right: -6px; width: 40px; height: 60px; pointer-events: none; }
+.zzz b { position: absolute; bottom: 0; left: 0; color: #e4e0ff; font-weight: 800; opacity: 0; animation: zFloat 3.6s ease-in infinite; }
+.zzz b:nth-child(1) { font-size: .8rem; }
+.zzz b:nth-child(2) { font-size: 1rem; animation-delay: 1.2s; }
+.zzz b:nth-child(3) { font-size: 1.3rem; animation-delay: 2.4s; }
+.memcard.dreaming .zzz b { color: #ffe8a3; animation-duration: 2.2s; }
+.memcard.dreaming .moon { animation: moonFloat 2.6s ease-in-out infinite; }
+@keyframes breathe { 50% { transform: scaleY(.975) translateY(1px); } }
+@keyframes zFloat { 0% { opacity: 0; transform: translate(0, 0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(26px, -54px) rotate(-12deg); } }
+@keyframes twinkle { 50% { opacity: .15; } }
+@keyframes moonFloat { 50% { transform: translateY(-6px) rotate(-6deg); } }
+.memkinds { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.memkinds li { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, .1); border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); font-size: .875rem; }
+.memkinds b { color: var(--c); font-size: 1.0625rem; }
+.sleepmeter { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, .08); font-size: .9375rem; line-height: 1.4; }
+.sleepmeter .zz { display: inline-flex; gap: 5px; flex: none; }
+.sleepmeter .zz i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #8f88e8; }
+.sleepmeter .zz i.on { background: #ffe8a3; border-color: #ffe8a3; box-shadow: 0 0 10px rgba(255, 232, 163, .6); }
+.memcard.sleepy .sleepmeter { background: rgba(255, 232, 163, .14); }
+.moonbtn { background: #ffe8a3; color: #241f5c; }
+.moonbtn:hover:not(:disabled) { background: #fff1c2; }
+.moonbtn .spin.light { border-color: rgba(36, 31, 92, .25); border-top-color: #241f5c; }
+.memcard-day { display: grid; gap: 14px; align-content: start; padding: clamp(20px, 2.6vw, 32px); }
+.memcard-day h3 { font-size: 1.0625rem; }
+.memtop { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.memtop li { display: grid; gap: 4px; padding: 12px 14px; border-radius: 14px; background: var(--soft); border-left: 4px solid var(--c); }
+.memtop li p { font-weight: 600; line-height: 1.4; }
+.lastdream { display: grid; gap: 4px; padding-top: 12px; border-top: 1px solid var(--line); }
+@media (max-width: 900px) { .memcard { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .moon, .moon i, .sleeper img, .zzz b { animation: none !important; } .zzz b { opacity: .8; } .zzz b:nth-child(2) { transform: translate(12px, -20px); } .zzz b:nth-child(3) { transform: translate(24px, -42px); } }

@@ -4,7 +4,7 @@
 // scored, the latest changes and the map of what it already knows. Everything comes from /api/agent and /api/radar;
 // the only illustrated parts say so.
 import { useContext, useEffect, useMemo, useState } from "react";
-import type { AgentState, Api, BenchScenario, HealthCheck, Job, Note, SavedKey, Scores, Skill } from "./api.js";
+import { ApiError, type AgentState, type Api, type BenchScenario, type HealthCheck, type Job, type MemoryKind, type Note, type SavedKey, type Scores, type Skill } from "./api.js";
 import { savedCap } from "./Companion.js";
 import { useLive } from "./live.js";
 import { EXAM_STYLE, examColor } from "./story.js";
@@ -116,6 +116,25 @@ function statusOf(lab: Lab): Status {
       say: E("My last cycle got stuck. Look at what happened and try again.", "Mi último ciclo se atoró. Revisa qué pasó e inténtalo de nuevo."),
       cta: E("See what happened", "Ver qué pasó"),
     };
+  const mem = lab.agent?.memory;
+  const dream = mem?.dreams[0];
+  if (dream && Date.now() - Date.parse(dream.createdAt) < 6 * 3_600_000 && (!j || Date.parse(dream.createdAt) >= Date.parse(j.updatedAt) - 1000))
+    return {
+      mood: "happy", screen: "ok", to: "agent",
+      say: dream.summary
+        ? E(`I just dreamt and tidied up what I know: ${dream.summary}`, `Acabo de soñar y ordené lo que sé: ${dream.summary}`)
+        : E("I just dreamt and tidied up what I know.", "Acabo de soñar y ordené lo que sé."),
+      cta: E("See what I remember", "Ver lo que recuerdo"),
+    };
+  if (mem && mem.undigested >= mem.dreamAfter)
+    return {
+      mood: "sleep", screen: "pulse", to: "agent",
+      say: E(
+        `I'm sleepy: ${mem.undigested} cycles I haven't digested. Let me dream and I'll keep only the lessons, so next time I think less.`,
+        `Tengo sueño: llevo ${mem.undigested} corridas sin digerir. Déjame soñar y me quedo solo con las lecciones; así la próxima vez pienso menos.`,
+      ),
+      cta: E("Let it dream", "Dejarlo soñar"),
+    };
   if (j?.state.outcome === "approved") {
     const c = j.state.candidate;
     return {
@@ -172,6 +191,8 @@ const TIPS: Text[] = [
   E("Nothing switches on without you: the harness filters, and a person decides.", "Nada se activa sin ti: el arnés filtra y una persona decide."),
   E("My weights never change. What I learn are skills, labeled with where they apply and which rules they were tested under.", "Mis pesos nunca cambian. Lo que aprendo son habilidades, etiquetadas con dónde aplican y con qué reglas se probaron."),
   E("Every call to the model counts against your monthly budget. If a step could go over it, I stop and tell you.", "Cada llamada al modelo cuenta contra tu presupuesto mensual. Si un paso pudiera rebasarlo, me detengo y te aviso."),
+  E("I dream: every few cycles I reread what happened once and keep only short lessons. That way I don't reread everything each time.", "Sueño: cada pocas corridas releo una vez lo que pasó y me quedo solo con lecciones cortas. Así no releo todo cada vez."),
+  E("Lessons I neither keep nor use fade away by themselves. The ones you pin, I never forget.", "Las lecciones que no conservo ni uso se desvanecen solas. Las que tú fijas, nunca las olvido."),
 ];
 
 /* ---------- the dashboard ---------- */
@@ -285,6 +306,7 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
       <SetupAlerts checks={health} go={go} />
       {view === "simple" ? (
         <>
+          {lab.hasKey && <MemoryCard lab={lab} lang={lang} go={go} client={client} />}
           <Story lab={lab} lang={lang} go={go} />
           <BigThree lab={lab} lang={lang} />
           <Doors go={go} />
@@ -293,6 +315,7 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
         <>
           <Kpis lab={lab} lang={lang} loading={loading} go={go} />
           <CycleTrack lab={lab} lang={lang} go={go} />
+          {lab.hasKey && <MemoryCard lab={lab} lang={lang} go={go} client={client} />}
           <div className="dgrid">
             <ScoreChart lab={lab} lang={lang} go={go} />
             <Feed lab={lab} lang={lang} go={go} />
@@ -305,7 +328,7 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
 }
 
 /* ---------- what matters right now, colored by urgency ---------- */
-type Alert = { tone: "bad" | "warn" | "live" | "good"; icon: string; title: Text; text: Text; cta?: { label: Text; to: Tab; anchor?: string } };
+type Alert = { tone: "bad" | "warn" | "live" | "good" | "dream"; icon: string; title: Text; text: Text; cta?: { label: Text; to: Tab; anchor?: string } };
 
 function alertsOf(lab: Lab, lang: Lang): Alert[] {
   const out: Alert[] = [];
@@ -327,6 +350,12 @@ function alertsOf(lab: Lab, lang: Lang): Alert[] {
     out.push({ tone: "bad", icon: "$", title: E("Monthly budget used up", "Se acabó el presupuesto del mes"), text: E(`${money(budget.spent, lang)} of ${money(budget.monthly, lang)}. It won't call the model until you raise it or the month changes.`, `${money(budget.spent, lang)} de ${money(budget.monthly, lang)}. No llamará al modelo hasta que lo subas o cambie el mes.`), cta: { label: E("Raise it", "Subirlo"), to: "brain" } });
   else if (budget && used >= 0.8)
     out.push({ tone: "warn", icon: "$", title: E("Close to the monthly budget", "Cerca del presupuesto del mes"), text: E(`${Math.round(used * 100)}% used: ${money(budget.spent, lang)} of ${money(budget.monthly, lang)}.`, `${Math.round(used * 100)}% usado: ${money(budget.spent, lang)} de ${money(budget.monthly, lang)}.`), cta: { label: E("Adjust", "Ajustar"), to: "brain" } });
+  const mem = lab.agent?.memory;
+  if (mem && mem.undigested >= mem.dreamAfter && !(j && isRunning(j)))
+    out.push({ tone: "dream", icon: "☾", title: E("It's sleepy: time to dream", "Tiene sueño: hora de soñar"), text: E(`${mem.undigested} finished cycles it hasn't digested. Dreaming turns them into short lessons, so later cycles read less and repeat fewer dead ends. Its next “Improve yourself” starts by dreaming.`, `${mem.undigested} corridas terminadas sin digerir. Al soñar las convierte en lecciones cortas: las siguientes corridas leen menos y repiten menos callejones sin salida. Su próximo «Mejórate tú solo» empieza soñando.`), cta: { label: E("See its memory", "Ver su memoria"), to: "agent", anchor: "memoria" } });
+  const dreamt = mem?.dreams[0];
+  if (dreamt && Date.now() - Date.parse(dreamt.createdAt) < 86_400_000 && !(mem && mem.undigested >= mem.dreamAfter))
+    out.push({ tone: "dream", icon: "✧", title: E("It dreamt and tidied up its memory", "Soñó y ordenó su memoria"), text: E(`${dreamt.summary ? `${dreamt.summary} · ` : ""}+${dreamt.stats.added ?? 0} new, ${dreamt.stats.rewritten ?? 0} rewritten, ${dreamt.stats.faded ?? 0} faded.`, `${dreamt.summary ? `${dreamt.summary} · ` : ""}+${dreamt.stats.added ?? 0} nuevas, ${dreamt.stats.rewritten ?? 0} reescritas, ${dreamt.stats.faded ?? 0} desvanecidas.`), cta: { label: E("See the lessons", "Ver las lecciones"), to: "agent", anchor: "memoria" } });
   if (j?.state.outcome === "approved" && j.state.candidate && Date.now() - Date.parse(j.updatedAt) < 3 * 86_400_000)
     out.push({ tone: "good", icon: "✓", title: E("New skill active", "Habilidad nueva activa"), text: E(`v${j.state.candidate.version} for “${ctxName(lab, j.state.candidate.scenario, j.state.candidate.context)}” is in use.`, `La v${j.state.candidate.version} para «${ctxName(lab, j.state.candidate.scenario, j.state.candidate.context)}» ya se usa.`) });
   return out;
@@ -434,6 +463,119 @@ function Doors({ go }: { go: (t: Tab) => void }) {
   );
 }
 
+/* ---------- memory and dreams: what it keeps, how strong, and the last dream ---------- */
+const KIND_STYLE: Record<MemoryKind, { name: Text; color: string }> = {
+  rule: { name: E("Rules", "Reglas"), color: "#9b8cff" },
+  "dead-end": { name: E("Dead ends", "Callejones sin salida"), color: "#ff8a75" },
+  strategy: { name: E("Strategies", "Estrategias"), color: "#5cb8ff" },
+  fact: { name: E("Facts", "Datos"), color: "#c3ccd6" },
+};
+
+function MemoryCard({ lab, lang, go, client }: { lab: Lab; lang: Lang; go: (t: Tab, anchor?: string) => void; client: Api }) {
+  const t = useT();
+  const live = useLive();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const mem = lab.agent?.memory;
+  if (!mem) return null;
+  const dreamingNow = lab.latest?.phase === "dream" && isRunning(lab.latest);
+  const sleepy = mem.undigested >= mem.dreamAfter;
+  const top = [...mem.active].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.strength - a.strength || Date.parse(b.updatedAt) - Date.parse(a.updatedAt)).slice(0, 3);
+  const kinds = (Object.keys(KIND_STYLE) as MemoryKind[]).map((k) => ({ k, n: mem.active.filter((m) => m.kind === k).length })).filter((x) => x.n);
+  const last = mem.dreams[0];
+  const scopeName = (scope: string) => {
+    if (scope === "global") return t(E("whole lab", "todo el laboratorio"));
+    const [sid, cid] = scope.split(":");
+    return [scTitle(lab, sid ?? ""), cid ? ctxName(lab, sid ?? "", cid) : null].filter(Boolean).join(" · ");
+  };
+  const dream = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await client.agentOp({ op: "dream", lang });
+      await live.reload();
+    } catch (err) {
+      setError(err instanceof ApiError && err.reason === "nothing-to-dream" ? t(E("Nothing new to dream about: finish a cycle first.", "Nada nuevo que soñar: primero termina una corrida.")) : (err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const left = Math.max(0, mem.dreamAfter - mem.undigested);
+  return (
+    <section className={`dcard memcard${sleepy ? " sleepy" : ""}${dreamingNow || busy ? " dreaming" : ""}`} aria-labelledby="mem-h">
+      <div className="memcard-night">
+        <div className="memcard-head">
+          <div>
+            <p className="kicker">{t(E("Memory and dreams", "Memoria y sueños"))}</p>
+            <h2 id="mem-h" className="h2">
+              {dreamingNow || busy ? t(E("Dreaming right now…", "Soñando ahorita…")) : mem.active.length ? t(E(`${mem.active.length} lessons it keeps`, `${mem.active.length} lecciones que guarda`)) : t(E("It doesn't remember anything yet", "Todavía no recuerda nada"))}
+            </h2>
+          </div>
+          <div className="sleeper" aria-hidden="true">
+            <span className="moon">☾<i /><i /><i /></span>
+            <img src="/img/agent-sleep.webp" alt="" width={347} height={563} />
+            <span className="zzz"><b>z</b><b>z</b><b>Z</b></span>
+          </div>
+        </div>
+        <p className="memcard-lead">
+          {t(E(
+            "Instead of rereading every cycle, it dreams: it rereads them once and keeps only short lessons. Each step then gets just the ones that matter, so it spends less context and less reasoning.",
+            "En vez de releer cada corrida, sueña: las relee una vez y se queda solo con lecciones cortas. Luego cada paso recibe solo las que importan, así gasta menos contexto y menos razonamiento.",
+          ))}
+        </p>
+        {kinds.length > 0 && (
+          <ul className="memkinds" aria-label={t(E("Lessons by kind", "Lecciones por tipo"))}>
+            {kinds.map(({ k, n }) => <li key={k} style={{ ["--c" as string]: KIND_STYLE[k].color }}><b>{n}</b> {t(KIND_STYLE[k].name)}</li>)}
+          </ul>
+        )}
+        <div className="sleepmeter" role="meter" aria-valuemin={0} aria-valuemax={mem.dreamAfter} aria-valuenow={Math.min(mem.undigested, mem.dreamAfter)} aria-label={t(E("Cycles to digest", "Corridas por digerir"))}>
+          <span className="zz">{Array.from({ length: mem.dreamAfter }, (_, i) => <i key={i} className={i < mem.undigested ? "on" : ""} />)}</span>
+          <span>
+            {sleepy
+              ? t(E(`${mem.undigested} cycles to digest: it will dream at the start of its next “Improve yourself”.`, `${mem.undigested} corridas por digerir: soñará al empezar su próximo «Mejórate tú solo».`))
+              : mem.undigested
+                ? t(E(`${mem.undigested} of ${mem.dreamAfter} cycles: ${left} more and it dreams by itself.`, `${mem.undigested} de ${mem.dreamAfter} corridas: ${left} más y sueña solo.`))
+                : t(E(`Nothing to digest. It dreams by itself after ${mem.dreamAfter} cycles.`, `Nada por digerir. Sueña solo después de ${mem.dreamAfter} corridas.`))}
+          </span>
+        </div>
+        <div className="row wrap-row">
+          <button type="button" className="btn small moonbtn" onClick={() => void dream()} disabled={busy || dreamingNow || mem.undigested === 0}>
+            {busy && <span className="spin light" aria-hidden="true" />}☾ {t(E("Dream now", "Soñar ahora"))}
+          </button>
+          <button type="button" className="link small" onClick={() => go("agent", "memoria")}>{t(E("See all its memory", "Ver toda su memoria"))} →</button>
+        </div>
+        <p className="fine">{t(E(`At most $${mem.cap.toFixed(2)} per dream, with your key. The exams never see its memory.`, `Máximo $${mem.cap.toFixed(2)} por sueño, con tu llave. Los exámenes nunca ven su memoria.`))}</p>
+        {error && <p className="error small" role="alert">{error}</p>}
+      </div>
+      <div className="memcard-day">
+        <h3>{t(E("What it remembers most", "Lo que más recuerda"))}</h3>
+        {top.length ? (
+          <ol className="memtop">
+            {top.map((m) => (
+              <li key={m.id} style={{ ["--c" as string]: KIND_STYLE[m.kind].color }}>
+                <p>{m.text}</p>
+                <span className="muted small">
+                  {t(KIND_STYLE[m.kind].name)} · {scopeName(m.scope)} · <span className="mem-dots" role="img" aria-label={t(E(`strength ${m.strength} of 5`, `fuerza ${m.strength} de 5`))}>{"●".repeat(m.strength)}{"○".repeat(Math.max(0, 5 - m.strength))}</span>
+                  {m.pinned && <> · {t(E("pinned", "fijada"))}</>}
+                </span>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="empty">{t(E("After a few cycles, its first dream will leave here the rules it found, the dead ends to avoid and the strategies that pay off.", "Después de unas corridas, su primer sueño dejará aquí las reglas que encontró, los callejones que debe evitar y las estrategias que rinden."))}</p>
+        )}
+        {last && (
+          <div className="lastdream">
+            <p className="small"><b>{t(E("Last dream", "Último sueño"))}</b> <span className="muted">· {ago(last.createdAt, lang)} · ${last.cost.toFixed(3)}</span></p>
+            {last.summary && <p className="small">“{last.summary}”</p>}
+            <p className="muted small">{t(E(`${last.jobs} cycles · +${last.stats.added ?? 0} new · ${last.stats.rewritten ?? 0} rewritten · ${last.stats.faded ?? 0} faded`, `${last.jobs} corridas · +${last.stats.added ?? 0} nuevas · ${last.stats.rewritten ?? 0} reescritas · ${last.stats.faded ?? 0} desvanecidas`))}</p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 /* ---------- the numbers ---------- */
 function Kpis({ lab, lang, loading, go }: { lab: Lab; lang: Lang; loading: boolean; go: (t: Tab, anchor?: string) => void }) {
   const t = useT();
@@ -482,6 +624,22 @@ function Kpis({ lab, lang, loading, go }: { lab: Lab; lang: Lang; loading: boole
         </div>
         <p className="sub">{budget ? t(E(`${budget.runs} model calls · your key, your limit`, `${budget.runs} llamadas al modelo · tu llave, tu límite`)) : t(E("Set a limit in Agent", "Pon un límite en Agente"))}</p>
       </article>
+      {(() => {
+        const mem = lab.agent?.memory;
+        const sleepy = Boolean(mem && mem.undigested >= mem.dreamAfter);
+        const last = mem?.dreams[0];
+        return (
+          <article className={`kpi${sleepy ? " dream" : ""}`} style={{ ["--c" as string]: "#4f5bd5" }}>
+            <h3>{t(E("Memory", "Memoria"))}</h3>
+            <p className="big">{mem?.active.length ?? "—"}{sleepy && <button type="button" className="pill dream kpi-act" onClick={() => go("agent", "memoria")}>☾ {t(E("sleepy", "con sueño"))} →</button>}</p>
+            <p className="sub">
+              {mem
+                ? t(E(`lessons · ${mem.undigested} cycles to digest · ${last ? `dreamt ${ago(last.createdAt, lang)}` : "never dreamt"}`, `lecciones · ${mem.undigested} corridas por digerir · ${last ? `soñó ${ago(last.createdAt, lang)}` : "nunca ha soñado"}`))
+                : t(E("Lessons it keeps by dreaming", "Lecciones que guarda al soñar"))}
+            </p>
+          </article>
+        );
+      })()}
       <article className={`kpi${pending ? " warn" : ""}`} style={{ ["--c" as string]: "#ff6600" }}>
         <h3>{t(E("Research radar", "Radar de investigación"))}</h3>
         <p className="big">{lab.notes.length}</p>
@@ -497,7 +655,7 @@ type PhaseInfo = { short: Text; name: Text; what: Text; color: string };
 export const PHASES: [PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo] = [
   {
     short: E("Decides", "Decide"), name: E("Decides what to practice", "Decide qué practicar"), color: "#6d5ce8",
-    what: E("You choose, or you let it: Muse Wonder looks where it fails most, which Meta models your key has and what each costs, and picks the exam, the model and the effort within the cycle's cap.", "Eliges tú o lo dejas a él: Muse Wonder mira dónde falla más, qué modelos de Meta tiene tu llave y cuánto cuesta cada uno, y elige el examen, el modelo y el esfuerzo sin pasarse del tope de la corrida."),
+    what: E("You choose, or you let it: Muse Wonder looks where it fails most, which Meta models your key has and what each costs, and picks the exam, the model and the effort within the cycle's cap. With 3 cycles it hasn't digested, it dreams first and decides with those lessons.", "Eliges tú o lo dejas a él: Muse Wonder mira dónde falla más, qué modelos de Meta tiene tu llave y cuánto cuesta cada uno, y elige el examen, el modelo y el esfuerzo sin pasarse del tope de la corrida. Si lleva 3 corridas sin digerir, antes sueña y decide con esas lecciones."),
   },
   {
     short: E("Measures", "Se mide"), name: E("Measures itself", "Se mide"), color: "#0081fb",
@@ -607,9 +765,13 @@ function CycleTrack({ lab, lang, go }: { lab: Lab; lang: Lang; go: (t: Tab) => v
     if (job?.phase === "awaiting") action = { label: E("Approve or reject", "Aprobar o rechazar"), to: "agent" };
   } else {
     const plan = s?.plan;
-    real = plan
+    const dreamt = s?.dream ? E(`First it dreamt about ${s.dream.jobs} cycles${s.dream.summary ? `: ${s.dream.summary}` : ""}. `, `Antes soñó con ${s.dream.jobs} corridas${s.dream.summary ? `: ${s.dream.summary}` : ""}. `) : null;
+    real = job?.phase === "dream"
+      ? E("Dreaming: rereading its last cycles and keeping only the lessons…", "Soñando: relee sus últimas corridas y se queda solo con las lecciones…")
+      : plan
       ? E(`It chose ${scTitle(lab, plan.scenario)} with ${plan.executor}${plan.effort ? ` (${plan.effort} effort)` : ""}${plan.estimate ? `, about $${plan.estimate.toFixed(2)}` : ""}${s?.maxCost ? ` of a $${s.maxCost.toFixed(2)} cap` : ""}: ${plan.why}`, `Eligió ${scTitle(lab, plan.scenario)} con ${plan.executor}${plan.effort ? ` (esfuerzo ${plan.effort})` : ""}${plan.estimate ? `, unos $${plan.estimate.toFixed(2)}` : ""}${s?.maxCost ? ` de un tope de $${s.maxCost.toFixed(2)}` : ""}: ${plan.why}`)
       : job ? E(`You chose: ${scTitle(lab, job.scenario)} with ${job.executor}.`, `Elegiste tú: ${scTitle(lab, job.scenario)} con ${job.executor}.`) : null;
+    if (dreamt && real) real = E(dreamt.en + real.en, dreamt.es + real.es);
   }
   if (s?.outcome === "run-budget" && cur === at) real = E(`It reached this cycle's cap ($${(s.maxCost ?? 0).toFixed(2)}) and the code stopped it cleanly. Nothing changed; give it a higher cap to go further.`, `Llegó al tope de esta corrida ($${(s.maxCost ?? 0).toFixed(2)}) y el código la detuvo limpio. No cambió nada; dale un tope más alto para llegar más lejos.`);
   return (
@@ -755,6 +917,9 @@ function events(lab: Lab): Ev[] {
     if (o === "nothing-to-learn") ev.push({ at: j.updatedAt, icon: "★", color: "#22b864", sc: j.scenario, to: "agent", text: E("No mistakes to study: nothing to write", "Sin errores que estudiar: nada que escribir") });
     if (j.phase === "awaiting") ev.push({ at: j.updatedAt, icon: "!", color: "#ffa928", sc: j.scenario, to: "agent", text: E("The harness passed a skill: it's waiting for you", "El arnés dejó pasar una habilidad: te está esperando") });
     if (j.state.error) ev.push({ at: j.updatedAt, icon: "!", color: "#f0533c", sc: j.scenario, to: "agent", text: E("A cycle got stuck", "Un ciclo se atoró") });
+  }
+  for (const d of lab.agent?.memory?.dreams ?? []) {
+    ev.push({ at: d.createdAt, icon: "☾", color: "#4f5bd5", to: "agent", text: E(`Dreamt about ${d.jobs} cycles: +${d.stats.added ?? 0} lessons, ${d.stats.rewritten ?? 0} rewritten, ${d.stats.faded ?? 0} faded`, `Soñó con ${d.jobs} corridas: +${d.stats.added ?? 0} lecciones, ${d.stats.rewritten ?? 0} reescritas, ${d.stats.faded ?? 0} desvanecidas`) });
   }
   // radar runs: one entry per batch of judged stories
   const runs = new Map<string, Note[]>();
