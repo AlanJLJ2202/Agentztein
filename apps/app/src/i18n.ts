@@ -61,6 +61,7 @@ export const T = {
     evolve: { en: "Its code", es: "Su código" },
     radar: { en: "Radar", es: "Radar" },
     brain: { en: "Settings", es: "Ajustes" },
+    traffic: { en: "Traffic", es: "Tráfico" },
   },
 
   hello: { en: "Hi", es: "Hola" },

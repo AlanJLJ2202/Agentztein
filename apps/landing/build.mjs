@@ -16,6 +16,16 @@ await build({
   target: "es2022",
   legalComments: "none",
 });
+// visit counting (ADR-034): tiny and separate, so a visit counts before the 3D lab has downloaded
+await build({
+  entryPoints: [here + "src/visits.js"],
+  outfile: out + "visits.js",
+  bundle: true,
+  format: "esm",
+  minify: true,
+  target: "es2022",
+  legalComments: "none",
+});
 
 cpSync(here + "index.html", out + "index.html");
 cpSync(here + "img", out + "img", { recursive: true });

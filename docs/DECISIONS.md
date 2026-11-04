@@ -585,3 +585,34 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
   - **Lema:** «El Agente AI que se desarrolla solo» / «The AI agent that builds itself» (la idea de antes, corta, con
     *agente*; se probó «…Y lo demuestra.» y quedaba muy largo). El lead abre con «No es un modelo ni un
     chatbot». El glosario suma *Cambio de código* y *Nueva herramienta*, en una sola fila de chips pequeños (el significado se abre al tocarlos).
+
+## ADR-034 — Contar visitas en nuestra propia base de datos y ver hasta dónde llegan
+- **Contexto (4 nov 2026):** Alan preguntó si se puede registrar a los visitantes para saber si el sitio tiene
+  tráfico, guardarlo en la base de datos y ver hasta dónde llegan. No había ninguna medición: ni de la landing ni
+  de la app.
+- **Decisión:**
+  - **Una tabla, un evento por fila** (`app.visit_events`, migración `0010`): `view`, `section` (sección de la
+    landing alcanzada), `lab` (primer toque al laboratorio 3D), `cta` (clic a la app, con dónde estaba el botón),
+    `leave` (milisegundos con la página en pantalla), `tab` (pestaña de la app), `signin` (vio la pantalla de
+    entrada) y `signed_in`. Vive en el esquema `app`, que la Data API de Supabase no expone.
+  - **Privacidad por diseño:** sin cookies, sin IP, sin huella. El navegador guarda un id aleatorio
+    (`localStorage`) y una sesión que termina tras 30 minutos sin actividad. Del *referrer* solo se guarda el host;
+    el país viene de `x-vercel-ip-country`; el dispositivo se reduce a celular/tablet/computadora. No se manda nada
+    con Global Privacy Control, Do Not Track o `?notrack=1`.
+  - **Ligar visita y cuenta sin confiar en el navegador:** solo `signed_in` lleva el token de Supabase y el
+    servidor lo verifica antes de guardar `user_id`. Con eso, "guardó su llave" y "corrió el agente" salen de
+    `app.provider_keys` y `app.agent_jobs`, no de lo que diga la página.
+  - **Envío:** `navigator.sendBeacon` en lotes (cada 1.5 s o al ocultar la página), como `text/plain` para evitar
+    *preflight*. La landing lo carga como script aparte (`visits.js`, ~3 KB) para que la visita cuente antes de que
+    baje el laboratorio 3D. `/api/track` siempre responde 204 y nunca bloquea la página.
+  - **Defensas:** se descartan user agents de bots, *crawlers*, vistas previas de enlaces y navegadores
+    *headless*; un lote trae máximo 25 eventos y un visitante máximo 600 por día.
+  - **Quién lo ve:** `GET /api/visits` solo para los correos de `ADMIN_EMAILS`. La pestaña **Tráfico** muestra
+    visitantes, visitas, tiempo mediano en la landing, el embudo (de abrir la landing a correr el agente), visitantes
+    por día, de dónde vienen, países, dispositivos, botones, pestañas, campañas utm y las últimas 30 visitas con
+    "hasta dónde llegó". El navegador de un dueño deja de contarse al abrir la app.
+- **Alternativas descartadas:** Vercel Analytics o Google Analytics (los datos no quedan en nuestra base y no se
+  pueden cruzar con cuentas, llaves y ciclos; GA además pide aviso de cookies); guardar la IP (dato personal que no
+  hace falta para contar).
+- **Pendiente:** no hay retención automática; si la tabla crece, borrar lo viejo con
+  `DELETE FROM app.visit_events WHERE created_at < now() - interval '13 months'`.

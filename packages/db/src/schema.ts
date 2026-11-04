@@ -505,3 +505,43 @@ export const evolveRuns = app.table(
     check("evolve_runs_status_chk", sql`${t.status} in ('queued', 'building', 'passed', 'rejected', 'failed')`),
   ],
 );
+
+/**
+ * Site traffic (ADR-034): one row per thing a visitor did, from the landing or the app. `visitor_id` is a random id the
+ * browser keeps (no cookie, no IP, no fingerprint); `session_id` changes after 30 minutes without activity. `user_id` is
+ * only set on "signed_in", after the server checked the Supabase session, which ties a visitor to the account they made.
+ * Rows from obvious bots are dropped before they get here. Read only by /api/visits, for the people in ADMIN_EMAILS.
+ */
+export const visitEvents = app.table(
+  "visit_events",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    visitorId: text("visitor_id").notNull(),
+    sessionId: text("session_id").notNull(),
+    page: text("page").notNull(),
+    event: text("event").notNull(),
+    /** the section, tab or button: `como-funciona`, `agent`, `hero-create`… */
+    target: text("target"),
+    /** "leave": milliseconds the page was visible */
+    value: integer("value"),
+    /** host of the page that sent them here (never the full URL) */
+    referrer: text("referrer"),
+    utmSource: text("utm_source"),
+    utmMedium: text("utm_medium"),
+    utmCampaign: text("utm_campaign"),
+    /** ISO country code from Vercel's edge (x-vercel-ip-country) */
+    country: text("country"),
+    device: text("device"),
+    lang: text("lang"),
+    userId: uuid("user_id"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("visit_events_created").on(t.createdAt),
+    index("visit_events_visitor").on(t.visitorId, t.createdAt),
+    index("visit_events_user").on(t.userId),
+    check("visit_events_page_chk", sql`${t.page} in ('landing', 'app')`),
+    check("visit_events_event_chk", sql`${t.event} in ('view', 'section', 'cta', 'lab', 'leave', 'tab', 'signin', 'signed_in')`),
+    check("visit_events_device_chk", sql`${t.device} is null or ${t.device} in ('mobile', 'tablet', 'desktop')`),
+  ],
+);

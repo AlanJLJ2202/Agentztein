@@ -117,6 +117,16 @@ pedirle texto propio) y la CDN guarda cada audio un año, así que cada uno se p
 sitio sintetiza sus propios efectos en el navegador y las frases solo salen en el globo de texto. El botón del
 altavoz (abajo a la izquierda) enciende y apaga el sonido; arranca al primer toque, salvo que lo hayas silenciado.
 
+**Tráfico del sitio (ADR-034).** La landing y la app cuentan sus visitas en `app.visit_events` (migración
+`0010`): qué secciones de la landing alcanzó cada visitante, si jugó con el laboratorio 3D, en qué botón hizo clic
+para entrar, si abrió la app e inició sesión, y si luego guardó su llave y corrió el agente. Sin cookies, sin IP y
+sin huella: el navegador guarda un id aleatorio, el país sale de Vercel y el dispositivo se reduce a celular,
+tablet o computadora. Los bots se descartan y nada se manda con *Global Privacy Control* o *Do Not Track*.
+Para verlo, agrega en Vercel `ADMIN_EMAILS` (correos separados por coma) y corre `db-migrate`; en la app aparece
+la pestaña **Tráfico** solo para esos correos, y su propio navegador deja de contarse. Para excluir otro
+navegador, abre el sitio una vez con `?notrack=1` (`?notrack=0` lo revierte). Para campañas, usa
+`?utm_source=…&utm_medium=…&utm_campaign=…` en los enlaces.
+
 **Solo modelos de Meta.** Cada usuario pega su llave de la **Meta Model API** (`https://api.meta.ai/v1`,
 compatible con OpenAI; se crea en dev.meta.ai). Es la que reemplazó a la Llama API (retirada el 6 jul 2026) y
 sirve los modelos Muse Spark. Está en vista previa pública para desarrolladores en EE. UU. La llave se verifica
