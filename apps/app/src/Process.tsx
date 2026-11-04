@@ -97,7 +97,7 @@ export function summarize(job: Job, sc: BenchScenario | undefined, tr: (x: Text)
   if (s.dream) items.push({ icon: "☾", color: "#4f5bd5", text: tr(E(`Dreamt about ${s.dream.jobs} finished cycles: ${s.dream.summary}`, `Soñó con ${s.dream.jobs} ciclos terminados: ${s.dream.summary}`)) });
   const recalled = new Set(trace.filter((e) => e.tool === "memory").flatMap((e) => e.ids ?? []));
   const recalledN = recalled.size || trace.filter((e) => e.tool === "memory").reduce((a, e) => a + (Number(e.note) || 0), 0);
-  if (recalledN) items.push({ icon: "◎", color: "#7a6cf0", text: tr(E(`Remembered ${recalledN} lesson${recalledN === 1 ? "" : "s"} from earlier cycles.`, `Recordó ${recalledN} lección${recalledN === 1 ? "" : "es"} de ciclos anteriores.`)) });
+  if (recalledN) items.push({ icon: "◎", color: "#7a6cf0", text: tr(E(`Remembered ${recalledN} lesson${recalledN === 1 ? "" : "s"} from earlier cycles.`, `Recordó ${recalledN} ${recalledN === 1 ? "lección" : "lecciones"} de ciclos anteriores.`)) });
 
   if (s.plan) {
     items.push({

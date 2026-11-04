@@ -264,15 +264,17 @@ DRESS.cuna = (g, { color, ceil, updates }) => {
   // benches and plants
   g.add(bench(-4.6, 4.8, 0, color), bench(4.6, 4.8, 0, color));
   [[-5.2, 5.2], [5.2, 5.2], [-5.3, -0.2], [5.3, -0.2], [-1.9, -5.3], [1.9, -5.3]].forEach(([x, z], i) => g.add(plant(x, z, i < 4 ? 1.4 : 1.1)));
-  // the dashboards on the south wall: bars, a line and the harness status
+  // the dashboards on the south wall: bars, a line, the harness status and the cost against the cap
   const dash = (x, title, kind) => screen(1.9, 1.1, 512, (c, W, H, t) => {
     c.fillStyle = "#0f1d26"; c.fillRect(0, 0, W, H);
     c.fillStyle = "#9fb3c2"; c.font = `700 26px ${FONT}`; c.fillText(title, 24, 40);
     if (kind === "bars") for (let i = 0; i < 10; i++) { const h = (0.25 + 0.7 * Math.abs(Math.sin(t * 1.3 + i * 0.7))) * (H - 120); c.fillStyle = i % 3 ? "#4aa8ff" : "#7ee2a8"; rr(c, 30 + i * 46, H - 30 - h, 30, h, 8); c.fill(); }
     if (kind === "line") { c.strokeStyle = "#ff8f70"; c.lineWidth = 5; c.beginPath(); for (let i = 0; i <= 40; i++) { const y = H / 2 + 20 + Math.sin(i * 0.4 + t * 2) * 36 + Math.sin(i * 0.9 - t) * 18; if (i) c.lineTo(30 + i * 11.5, y); else c.moveTo(30, y); } c.stroke(); }
     if (kind === "status") ["tests", "scope", "budget", "risk", "human"].forEach((s, i) => { c.fillStyle = "#7ee2a8"; c.beginPath(); c.arc(44, 84 + i * 50, 11, 0, 7); c.fill(); c.fillStyle = "#e6edf3"; c.font = `600 26px ${FONT}`; c.fillText(s, 70, 93 + i * 50); });
+    if (kind === "cost") { const k = (t * 0.12) % 1; c.fillStyle = "#1f3340"; rr(c, 30, H / 2 - 18, W - 60, 36, 18); c.fill(); c.fillStyle = k > 0.8 ? "#ffb547" : "#4aa8ff"; rr(c, 30, H / 2 - 18, (W - 60) * k, 36, 18); c.fill(); c.fillStyle = "#e6edf3"; c.font = `700 30px ${FONT}`; c.fillText("$" + (k * 0.5).toFixed(2) + " / $0.50", 30, H / 2 + 70); }
   }, { x, y: 1.9, z: 5.86, ry: Math.PI });
-  [dash(-3.2, "SKILLS / WEEK", "bars"), dash(0, "SCORE", "line"), dash(3.2, "HARNESS", "status")].forEach((s) => { g.add(s); updates.push(s.userData.tick); });
+  // two on each side of the door to the workshop (its opening is x -1..1), so none stands in front of it
+  [dash(-4.6, "SKILLS / WEEK", "bars"), dash(-2.4, "SCORE", "line"), dash(2.4, "HARNESS", "status"), dash(4.6, "COST / CAP", "cost")].forEach((s) => { g.add(s); updates.push(s.userData.tick); });
   // east and west walls: tall light panels
   [-5.86].forEach((x) => [-1.0, 0, 1.0].forEach((z, i) => g.add(at(slab(0.05, 1.6 + (i === 1 ? 0.5 : 0), 0.1, lit(blue, 1.2)), x, 1.5, z))));
   // an aquarium on the east wall, with fish

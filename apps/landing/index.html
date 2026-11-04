@@ -279,14 +279,14 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 /* ---------- Meta ---------- */
 /* proof: the real app, right after Meta's models */
 .proof { background: #fff; }
-.shots { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, .55fr); gap: 16px; align-items: start; }
-.shot { margin: 0; display: grid; gap: 10px; }
-.shot img { width: 100%; height: auto; border-radius: 20px; border: 1px solid var(--soft-2); box-shadow: 0 18px 40px rgba(28, 43, 51, .1); background: #fff; }
-.shot figcaption { display: grid; gap: 2px; font-size: .9375rem; line-height: 1.4; }
+/* three real screenshots of the app, same size and aligned: picture, then title, then one line */
+.shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.shot { margin: 0; display: grid; grid-template-rows: auto 1fr; gap: 14px; }
+.shot img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: top center; border-radius: 18px; border: 1px solid var(--soft-2); box-shadow: 0 18px 40px rgba(28, 43, 51, .1); background: #fff; }
+.shot figcaption { display: grid; align-content: start; gap: 4px; font-size: .9375rem; line-height: 1.45; }
 .shot figcaption span { color: var(--muted); }
-.shots-note { margin-top: 22px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-@media (max-width: 960px) { .shots { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .shot.big { grid-column: 1 / -1; } }
-@media (max-width: 560px) { .shots { grid-template-columns: minmax(0, 1fr); } .shot.tall img { max-width: 300px; } }
+.shots-note { margin-top: 26px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+@media (max-width: 860px) { .shots { grid-template-columns: minmax(0, 1fr); gap: 28px; max-width: 620px; } }
 .meta-sec { background: var(--sky); }
 .brain { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 6fr); gap: clamp(24px, 5vw, 80px); align-items: center; }
 .brain .lockup { font-size: 1.25rem; }
@@ -1159,17 +1159,17 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
       <p class="lead" data-es="Nada de esto es una maqueta: con tu llave de Meta, cada fase corre de verdad, se registra y la puedes ver.">None of this is a mock-up: with your Meta key every phase really runs, is logged and you can watch it.</p>
     </div>
     <div class="shots">
-      <figure class="shot big ent">
-        <img src="img/app-run.webp" width="1600" height="1153" loading="lazy" alt="One cycle drawn as a 3D network: each call to the model, the tools it used and what each gave back; it turns red and says the code stopped the agent when it went over the cycle's cap." data-es-alt="Una corrida dibujada como red 3D: cada llamada al modelo, las herramientas que usó y lo que devolvió cada una; se pone roja y dice que el código detuvo al agente cuando pasó el tope de la corrida." />
-        <figcaption><b data-es="Cada corrida, como red">Each cycle, as a network</b><span data-es="Cada llamada a Muse, cada herramienta y su costo contra el tope. Si un paso pudiera pasarse, el código detiene al agente.">Every call to Muse, every tool and its cost against the cap. If a step could go over, the code stops the agent.</span></figcaption>
+      <figure class="shot ent">
+        <img src="img/app-process.webp" width="1600" height="1200" loading="lazy" alt="The Process tab: a TL;DR of the cycle, each decision it made marked, the new skill tagged as such, and its mind on the side: spend against the cap, the models it called and the lessons it recalled." data-es-alt="La pestaña Proceso: un TL;DR del ciclo, cada decisión que tomó marcada, la habilidad nueva etiquetada como tal y, al lado, su mente: el gasto contra el tope, los modelos que llamó y las lecciones que recordó." />
+        <figcaption><b data-es="Su proceso, en claro">Its process, in plain sight</b><span data-es="Un TL;DR de cada ciclo, lo que decidió resaltado y qué apruebas exactamente.">A TL;DR of every cycle, what it decided highlighted and exactly what you approve.</span></figcaption>
       </figure>
       <figure class="shot ent">
-        <img src="img/app-board.webp" width="1600" height="1200" loading="lazy" alt="The dashboard: two highlighted alerts (a skill waits for approval, the budget is at 86%), colored key numbers and the six phases of the latest cycle." data-es-alt="El tablero: dos alertas remarcadas (una habilidad espera aprobación, el presupuesto va en 86%), números clave con color y las seis fases de la última corrida." />
-        <figcaption><b data-es="Lo importante, remarcado">What matters, highlighted</b><span data-es="Lo que necesita de ti sale arriba y en color: aprobar una habilidad, el presupuesto, una corrida en curso.">What needs you comes first and in color: approving a skill, the budget, a cycle in progress.</span></figcaption>
+        <img src="img/app-run.webp" width="1600" height="1200" loading="lazy" alt="One cycle drawn as a 3D network: each call to the model, the tools it used and what each gave back, with the cost against the cycle's cap." data-es-alt="Una corrida dibujada como red 3D: cada llamada al modelo, las herramientas que usó y lo que devolvió cada una, con el costo contra el tope de la corrida." />
+        <figcaption><b data-es="Cada corrida, como red">Each cycle, as a network</b><span data-es="Cada llamada a Muse, cada herramienta y su costo contra el tope. Si un paso pudiera pasarse, el código lo detiene.">Every call to Muse, every tool and its cost against the cap. If a step could go over, the code stops it.</span></figcaption>
       </figure>
-      <figure class="shot tall ent">
-        <img src="img/app-talk.webp" width="760" height="1200" loading="lazy" alt="The companion chat: you ask what it is doing and it answers in one short sentence, with a button to listen and another to open the right screen." data-es-alt="La plática con el compañero: le preguntas qué está haciendo y contesta en una frase corta, con un botón para escucharla y otro para abrir la pantalla indicada." />
-        <figcaption><b data-es="Le hablas y te contesta">You talk, it answers</b><span data-es="Muse Voice Transcribe te escucha; contesta con la voz de tu navegador o con ElevenLabs.">Muse Voice Transcribe listens; it answers with your browser's voice or with ElevenLabs.</span></figcaption>
+      <figure class="shot ent">
+        <img src="img/app-talk.webp" width="1600" height="1200" loading="lazy" alt="The companion chat over the Process tab: you ask what it is doing and it answers in one short sentence, with a button to listen and another to open the right screen." data-es-alt="La plática con el compañero sobre la pestaña Proceso: le preguntas qué está haciendo y contesta en una frase corta, con un botón para escucharla y otro para abrir la pantalla indicada." />
+        <figcaption><b data-es="Le hablas y te contesta">You talk, it answers</b><span data-es="Muse Voice Transcribe te escucha; contesta con la voz de tu navegador o con ElevenLabs.">Muse Voice Transcribe hears you; it answers with your browser's voice or with ElevenLabs.</span></figcaption>
       </figure>
     </div>
     <p class="fine shots-note"><a class="btn" href="/app/" data-es="Pruébalo con tu llave de Meta">Try it with your Meta key</a> <span data-es="Capturas de la app con datos de ejemplo.">Screenshots of the app with sample data.</span></p>
