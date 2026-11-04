@@ -80,7 +80,7 @@ export type Skill = {
   createdAt: string;
   decidedAt: string | null;
 };
-export type Phase = "plan" | "baseline" | "propose" | "validate" | "awaiting" | "done";
+export type Phase = "dream" | "plan" | "baseline" | "propose" | "validate" | "awaiting" | "done";
 /** One thing the agent did in a cycle: which tool or model, what it cost, how long it took. */
 export type TraceEntry = { at: string; phase?: string; tool: string; model?: string; cost?: number; ms?: number; tokens?: number; note?: string; idea?: string | null };
 /** What the director (Muse Wonder) decided when the person let the agent choose. */
@@ -112,6 +112,8 @@ export type Job = {
     maxCost?: number;
     auto?: boolean;
     plan?: Plan;
+    /** The dream it had at the start of this cycle, if it was due. */
+    dream?: { id: string; jobs: number; summary: string; stats: DreamStats };
     trace?: TraceEntry[];
     detail?: string;
     before?: { practice: Scores; validation: Scores; answered: number; total: number };
@@ -124,6 +126,26 @@ export type Job = {
   createdAt: string;
   updatedAt: string;
 };
+/** One lesson it consolidated while dreaming (ADR-031). */
+export type MemoryKind = "rule" | "dead-end" | "strategy" | "fact";
+export type Memory = {
+  id: string;
+  scope: string;
+  kind: MemoryKind;
+  text: string;
+  strength: number;
+  pinned: boolean;
+  status: "active" | "faded" | "superseded" | "forgotten";
+  evidence: string[];
+  parentId: string | null;
+  uses: number;
+  lastUsedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+export type DreamStats = { added: number; rewritten: number; strengthened: number; weakened: number; faded: number; fixes: string[] };
+export type Dream = { id: string; model: string; jobs: number; summary: string; stats: DreamStats; cost: number; createdAt: string };
+export type MemoryState = { active: Memory[]; dreams: Dream[]; undigested: number; dreamAfter: number; cap: number };
 export type AgentState = {
   bench: BenchScenario[];
   skills: Skill[];
@@ -131,6 +153,7 @@ export type AgentState = {
   key: { model: string | null; models: string[] } | null;
   families: { family: string; name: string; id: string | null }[];
   budget: Budget;
+  memory: MemoryState;
 };
 export type Exam = { scenario: string; bare: boolean; scores: Scores; answered: number; total: number; cost: number; model: string };
 

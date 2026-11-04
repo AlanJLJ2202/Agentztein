@@ -490,3 +490,44 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
     usando el lab.
   - **Landing:** Hero → Cómo funciona → Con Meta → Ya funciona, en la app (capturas reales con datos de ejemplo) →
     Laboratorio → Arnés → Avance. Detalle y recomendaciones pendientes en `docs/AUDITORIA-HACKATHON.md`.
+
+## ADR-031 — Memoria en cuatro capas y sueños que consolidan lo aprendido
+- **Contexto (4 nov 2026):** Alan preguntó cómo se controla la memoria y pidió que Agentztein pueda "soñar" para
+  ahorrar contexto y razonamiento. Hasta ahora lo único que se recordaba entre ciclos eran las habilidades; la traza,
+  los errores y los veredictos de cada ciclo se guardaban pero nadie los releía, así que el planificador podía
+  repetir una hipótesis que el arnés ya había descartado, y el director veía solo el último resultado por examen.
+- **Decisión:**
+  - **Cuatro capas** (`api/_lib/memory.js`): *de trabajo* (lo que entra en un prompt), *episódica* (cada ciclo en
+    `app.agent_jobs`, larga y nunca enviada completa), *lecciones* (`app.agent_memories`, nueva) y *procedimental*
+    (habilidades y núcleo, que solo cambian con el arnés).
+  - **Soñar** (`POST /api/agent { op: "dream" }`, o la fase `dream` al inicio de un ciclo autónomo cuando hay
+    `DREAM_AFTER` = 3 ciclos terminados sin digerir): Muse Wonder, con esfuerzo medio, relee hasta 10 ciclos sin
+    digerir, cada uno comprimido de forma determinista en una línea (`episodeLine`: examen, modelo, resultado,
+    validación antes/después solo como conteos, la candidata recortada y hasta tres errores de práctica), y sus
+    lecciones activas bajo alias cortos (`m1`, `c1` en vez de uuids). Contesta qué conservar, reescribir, agregar u
+    olvidar. Es el patrón de *sleep-time compute*: el razonamiento caro se hace una vez fuera del ciclo y los ciclos
+    siguientes leen el resultado.
+  - **Reglas fijas al aplicar un sueño** (`consolidate`, pura y probada): conservar o reescribir sube la fuerza
+    (0–5, empieza en 2); la que no se menciona ni se usó desde el último sueño baja un punto y a 0 se desvanece; se
+    mantienen como máximo 40 activas (se desvanecen primero las más débiles); una lección repetida no se duplica.
+    Reescribir no edita: la fila vieja queda `superseded` y nace otra con `parent_id`. Texto, alcance, tipo y
+    evidencia quedan congelados por trigger y nada se borra (migración `0009`), igual que habilidades y núcleos.
+  - **Lecciones con alcance y tipo:** alcance `global`, `<examen>` o `<examen>:<situación>`; tipo `rule` (patrón en
+    los datos), `dead-end` (lo que no funcionó y por qué), `strategy` (modelo/esfuerzo que rinde) o `fact`. Máximo 240
+    caracteres; se descarta la que nombra un registro concreto del banco (mismo patrón que las reglas del núcleo).
+  - **Recordar con presupuesto** (`recall`): cada lector recibe un bloque cortado a su propio límite de caracteres:
+    planificador 1200 (primero la situación con más errores, luego su examen, luego lo global; nunca otro examen),
+    director 900 y charla 500. Cada uso marca `last_used_at`, así lo que se usa no se desvanece. La traza del ciclo
+    registra la herramienta `memory` con cuántas lecciones entraron, para poder medir el efecto.
+  - **El examen nunca ve la memoria:** el ejecutor solo recibe habilidades que pasaron el arnés. Las lecciones salen
+    de errores de práctica (que el planificador ya veía) y de conteos de validación; nunca de respuestas de
+    validación o del examen sellado. Así recordar no puede filtrar una respuesta a una calificación.
+  - **Control humano:** en la pestaña Agente, "Memoria y sueños" muestra las lecciones por tipo, su alcance y fuerza,
+    y los últimos sueños (qué cambió y cuánto costó). La persona puede soñar ahora (tope 0.25 USD por sueño), fijar
+    una lección (ningún sueño la reescribe ni la desvanece) u olvidarla (`op: "memory"`, estado `forgotten`). La
+    charla sabe lo que recuerda y puede sugerir soñar; solo corre si la persona confirma.
+- **Alternativas descartadas:** búsqueda por embeddings (otra infraestructura y otro proveedor; con ≤40 lecciones
+  cortas el orden por alcance y fuerza alcanza); resumir toda la traza en cada llamada (paga el mismo razonamiento
+  cada vez); dejar que el sueño edite habilidades (saltaría el arnés).
+- **Pendiente de medir:** si con memoria bajan los ciclos rechazados por el arnés y los tokens del planificador por
+  habilidad aprobada. No hay números todavía; el registro está listo (`memory` en la traza, `app.agent_dreams`).

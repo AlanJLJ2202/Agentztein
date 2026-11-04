@@ -10,10 +10,11 @@ import { db } from "./_lib/db.js";
 import { budgetOf } from "./_lib/harness.js";
 import { harnessed, keyOf } from "./_lib/harnessed.js";
 import { HttpError, handle, json, readJson } from "./_lib/http.js";
+import { activeMemories, BUDGETS, DREAM_AFTER, markUsed, recall, undigested } from "./_lib/memory.js";
 
 const MAX_TURNS = 12;
 const MAX_CHARS = 1000;
-export const TALK_ACTIONS = ["none", "auto-cycle", "open:overview", "open:mind", "open:lab", "open:agent", "open:evolve", "open:radar", "open:brain"];
+export const TALK_ACTIONS = ["none", "auto-cycle", "dream", "open:overview", "open:mind", "open:lab", "open:agent", "open:evolve", "open:radar", "open:brain"];
 
 /** @param {unknown} raw */
 export function cleanTurns(raw) {
@@ -41,13 +42,19 @@ export function readReply(text) {
 
 /** What it knows about the person's lab, in a few lines. @param {import("pg").Pool} pool @param {string} userId */
 async function labSummary(pool, userId) {
-  const [skills, jobs, notes, budget] = await Promise.all([
+  const [skills, jobs, notes, budget, memories, pending, dreams] = await Promise.all([
     pool.query("SELECT scenario, context, version FROM app.agent_skills WHERE user_id = $1 AND status = 'active'", [userId]),
     pool.query("SELECT scenario, executor, phase, state FROM app.agent_jobs WHERE user_id = $1 ORDER BY created_at DESC LIMIT 3", [userId]),
     pool.query("SELECT COUNT(*)::int AS n, COUNT(*) FILTER (WHERE verdict = 'experiment')::int AS e FROM app.research_notes WHERE user_id = $1", [userId]),
     budgetOf(pool, userId),
+    activeMemories(pool, userId),
+    undigested(pool, userId),
+    pool.query("SELECT created_at, summary FROM app.agent_dreams WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1", [userId]),
   ]);
   const all = benchSummary();
+  const memory = recall(memories, { budget: BUDGETS.talk });
+  await markUsed(pool, memory.ids);
+  const lastDream = dreams.rows[0];
   const bench = all.filter((b) => !b.legacy);
   const title = (/** @type {string} */ id) => all.find((b) => b.id === id)?.title ?? id;
   const frac = (/** @type {any} */ s) => {
@@ -60,6 +67,8 @@ async function labSummary(pool, userId) {
     `Últimos ciclos: ${jobs.rows.length ? jobs.rows.map((j) => `${title(j.scenario)} con ${j.executor}: fase ${j.phase}${j.state?.outcome ? `, resultado ${j.state.outcome}` : ""}, validación antes ${frac(j.state?.before?.validation)}${j.state?.after ? ` y con la candidata ${frac(j.state.after)}` : ""}`).join(" | ") : "ninguno todavía"}.`,
     `Radar: ${notes.rows[0]?.n ?? 0} historias evaluadas, ${notes.rows[0]?.e ?? 0} valen un experimento.`,
     `Presupuesto del mes: gastado $${budget.spent.toFixed(2)} de $${budget.monthly.toFixed(2)}.`,
+    `Memoria: ${memories.length} lecciones activas; ${pending} ciclos terminados sin digerir (sueña solo al llegar a ${DREAM_AFTER}); ${lastDream ? `soñó por última vez el ${new Date(lastDream.created_at).toISOString().slice(0, 10)}: ${lastDream.summary}` : "nunca ha soñado"}.`,
+    ...(memory.text ? [`Lo que más recuerdas:\n${memory.text}`] : []),
   ];
   return lines.join("\n");
 }
@@ -75,9 +84,9 @@ export function talkSystem(lang, lab, tab) {
     "leen en voz alta: sin listas, sin markdown, sin emojis. No inventes números: usa solo los del estado del laboratorio. " +
     `Responde en ${lang === "es" ? "español de México" : "English"}.\n\n` +
     `Estado del laboratorio:\n${lab}\n\nLa persona está viendo la pestaña: ${tab}.\n\n` +
-    'Responde SOLO con JSON: {"say": "<lo que dices>", "action": "<una de: none, auto-cycle, open:overview, open:mind, open:lab, ' +
+    'Responde SOLO con JSON: {"say": "<lo que dices>", "action": "<una de: none, auto-cycle, dream, open:overview, open:mind, open:lab, ' +
     'open:agent, open:evolve, open:radar, open:brain>"}. Usa auto-cycle solo si la persona te pide mejorarte o practicar y no hay ' +
-    "un ciclo corriendo; open:<pestaña> si le ayudaría verla. La app le pide confirmación antes de hacer cualquier acción."
+    "un ciclo corriendo; dream si te pide ordenar o consolidar lo que aprendiste y hay ciclos sin digerir; open:<pestaña> si le ayudaría verla. La app le pide confirmación antes de hacer cualquier acción."
   );
 }
 

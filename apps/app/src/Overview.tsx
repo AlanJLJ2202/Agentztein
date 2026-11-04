@@ -40,7 +40,7 @@ const frac = (s?: Scores) => {
   const x = sum(s);
   return x ? `${x.c}/${x.t}` : "—";
 };
-const RUNNING = new Set(["plan", "baseline", "propose", "validate"]);
+const RUNNING = new Set(["dream", "plan", "baseline", "propose", "validate"]);
 const isRunning = (j: Job) => RUNNING.has(j.phase) && !j.state.error;
 
 function ago(iso: string | null, lang: Lang) {
@@ -88,7 +88,9 @@ function statusOf(lab: Lab): Status {
     };
   if (j && isRunning(j)) {
     const say =
-      j.phase === "plan"
+      j.phase === "dream"
+        ? E("I'm dreaming: rereading my last cycles and keeping only the lessons…", "Estoy soñando: releo mis últimos ciclos y me quedo solo con las lecciones…")
+        : j.phase === "plan"
         ? E("You let me decide: I'm choosing what to practice and with which model…", "Me dejaste decidir: estoy eligiendo qué practicar y con qué modelo…")
         : j.phase === "baseline"
         ? E("I'm taking the exam to see where I stand…", "Estoy presentando el examen para ver dónde estoy…")
@@ -528,7 +530,7 @@ function phaseStates(job: Job | null, notes: Note[]): { st: PhaseState[]; at: nu
   const auto = Boolean(s.auto || s.plan);
   let at = 1;
   let mark: PhaseState = "now";
-  if (job.phase === "plan") at = 0;
+  if (job.phase === "dream" || job.phase === "plan") at = 0;
   else if (job.phase === "baseline") at = 1;
   else if (job.phase === "propose") at = 3;
   else if (job.phase === "validate") at = 4;

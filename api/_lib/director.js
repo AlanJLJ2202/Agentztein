@@ -9,7 +9,7 @@ import { numbered, parseJsonObject } from "./agent.js";
 import { MAX_OUTPUT_TOKENS } from "./harness.js";
 
 /** Tools the plan may name, in the order a cycle can use them. */
-export const PLAN_TOOLS = ["radar", "exam", "planner", "library", "harness", "human", "image", "voice", "code"];
+export const PLAN_TOOLS = ["dream", "memory", "radar", "exam", "planner", "library", "harness", "human", "image", "voice", "code"];
 export const CAPABILITIES = ["vision", "image", "voice", "code", "web", "memory"];
 
 /**
@@ -42,7 +42,8 @@ export const DIRECTOR_SYSTEM =
 /**
  * @param {{ bench: any[], standing: { id: string, validation: number | null, skills: number, last: string | null }[],
  *   families: { family: string, name: string, id: string, usd: [number, number], sees: boolean, effort: boolean, cycle: Record<string, number> }[],
- *   cap: number, ideas: { title: string }[], guidance: string, lang: string }} o
+ *   cap: number, ideas: { title: string }[], guidance: string, lang: string, memory?: string }} o
+ * `memory` is its consolidated lessons (api/_lib/memory.js), already cut to the director's budget.
  */
 export function directorPrompt(o) {
   const parts = [
@@ -56,9 +57,10 @@ export function directorPrompt(o) {
     `Modelos de Meta en la llave (familia · id · USD por millón entrada/salida · ve imágenes · niveles de esfuerzo · costo aprox. de un ciclo por escenario):\n${o.families
       .map((f) => `- ${f.family} · ${f.id} · $${f.usd[0]}/$${f.usd[1]} · ${f.sees ? "sí" : "no"} · ${f.effort ? "sí" : "no"} · ${Object.entries(f.cycle).map(([k, v]) => `${k}≈$${v.toFixed(3)}`).join(", ")}`)
       .join("\n")}`,
-    "Herramientas que el ciclo puede usar: radar (ideas aprobadas de Hacker News), exam (el ejecutor presenta el examen), planner (escribe la habilidad), library (guarda versiones), harness (decide si pasa), human (la persona aprueba), image (Muse Image dibuja), voice (Muse Voice escucha), code (el agente cambia su propio código, en otra pestaña).",
+    "Herramientas que el ciclo puede usar: dream (antes de decidir, digiere los ciclos terminados en lecciones), memory (el planificador lee esas lecciones), radar (ideas aprobadas de Hacker News), exam (el ejecutor presenta el examen), planner (escribe la habilidad), library (guarda versiones), harness (decide si pasa), human (la persona aprueba), image (Muse Image dibuja), voice (Muse Voice escucha), code (el agente cambia su propio código, en otra pestaña).",
     "Capacidades que puedes proponer: vision, image, voice, code, web, memory.",
   ];
+  if (o.memory) parts.push(`Lo que recuerdas (lecciones que consolidaste al soñar; úsalas para no repetir lo que ya no funcionó):\n${o.memory}`);
   if (o.ideas.length) parts.push(`Ideas aprobadas en el radar:\n${o.ideas.map((i) => `- ${i.title}`).join("\n")}`);
   if (o.guidance) parts.push(`Guía de la persona: ${o.guidance}`);
   parts.push(
