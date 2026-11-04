@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Agentztein · The AI agent that improves itself</title>
+<title>Agentztein · The AI agent that builds itself</title>
 <meta name="description" content="Agentztein is an AI research agent that writes its own skills and code, tests them on exams in the style of the frontier benchmarks and keeps only what makes it better, with a person's approval. With Meta's Muse models as its brain." />
 <link rel="icon" type="image/png" href="img/favicon.png" />
 <link rel="apple-touch-icon" href="img/mark.png" />
-<meta property="og:title" content="Agentztein: the AI agent that improves itself. And proves it." />
+<meta property="og:title" content="Agentztein: the AI agent that builds itself" />
 <meta property="og:description" content="An AI research agent that improves itself on exams in the style of the frontier benchmarks. With Meta's Muse models." />
 <meta property="og:image" content="img/lab.webp" />
 <meta name="theme-color" content="#ffffff" />
@@ -132,8 +132,7 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 .hero-copy-wrap { position: relative; z-index: 2; pointer-events: none; }
 .hero-copy { max-width: 600px; padding-block: 56px 88px; pointer-events: auto; }
 .hero .lockup { font-size: 1.0625rem; }
-.hero h1 { font-size: clamp(2.6rem, 1.1rem + 4.2vw, 5.4rem); letter-spacing: -.05em; line-height: .98; margin-top: 26px; }
-.hero h1 .em { color: var(--blue, #0064e0); }
+.hero h1 { font-size: clamp(3rem, 1.2rem + 5vw, 6.2rem); letter-spacing: -.05em; line-height: .96; margin-top: 26px; }
 .hero h1 .w { display: inline-block; }
 .hero .lead { margin-top: 26px; max-width: 30em; color: var(--muted); }
 .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
@@ -447,16 +446,15 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .card .keys i { font-style: normal; }
 .card .keys kbd { background: var(--soft); color: var(--ink); border: 1px solid var(--soft-2); padding: 3px 6px; border-radius: 6px; font: 700 .75rem/1 ui-monospace, monospace; }
 @media (max-width: 760px) { .card { position: static; width: auto; margin-top: 12px; box-shadow: none; background: var(--soft); } .card .keys { display: none; } }
-.terms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 30px; }
-.term { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 6px 16px 6px 8px; border-radius: 999px; background: #fff; border: 1px solid var(--soft-2); cursor: help; font-size: .9375rem; transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s; }
-.term:hover, .term:focus-visible, .term[aria-expanded="true"] { transform: translateY(-2px); border-color: var(--c); box-shadow: 0 8px 22px color-mix(in srgb, var(--c) 22%, transparent); }
+/* the key words: one quiet row of small chips; what each means opens on tap (its popover) */
+.terms { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 26px; }
+.term { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 4px 12px 4px 5px; border-radius: 999px; background: #fff; border: 1px solid var(--soft-2); cursor: help; font-size: .8125rem; transition: border-color .2s, box-shadow .2s var(--ease); }
+.term:hover, .term:focus-visible, .term[aria-expanded="true"] { border-color: var(--c); box-shadow: 0 4px 14px color-mix(in srgb, var(--c) 18%, transparent); }
 .term:focus-visible { outline: 3px solid var(--meta); outline-offset: 2px; }
-.term i { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--c) 16%, #fff); color: var(--c); font-style: normal; font-weight: 800; font-size: .875rem; }
-.term b { font-weight: 800; }
-.term span { color: var(--muted); }
+.term i { width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--c) 16%, #fff); color: var(--c); font-style: normal; font-weight: 800; font-size: .6875rem; }
+.term b { font-weight: 700; }
+.term span { display: none; }
 .term.today { background: var(--amber-bg); border-color: transparent; }
-@media (max-width: 900px) { .terms { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 520px) { .term span { display: none; } }
 /* floating popups: they appear next to the thing they explain */
 .pop { position: fixed; left: 0; top: 0; z-index: 70; width: max-content; max-width: min(330px, calc(100vw - 16px)); padding: 14px 16px; border-radius: 16px; background: var(--ink); color: #e8eef3; font-size: .9375rem; line-height: 1.45; box-shadow: 0 18px 50px rgba(10, 22, 32, .35); opacity: 0; pointer-events: none; transform: translateY(6px) scale(.97); transition: opacity .18s var(--ease), transform .22s var(--ease); }
 .pop.on { opacity: 1; transform: none; }
@@ -939,7 +937,7 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
     <div class="hero-copy">
       <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#metalogo"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Global AI Developer Hackathon 2026</span></span>
       <img class="hero-logo" src="img/logo.webp" alt="Agentztein" width="1665" height="344" />
-      <h1 data-es='<span class="w">El agente de IA</span> <span class="w">que se mejora</span> <span class="w">solo.</span> <span class="w em">Y lo demuestra.</span>'><span class="w">The AI agent</span> <span class="w">that improves</span> <span class="w">itself.</span> <span class="w em">And proves it.</span></h1>
+      <h1 data-es='<span class="w">El</span> <span class="w">Agente AI</span> <span class="w">que</span> <span class="w">se</span> <span class="w">desarrolla</span> <span class="w">solo</span>'><span class="w">The</span> <span class="w">AI agent</span> <span class="w">that</span> <span class="w">builds</span> <span class="w">itself</span></h1>
       <p class="lead" data-es="No es un modelo ni un chatbot: Agentztein es un agente de investigación de IA. Se escribe sus propias habilidades y hasta su código, los pone a prueba en exámenes al estilo de los benchmarks de frontera y solo se queda con lo que el arnés demuestra que lo hace mejor, sin olvidar lo que ya sabía.">Not a model, not a chatbot: Agentztein is an AI research agent. It writes its own skills and even its own code, tests them on exams in the style of the frontier benchmarks and keeps only what the harness proves makes it better, without forgetting what it already knew.</p>
       <div class="cta">
         <a class="btn" href="#labStage"><span data-es="Entra a su laboratorio">Enter its lab</span>
@@ -1364,8 +1362,8 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
   document.querySelectorAll("[data-es]").forEach((el) => { el.dataset.en = el.innerHTML; });
   ATTRS.forEach((a) => document.querySelectorAll(`[data-es-${a}]`).forEach((el) => { el.dataset[`en${a.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase())}`] = el.getAttribute(a); }));
   const META = {
-    en: { title: "Agentztein · The AI agent that improves itself", desc: "Agentztein is an AI research agent that writes its own skills and code, tests them on exams in the style of the frontier benchmarks and keeps only what makes it better, with a person's approval. With Meta's Muse models as its brain." },
-    es: { title: "Agentztein · El agente de IA que se mejora solo", desc: "Agentztein es un agente de investigación de IA que se escribe sus propias habilidades y su código, los pone a prueba en exámenes al estilo de los benchmarks de frontera y solo se queda con lo que lo hace mejor, con la aprobación de una persona. Con los modelos Muse de Meta como cerebro." },
+    en: { title: "Agentztein · The AI agent that builds itself", desc: "Agentztein is an AI research agent that writes its own skills and code, tests them on exams in the style of the frontier benchmarks and keeps only what makes it better, with a person's approval. With Meta's Muse models as its brain." },
+    es: { title: "Agentztein · El Agente AI que se desarrolla solo", desc: "Agentztein es un agente de investigación de IA que se escribe sus propias habilidades y su código, los pone a prueba en exámenes al estilo de los benchmarks de frontera y solo se queda con lo que lo hace mejor, con la aprobación de una persona. Con los modelos Muse de Meta como cerebro." },
   };
   const applyLang = (l, announce) => {
     lang = l;

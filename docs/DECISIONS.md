@@ -582,5 +582,6 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
     vez si la respuesta no es JSON legible (solo si cabe en el presupuesto); `api/radar.js` sube a 120 s.
   - **Logos de las fuentes** (`packages/research/src/logos.js`, trazos de Simple Icons): Y Combinator (Hacker News),
     arXiv, Hugging Face y GitHub, iguales en el Hero, la landing y la app.
-  - **Lema:** «El agente de IA que se mejora solo. Y lo demuestra.» / «The AI agent that improves itself. And proves
-    it.»; el lead abre con «No es un modelo ni un chatbot». El glosario suma *Cambio de código* y *Nueva herramienta*.
+  - **Lema:** «El Agente AI que se desarrolla solo» / «The AI agent that builds itself» (la idea de antes, corta, con
+    *agente*; se probó «…Y lo demuestra.» y quedaba muy largo). El lead abre con «No es un modelo ni un
+    chatbot». El glosario suma *Cambio de código* y *Nueva herramienta*, en una sola fila de chips pequeños (el significado se abre al tocarlos).
