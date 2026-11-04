@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="apps/landing/img/logo-light.webp">
-    <img src="apps/landing/img/logo.webp" alt="Agentztein" width="420">
+    <source media="(prefers-color-scheme: dark)" srcset="https://agentztein.vercel.app/img/logo-light.webp">
+    <img src="https://agentztein.vercel.app/img/logo.webp" alt="Agentztein" width="420">
   </picture>
 </p>
 
@@ -96,7 +96,7 @@ around them:
 | **Docs** | [Deployment](docs/DEPLOYMENT.md) · [Code evolution](docs/EVOLVE.md) · [Decisions (ADRs)](docs/DECISIONS.md) · [Progress log](docs/PROGRESS.md) · [Benchmark research](docs/FRONTERA.md) |
 
 <p align="center">
-  <img src="apps/landing/img/app-process.webp" alt="The Process tab: a TL;DR of one cycle with each decision marked, the candidate skill, the harness verdict, and on the side the spend against the cycle's cap, the models called and the lessons recalled." width="760">
+  <img src="https://agentztein.vercel.app/img/app-process.webp" alt="The Process tab: a TL;DR of one cycle with each decision marked, the candidate skill, the harness verdict, and on the side the spend against the cycle's cap, the models called and the lessons recalled." width="760">
   <br>
   <sub>The <b>Process</b> tab of the app. Screenshot of the real interface <b>with sample data</b>: the numbers in it are not experimental results.</sub>
 </p>
