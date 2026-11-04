@@ -14,6 +14,9 @@
     "api/agent.js": {
       "maxDuration": 120
     },
+    "api/talk.js": {
+      "maxDuration": 60
+    },
     "api/media.js": {
       "maxDuration": 60
     },

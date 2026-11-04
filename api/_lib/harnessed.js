@@ -25,7 +25,9 @@ export async function keyOf(pool, userId) {
  * @param {import("pg").Pool} pool
  * @param {string} userId
  * @param {Awaited<ReturnType<typeof keyOf>>} k
- * @param {{ kind: string, model: string, effort: string | null, system?: string, prompt?: string, messages?: any[], tools?: any[], timeoutMs?: number }} call
+ * `cap` is what is left of this cycle's own spending cap, if it has one: a call whose worst case doesn't fit is refused
+ * the same way, before spending.
+ * @param {{ kind: string, model: string, effort: string | null, system?: string, prompt?: string, messages?: any[], tools?: any[], timeoutMs?: number, cap?: number }} call
  */
 export async function harnessed(pool, userId, k, call) {
   const budget = await budgetOf(pool, userId);
@@ -33,6 +35,9 @@ export async function harnessed(pool, userId, k, call) {
   const worst = costOf(call.model, Math.ceil((size + JSON.stringify(call.tools ?? []).length) / 4), MAX_OUTPUT_TOKENS);
   if (budget.spent + worst > budget.monthly) {
     throw new HttpError(409, "This step could go over your monthly budget. Raise it or wait until next month.", { reason: "budget", ...budget, worst });
+  }
+  if (typeof call.cap === "number" && worst > call.cap) {
+    throw new HttpError(409, "This step could go over this cycle's spending cap.", { reason: "run-budget", left: Math.max(0, call.cap), worst });
   }
   const reply = await complete({
     provider: k.provider, key: k.key, model: call.model, effort: call.effort, system: call.system, user: call.prompt,

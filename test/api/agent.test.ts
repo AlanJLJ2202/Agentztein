@@ -10,6 +10,7 @@ import { buildEvalset } from "../../scripts/evalset.js";
 import type * as AgentApi from "../../api/agent.js";
 import type * as KeysApi from "../../api/keys.js";
 import type * as LimitsApi from "../../api/limits.js";
+import type * as TalkApi from "../../api/talk.js";
 
 const SECRET = "x".repeat(40);
 const USER = { id: "8d7c2c1e-4f7e-4b8f-9d0a-0f4c1f6b9a11", email: "alan@example.com" };
@@ -47,6 +48,7 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
   let agent: typeof AgentApi;
   let keys: typeof KeysApi;
   let limits: typeof LimitsApi;
+  let talk: typeof TalkApi;
   let dbUrl = "";
   const chats: Array<{ model: string; system: string }> = [];
 
@@ -97,12 +99,16 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
         chats.push({ model: body.model, system });
         const content = system.includes("planificador")
           ? JSON.stringify({ context: ctxB, instructions: "REGLA-OK: en esta línea la tolerancia es ±0.10 mm.", rationale: "Los rechazos caen fuera de ±0.10", noteId: null })
-          : fakeExecutor(prompt);
+          : system.includes("director de Agentztein")
+            ? JSON.stringify({ scenario: "devoluciones", executor: "spark", effort: "high", why: "Ahí hay más que ganar.", steps: [{ tool: "exam", why: "medirme" }], proposals: [{ capability: "vision", model: "spark", idea: "Ver fotos de los paquetes", why: "Las devoluciones traen fotos" }] })
+            : system.startsWith("Eres Agentztein")
+              ? JSON.stringify({ say: system.includes("Habilidades activas: ninguna") ? "Aún no sé nada." : "Ya sé algo.", action: "auto-cycle" })
+              : fakeExecutor(prompt);
         return Response.json({ choices: [{ message: { content } }], usage: { prompt_tokens: 4000, completion_tokens: 700 } });
       }
       return new Response("unexpected " + url, { status: 500 });
     });
-    [agent, keys, limits] = await Promise.all([import("../../api/agent.js"), import("../../api/keys.js"), import("../../api/limits.js")]);
+    [agent, keys, limits, talk] = await Promise.all([import("../../api/agent.js"), import("../../api/keys.js"), import("../../api/limits.js"), import("../../api/talk.js")]);
   });
 
   afterAll(async () => {
@@ -194,6 +200,44 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
     while (["baseline", "propose", "validate"].includes(job.phase)) job = (await post({ op: "step", jobId })).body.job;
     // the fake planner writes for manufactura's context, which doesn't exist in envios
     expect(job).toMatchObject({ phase: "done", state: { outcome: "planner-failed" } });
+  });
+
+  it("lets the director choose the scenario, model and effort, and traces every step", async () => {
+    const start = await post({ op: "start", auto: true, maxCost: 1, lang: "es" });
+    expect(start.body.job).toMatchObject({ phase: "plan", planner: "muse-wonder-1.0", state: { auto: true, maxCost: 1 } });
+    const jobId = start.body.job.id;
+    const planned = (await post({ op: "step", jobId })).body.job;
+    expect(planned).toMatchObject({ phase: "baseline", scenario: "devoluciones", executor: "muse-spark-1.3", effort: "high" });
+    expect(planned.state.plan).toMatchObject({ why: "Ahí hay más que ganar.", proposals: [{ capability: "vision" }] });
+    let job = planned;
+    while (["plan", "baseline", "propose", "validate"].includes(job.phase)) job = (await post({ op: "step", jobId })).body.job;
+    const tools = job.state.trace.map((e: { tool: string }) => e.tool);
+    expect(tools.slice(0, 4)).toEqual(["director", "director", "exam", "grader"]);
+    expect(tools).toContain("planner");
+    expect(job.state.trace.find((e: { tool: string; model?: string }) => e.tool === "exam").model).toBe("muse-spark-1.3");
+  });
+
+  it("stops a cycle at its own cap, before calling Meta, and leaves nothing waiting", async () => {
+    const start = await post({ op: "start", scenario: "mensajes", maxCost: 0.05 });
+    const jobId = start.body.job.id;
+    const s1 = await post({ op: "step", jobId });
+    expect(s1.body.job.phase).toBe("propose");
+    const n = chats.length;
+    // Muse Wonder's worst case doesn't fit in what is left of $0.05
+    const s2 = await post({ op: "step", jobId });
+    expect(s2.status).toBe(200);
+    expect(s2.body.job).toMatchObject({ phase: "done", state: { outcome: "run-budget" } });
+    expect(chats.length).toBe(n);
+  });
+
+  it("talks as itself, knowing the lab, and only suggests actions", async () => {
+    const res = await talk.POST(new Request("https://agentztein.test/api/talk", {
+      method: "POST",
+      headers: { authorization: "Bearer tok", "content-type": "application/json" },
+      body: JSON.stringify({ messages: [{ role: "user", content: "¿Qué sabes?" }], lang: "es", tab: "overview" }),
+    }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ say: "Ya sé algo.", action: "auto-cycle", model: "muse-spark-1.3" });
   });
 
   it("refuses a step that could go over the budget, before calling Meta", async () => {

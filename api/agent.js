@@ -1,6 +1,8 @@
 // /api/agent: the agent improving itself, for real, with the user's own Meta key.
 //   GET                                  the bench, the agent's skills, recent cycles, the key's Meta families, budget
-//   POST { op: "start", scenario, executor?, planner?, effort?, guidance? }   opens an improvement cycle
+//   POST { op: "start", scenario, executor?, planner?, effort?, guidance?, maxCost?, auto?, lang? }   opens an improvement
+//                                        cycle; maxCost caps what this one cycle may spend (USD); with auto the
+//                                        director (Muse Wonder) first decides scenario, executor and effort itself
 //   POST { op: "step", jobId }           runs the cycle's next phase (one model call; the app calls it in a loop)
 //   POST { op: "decide", skillId, decision }   a person approves or rejects a candidate that passed the harness
 //   POST { op: "retire", skillId }       takes an active skill out of use (rollback)
@@ -23,10 +25,14 @@ import { budgetOf } from "./_lib/harness.js";
 import { harnessed, keyOf, MODEL_TIMEOUT_MS } from "./_lib/harnessed.js";
 import { HttpError, handle, json, readJson } from "./_lib/http.js";
 import { activeCore } from "./_lib/cores.js";
+import { DIRECTOR_SYSTEM, directorPrompt, estimateCycle, parseDirection, usableFamilies } from "./_lib/director.js";
 import { materialize, runSandboxed } from "./_lib/sandbox.js";
 import { publicScenario, runCore } from "./_lib/solver.js";
 
-const RUNNING = ["baseline", "propose", "validate"];
+const RUNNING = ["plan", "baseline", "propose", "validate"];
+/** Per-cycle spending cap: default, and the range a person can choose (USD). */
+export const RUN_CAP = { default: 0.5, min: 0.05, max: 20 };
+const TRACE_MAX = 60;
 const MODEL_ID = /^[A-Za-z0-9._:/-]{2,80}$/;
 /** Model calls the agent's core may make in one exam inside the app (the function has 120 s in total). */
 const CORE_MAX_CALLS = 3;
@@ -80,7 +86,8 @@ async function activeSkills(pool, userId, scenario) {
  * The executor takes an exam: the agent's own core (packages/agent-core) answers, every model call it makes goes
  * through the harness, and the answers are scored here with the truth the core never sees.
  * @param {import("pg").Pool} pool @param {string} userId @param {Awaited<ReturnType<typeof keyOf>>} k
- * @param {{ kind: string, model: string, effort: string | null, sc: any, skills: { context: string, version: number, instructions: string }[], groups: { set: string, batches: any[] }[] }} exam
+ * `cap` is what is left of the cycle's spending cap (if any); `rec` gets each model call for the cycle's trace.
+ * @param {{ kind: string, model: string, effort: string | null, sc: any, skills: { context: string, version: number, instructions: string }[], groups: { set: string, batches: any[] }[], cap?: number, rec?: (e: Record<string, unknown>) => void }} exam
  */
 async function takeExam(pool, userId, k, exam) {
   const { rows, batches } = numbered(exam.sc, exam.groups);
@@ -90,11 +97,14 @@ async function takeExam(pool, userId, k, exam) {
   /** @type {(req: any) => Promise<any>} */
   const call = async (req) => {
     const effort = req.effort === undefined ? exam.effort : effortFor(exam.model, req.effort, exam.effort ?? "medium");
+    const t0 = Date.now();
     const run = await harnessed(pool, userId, k, {
       kind: exam.kind, model: exam.model, effort, system: req.system, prompt: req.user, messages: req.messages, tools: req.tools,
       timeoutMs: Math.max(5_000, deadline - Date.now()),
+      cap: typeof exam.cap === "number" ? exam.cap - cost : undefined,
     });
     cost += run.cost;
+    exam.rec?.({ tool: "exam", model: exam.model, cost: run.cost, ms: Date.now() - t0, tokens: run.usage.input + run.usage.output });
     return run;
   };
   // the user's own evolved core, if they have one active, runs sandboxed; otherwise the platform's core (v0)
@@ -155,8 +165,13 @@ async function post(request) {
   const op = body.op;
 
   if (op === "start") {
-    const sc = scenarioOf(body.scenario);
+    const auto = body.auto === true;
+    // letting it decide: the director picks the scenario in its first step; until then the cycle points at the asked one
+    const sc = scenarioOf(body.scenario) ?? (auto ? scenarioOf(benchSummary()[0]?.id) : null);
     if (!sc) throw new HttpError(400, "Choose one of the bench scenarios");
+    const asked = Number(body.maxCost);
+    const maxCost = Number.isFinite(asked) && asked > 0 ? Math.min(RUN_CAP.max, Math.max(RUN_CAP.min, Math.round(asked * 100) / 100)) : RUN_CAP.default;
+    const lang = body.lang === "es" ? "es" : "en";
     const k = await keyOf(pool, user.id);
     const executor = typeof body.executor === "string" && MODEL_ID.test(body.executor) ? body.executor : k.model;
     if (!executor) throw new HttpError(409, "Choose which model to use first", { reason: "no-model" });
@@ -173,8 +188,11 @@ async function post(request) {
     if (busy[0]) throw new HttpError(409, "A cycle is already running; finish it first", { reason: "busy", job: jobOut(busy[0]) });
     const { rows } = await pool.query(
       `INSERT INTO app.agent_jobs (user_id, scenario, executor, planner, effort, phase, state)
-       VALUES ($1, $2, $3, $4, $5, 'baseline', $6) RETURNING *`,
-      [user.id, sc.id, executor, planner, effort, JSON.stringify({ guidance, cost: 0 })],
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [user.id, sc.id, executor, planner, effort, auto ? "plan" : "baseline", JSON.stringify({
+        guidance, cost: 0, maxCost, auto, lang,
+        trace: [{ at: new Date().toISOString(), tool: auto ? "director" : "human", note: auto ? "handed-over" : "started" }],
+      })],
     );
     return json({ job: jobOut(rows[0]) });
   }
@@ -196,11 +214,13 @@ async function post(request) {
       if (!rows[0]) throw new HttpError(404, "That cycle doesn't exist");
       return json({ job: jobOut(rows[0]) });
     }
-    const save = async (/** @type {string} */ phase, /** @type {Record<string, unknown>} */ state) => {
+    const save = async (/** @type {string} */ phase, /** @type {Record<string, any>} */ state) => {
       const { running: _r, ...rest } = state;
+      if (Array.isArray(rest.trace)) rest.trace = rest.trace.slice(-TRACE_MAX);
+      // the director's step may change what the cycle works on and with which model
       const { rows } = await pool.query(
-        "UPDATE app.agent_jobs SET phase = $2, state = $3, updated_at = now() WHERE id = $1 RETURNING *",
-        [job.id, phase, JSON.stringify(rest)],
+        "UPDATE app.agent_jobs SET phase = $2, state = $3, scenario = $4, executor = $5, effort = $6, updated_at = now() WHERE id = $1 RETURNING *",
+        [job.id, phase, JSON.stringify(rest), job.scenario, job.executor, job.effort],
       );
       return rows[0];
     };
@@ -210,6 +230,16 @@ async function post(request) {
       const next = await runPhase(pool, user.id, job, state);
       return json({ job: jobOut(await save(next, state)) });
     } catch (err) {
+      if (err instanceof HttpError && err.extra.reason === "run-budget") {
+        // the cycle reached its own cap: it stops cleanly, and a candidate it couldn't test is not left waiting
+        state.outcome = "run-budget";
+        state.detail = `cap $${Number(state.maxCost ?? 0).toFixed(2)}`;
+        trace(state, { tool: "harness", note: "run-budget" });
+        if (state.candidate && !state.verdict) {
+          await pool.query("UPDATE app.agent_skills SET status = 'rejected', decided_at = now() WHERE id = $1 AND status = 'candidate'", [state.candidate.id]);
+        }
+        return json({ job: jobOut(await save("done", state)) });
+      }
       state.error = err instanceof Error ? err.message : "failed";
       await save(job.phase, state);
       throw err;
@@ -286,19 +316,37 @@ async function post(request) {
  * @param {import("pg").Pool} pool @param {string} userId @param {any} job @param {Record<string, any>} state
  */
 async function runPhase(pool, userId, job, state) {
+  const k = await keyOf(pool, userId);
+  const spend = (/** @type {number} */ c) => { state.cost = Number(state.cost ?? 0) + c; };
+  // what is left of this cycle's own cap (cycles from before caps existed have none)
+  const left = () => (typeof state.maxCost === "number" ? state.maxCost - Number(state.cost ?? 0) : undefined);
+  const rec = (/** @type {Record<string, unknown>} */ e) => trace(state, { phase: job.phase, ...e });
+
+  if (job.phase === "plan") {
+    const t0 = Date.now();
+    const decided = await direct(pool, userId, k, job, state, left());
+    spend(decided.cost);
+    rec({ tool: "director", model: job.planner, cost: decided.cost, ms: Date.now() - t0, note: decided.plan.why });
+    job.scenario = decided.plan.scenario;
+    job.executor = decided.plan.executor || job.executor;
+    job.effort = decided.plan.effort;
+    state.plan = decided.plan;
+    return "baseline";
+  }
+
   const sc = scenarioOf(job.scenario);
   if (!sc) throw new HttpError(400, "This cycle's scenario no longer exists");
-  const k = await keyOf(pool, userId);
   const active = await activeSkills(pool, userId, sc.id);
-  const spend = (/** @type {number} */ c) => { state.cost = Number(state.cost ?? 0) + c; };
 
   if (job.phase === "baseline") {
     const run = await takeExam(pool, userId, k, {
       kind: "eval", model: job.executor, effort: job.effort, sc, skills: active,
       groups: [{ set: "practice", batches: sc.sets.practice }, { set: "validation", batches: sc.sets.validation }],
+      cap: left(), rec,
     });
     spend(run.cost);
     const { scores, marked, answered, rows } = run;
+    rec({ tool: "grader", note: `${marked.filter((m) => m.ok).length}/${rows.length}` });
     state.core = run.core;
     state.skillsUsed = active.map((s) => ({ context: s.context, version: s.version }));
     state.before = { practice: scores.practice ?? {}, validation: scores.validation ?? {}, answered, total: rows.length };
@@ -314,10 +362,13 @@ async function runPhase(pool, userId, job, state) {
        WHERE user_id = $1 AND decision = 'approved' AND verdict = 'experiment' ORDER BY decided_at DESC LIMIT 5`,
       [userId],
     );
+    if (ideas.length) rec({ tool: "radar", note: `${ideas.length}` });
     const { prompt } = plannerPrompt(sc, active, state.practice ?? [], ideas, String(state.guidance ?? ""));
     const effort = effortFor(job.planner, "high", "high");
-    const run = await harnessed(pool, userId, k, { kind: "propose", model: job.planner, effort, system: PLANNER_SYSTEM, prompt });
+    const t0 = Date.now();
+    const run = await harnessed(pool, userId, k, { kind: "propose", model: job.planner, effort, system: PLANNER_SYSTEM, prompt, cap: left() });
     spend(run.cost);
+    rec({ tool: "planner", model: job.planner, cost: run.cost, ms: Date.now() - t0, tokens: run.usage.input + run.usage.output });
     let proposal;
     try {
       proposal = parseProposal(sc, run.text);
@@ -338,6 +389,7 @@ async function runPhase(pool, userId, job, state) {
       [userId, sc.id, proposal.context, (ver[0]?.v ?? 0) + 1, proposal.instructions, proposal.rationale, parent?.id ?? null, job.planner, noteId, job.id],
     );
     state.candidate = { ...skillOut(rows[0]), parentInstructions: parent?.instructions ?? null };
+    rec({ tool: "library", note: `${proposal.context} v${rows[0].version}`, idea: noteId });
     return "validate";
   }
 
@@ -345,8 +397,9 @@ async function runPhase(pool, userId, job, state) {
     const cand = state.candidate;
     if (!cand) throw new HttpError(409, "This cycle has no candidate");
     const skills = [...active.filter((s) => s.context !== cand.context), { context: cand.context, version: cand.version, instructions: cand.instructions }];
-    const run = await takeExam(pool, userId, k, { kind: "eval", model: job.executor, effort: job.effort, sc, skills, groups: [{ set: "validation", batches: sc.sets.validation }] });
+    const run = await takeExam(pool, userId, k, { kind: "eval", model: job.executor, effort: job.effort, sc, skills, groups: [{ set: "validation", batches: sc.sets.validation }], cap: left(), rec });
     spend(run.cost);
+    rec({ tool: "grader", note: `${run.marked.filter((m) => m.ok).length}/${run.rows.length}` });
     const { scores } = run;
     const after = scores.validation ?? {};
     const verdict = { ...harnessVerdict(state.before?.validation ?? {}, after, cand.context), before: state.before?.validation ?? {}, after };
@@ -358,10 +411,57 @@ async function runPhase(pool, userId, job, state) {
       [cand.id, JSON.stringify(verdict), verdict.pass],
     );
     if (!verdict.pass) state.outcome = "harness-rejected";
+    rec({ tool: "harness", note: verdict.reason });
+    if (verdict.pass) trace(state, { phase: "awaiting", tool: "human", note: "waiting" });
     return verdict.pass ? "awaiting" : "done";
   }
 
   throw new HttpError(409, "Nothing left to run in this cycle");
+}
+
+/** Appends one entry to the cycle's trace: what the agent did, with which tool or model, what it cost. */
+function trace(/** @type {Record<string, any>} */ state, /** @type {Record<string, unknown>} */ e) {
+  const list = Array.isArray(state.trace) ? state.trace : (state.trace = []);
+  list.push({ at: new Date().toISOString(), ...e });
+  if (list.length > TRACE_MAX) list.splice(0, list.length - TRACE_MAX);
+}
+
+/**
+ * The director's step: Muse Wonder (or the planner the cycle has) decides this cycle's scenario, executor and
+ * effort within the cap, and may propose capabilities the lab doesn't use yet.
+ * @param {import("pg").Pool} pool @param {string} userId @param {Awaited<ReturnType<typeof keyOf>>} k @param {any} job
+ * @param {Record<string, any>} state @param {number | undefined} cap
+ */
+async function direct(pool, userId, k, job, state, cap) {
+  const bench = benchSummary();
+  const [{ rows: jobs }, { rows: skills }, { rows: ideas }] = await Promise.all([
+    pool.query("SELECT scenario, executor, state FROM app.agent_jobs WHERE user_id = $1 AND id <> $2 ORDER BY created_at DESC LIMIT 20", [userId, job.id]),
+    pool.query("SELECT scenario, COUNT(*)::int AS n FROM app.agent_skills WHERE user_id = $1 AND status = 'active' GROUP BY scenario", [userId]),
+    pool.query("SELECT title FROM app.research_notes WHERE user_id = $1 AND decision = 'approved' AND verdict = 'experiment' ORDER BY decided_at DESC LIMIT 5", [userId]),
+  ]);
+  const pctOf = (/** @type {any} */ s) => {
+    const t = Object.values(s ?? {}).reduce((/** @type {{ c: number, t: number }} */ a, /** @type {any} */ b) => ({ c: a.c + b.correct, t: a.t + b.total }), { c: 0, t: 0 });
+    return t.t ? (t.c / t.t) * 100 : null;
+  };
+  const standing = bench.map((b) => {
+    const last = jobs.find((j) => j.scenario === b.id);
+    const val = last?.state?.after ?? last?.state?.before?.validation;
+    return { id: b.id, validation: pctOf(val), skills: skills.find((s) => s.scenario === b.id)?.n ?? 0, last: last ? `${last.state?.outcome ?? "en curso"} con ${last.executor}` : null };
+  });
+  const families = usableFamilies(k.models).map((f) => ({
+    family: f.family, name: f.name, id: /** @type {string} */ (f.id), usd: f.usd, sees: f.sees, effort: f.effort,
+    cycle: Object.fromEntries(bench.map((b) => [b.id, estimateCycle(scenarioOf(b.id), /** @type {string} */ (f.id), job.planner)])),
+  }));
+  if (!families.length) throw new HttpError(409, "Your key doesn't list a Meta model the agent can choose", { reason: "no-model" });
+  const capNow = typeof cap === "number" ? cap : Number(state.maxCost ?? RUN_CAP.default);
+  const weakest = [...standing].sort((a, b) => (a.validation ?? -1) - (b.validation ?? -1))[0]?.id ?? job.scenario;
+  const prompt = directorPrompt({ bench, standing, families, cap: capNow, ideas, guidance: String(state.guidance ?? ""), lang: String(state.lang ?? "en") });
+  const run = await harnessed(pool, userId, k, { kind: "direct", model: job.planner, effort: effortFor(job.planner, "medium", "medium"), system: DIRECTOR_SYSTEM, prompt, cap });
+  const plan = parseDirection(run.text, {
+    scenarios: bench.map((b) => b.id), families, cap: Math.max(0, capNow - run.cost),
+    fallback: { scenario: weakest, family: families.find((f) => f.family === "spark") ? "spark" : (families[0]?.family ?? "spark") },
+  });
+  return { plan, cost: run.cost };
 }
 
 export const POST = handle(post);
