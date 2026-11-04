@@ -12,6 +12,7 @@ import { SignIn } from "./SignIn.js";
 import { Companion } from "./Companion.js";
 import { Process } from "./Process.js";
 import { LiveProvider } from "./live.js";
+import { TranslateProvider } from "./translate.js";
 import { Mind } from "./Mind.js";
 import { Path, showPath } from "./Path.js";
 
@@ -156,6 +157,7 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
 
   return (
     <LiveProvider client={client}>
+      <TranslateProvider client={client} lang={lang}>
       <header className="bar">
         <div className="wrap row">
           <a className="word" href="/" aria-label="Agentztein"><img src="/img/logo.webp" alt="Agentztein" width={155} height={32} /></a>
@@ -200,6 +202,7 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
         {tab === "radar" && <Radar client={client} keys={keys} onKeys={setKeys} onNotes={setNotesCount} go={go} lang={lang} />}
       </main>
       <Companion tab={tab} go={go} client={client} lang={lang} />
+      </TranslateProvider>
     </LiveProvider>
   );
 }

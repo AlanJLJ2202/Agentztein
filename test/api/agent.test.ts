@@ -97,7 +97,9 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
         const system = body.messages[0].content as string;
         const prompt = body.messages[1].content as string;
         chats.push({ model: body.model, system, prompt });
-        const content = system.includes("soñando")
+        const content = system.startsWith("You translate")
+          ? JSON.stringify({ t: (JSON.parse(prompt.split("\n").at(-1) ?? "[]") as string[]).map((x) => `EN: ${x}`) })
+          : system.includes("soñando")
           ? JSON.stringify(prompt.includes("Todavía no recuerdas nada")
             ? {
               keep: [], rewrite: [], forget: [], summary: "Soñé con mis primeros ciclos.",
@@ -305,6 +307,22 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
     }));
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ say: "Ya sé algo.", action: "auto-cycle", model: "muse-spark-1.3" });
+  });
+
+  it("translates what the models wrote into the reader's language, inside the harness", async () => {
+    const n = chats.length;
+    const r = await post({ op: "translate", to: "en", texts: ["Ahí hay más que ganar.", "Para set_general marca «valida»."] });
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ texts: ["EN: Ahí hay más que ganar.", "EN: Para set_general marca «valida»."], model: "muse-spark-1.3" });
+    expect(chats.length).toBe(n + 1);
+    expect(chats.at(-1)?.prompt).toContain("into English");
+    const c = new pg.Client({ connectionString: dbUrl });
+    await c.connect();
+    const { rows } = await c.query("SELECT kind FROM app.harness_runs WHERE kind = 'translate'");
+    await c.end();
+    expect(rows.length).toBe(1);
+    expect((await post({ op: "translate", to: "fr", texts: ["hola"] })).status).toBe(400);
+    expect((await post({ op: "translate", to: "en", texts: Array(30).fill("hola") })).status).toBe(400);
   });
 
   it("refuses a step that could go over the budget, before calling Meta", async () => {

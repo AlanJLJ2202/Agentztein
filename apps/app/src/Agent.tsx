@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, type AgentState, type Api, type Exam, type Job, type Scores, type Skill } from "./api.js";
 import type { Tab } from "./App.js";
 import { useT, type Lang, type Text } from "./i18n.js";
+import { mtJob, useMt } from "./translate.js";
 import { MetaMark } from "./Logos.js";
 import { CAP_KEY, savedCap } from "./Companion.js";
 import { useLive } from "./live.js";
@@ -188,6 +189,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
   const [auto, setAuto] = useState(true);
   const [cap, setCap] = useState(() => savedCap().toFixed(2));
   const live = useLive();
+  const { mt } = useMt();
   const [job, setJob] = useState<Job | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -420,9 +422,9 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
                   ))}
                 </ol>
                 <p className="small muted">{jobSc.title} · {job.planner} → {job.executor}{job.effort ? ` (${job.effort})` : ""} · ${Number(job.state.cost ?? 0).toFixed(4)}{job.state.maxCost ? ` / $${job.state.maxCost.toFixed(2)}` : ""} {t(L.cost)}</p>
-                <Tldr job={job} sc={jobSc} compact />
+                <Tldr job={mtJob(job, mt)} sc={jobSc} compact />
                 {RUNNING.includes(job.phase) && !busy && <button type="button" className="btn small ghost" onClick={() => void resume()}>{t(L.resume)}</button>}
-                <Approval job={job} sc={jobSc} onDecide={decide} />
+                <Approval job={mtJob(job, mt)} raw={job} sc={jobSc} onDecide={decide} />
                 <button type="button" className="btn small" onClick={() => go("lab")}>{t(E("See its whole process: thinking, memory and network", "Ver su proceso completo: pensamiento, memoria y red"))} →</button>
               </>
             ) : (
@@ -449,7 +451,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
                         <span className="row" style={{ gap: 8, flexWrap: "wrap" }}><ChangeTag kind={skillKind(s)} /><b>{b.contexts.find((c) => c.id === s.context)?.name} · v{s.version}</b></span>
                         <span className={`st ${s.status}`}>{t(L.status[s.status] ?? E("", ""))}</span>
                       </div>
-                      <pre>{s.instructions}</pre>
+                      <pre>{mt(s.instructions)}</pre>
                       {s.verdict && <p className="muted small">{delta(s) > 0 ? "+" : ""}{delta(s)} · {s.model}</p>}
                       {emblems[s.id] && <img className="emblem" src={emblems[s.id]} alt="" width={96} height={96} />}
                       {s.status === "active" && (

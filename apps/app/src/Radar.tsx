@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ApiError, type Api, type Budget, type Note, type SavedKey, type Verdict } from "./api.js";
 import type { Tab } from "./App.js";
 import { T, useT, type Lang } from "./i18n.js";
+import { useMt } from "./translate.js";
 import { SourcesMark, SourceTag } from "./Logos.js";
 
 type Props = { client: Api; keys: SavedKey[] | null; onKeys: (k: SavedKey[]) => void; onNotes: (n: number) => void; go: (t: Tab) => void; lang: Lang };
@@ -25,6 +26,7 @@ function CapChip({ cap, lang }: { cap: string | null; lang: Lang }) {
 
 export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
   const t = useT();
+  const { mt } = useMt();
   const [stories, setStories] = useState<Story[] | null>(null);
   const [liveError, setLiveError] = useState(false);
   const [down, setDown] = useState<string[]>([]);
@@ -159,9 +161,9 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
                   </div>
                   <h3><a href={n.url ?? n.discussionUrl ?? "#"} target="_blank" rel="noreferrer">{n.title}</a></h3>
                   <dl>
-                    {n.gain && <div><dt>{t(T.gain)}</dt><dd>{n.gain}</dd></div>}
-                    {n.cost && <div><dt>{t(T.cost)}</dt><dd>{n.cost}</dd></div>}
-                    {n.why && <div><dt>{t(T.why)}</dt><dd>{n.why}</dd></div>}
+                    {n.gain && <div><dt>{t(T.gain)}</dt><dd>{mt(n.gain)}</dd></div>}
+                    {n.cost && <div><dt>{t(T.cost)}</dt><dd>{mt(n.cost)}</dd></div>}
+                    {n.why && <div><dt>{t(T.why)}</dt><dd>{mt(n.why)}</dd></div>}
                   </dl>
                   {n.verdict === "experiment" && (
                     n.decision ? (

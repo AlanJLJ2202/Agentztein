@@ -3,11 +3,11 @@
 // around (the 3D lab, the brain graph and the companion all watch the same job). Each new step of the trace becomes
 // a line the companion can say.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import type { AgentState, Api, Job, Note } from "./api.js";
+import type { AgentState, Api, Job, Note, TraceEntry } from "./api.js";
 import type { Text } from "./i18n.js";
 import { isRunning, RUNNING_PHASES, say } from "./story.js";
 
-export type Beat = { id: number; text: Text; tool: string; bad?: boolean; job: Job };
+export type Beat = { id: number; text: Text; tool: string; bad?: boolean; job: Job; entry?: TraceEntry };
 export type Live = {
   agent: AgentState | null;
   notes: Note[] | null;
@@ -68,7 +68,7 @@ export function LiveProvider({ client, children }: { client: Api; children: Reac
     const fresh = trace.slice(from);
     seen.current.set(j.id, trace.length);
     const last = fresh.at(-1);
-    if (last) setBeat({ id: ++beatId.current, text: say(last, j), tool: last.tool, bad: last.tool === "harness" && last.note !== "improves", job: j });
+    if (last) setBeat({ id: ++beatId.current, text: say(last, j), tool: last.tool, bad: last.tool === "harness" && last.note !== "improves", job: j, entry: last });
   }, []);
 
   const drive = useCallback(async (j: Job) => {

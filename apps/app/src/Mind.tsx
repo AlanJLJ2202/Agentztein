@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Job, Note, Skill } from "./api.js";
 import type { Tab } from "./App.js";
 import { useT, type Text } from "./i18n.js";
+import { useMt } from "./translate.js";
 import { useLive } from "./live.js";
 import { E, examColor, isRunning, nextUp, say, TOOLS, type ToolId } from "./story.js";
 
@@ -85,7 +86,8 @@ export function Mind({ go }: { go: (t: Tab, anchor?: string) => void }) {
   const t = useT();
   const live = useLive();
   const bench = useMemo(() => (live.agent?.bench ?? []).filter((b) => !b.legacy), [live.agent]);
-  const skills = live.agent?.skills ?? [];
+  const { mt } = useMt();
+  const skills = useMemo(() => (live.agent?.skills ?? []).map((s) => ({ ...s, instructions: mt(s.instructions), rationale: mt(s.rationale) })), [live.agent, mt]);
   const jobs = useMemo(() => live.agent?.jobs ?? [], [live.agent]);
   const notes = live.notes ?? [];
   const { nodes, links } = useMemo(() => build(bench, skills, notes, jobs), [bench, skills, notes, jobs]);

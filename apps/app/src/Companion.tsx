@@ -10,8 +10,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, type Api } from "./api.js";
 import type { Tab } from "./App.js";
 import { type Lang, type Text, useT } from "./i18n.js";
+import { mtEntry, mtJob, useMt } from "./translate.js";
 import { useLive } from "./live.js";
-import { E, isRunning, nextUp } from "./story.js";
+import { E, isRunning, nextUp, say } from "./story.js";
 import { markPath } from "./Path.js";
 import { browserCanListen, hush, listenBrowser, playAudio, speakBrowser, useVoicePrefs } from "./voice.js";
 
@@ -85,6 +86,7 @@ async function hear(onLevel: (n: number) => void, onSpeech: () => void, cancel: 
 export function Companion({ tab, go, client, lang }: { tab: Tab; go: (t: Tab) => void; client: Api; lang: Lang }) {
   const t = useT();
   const live = useLive();
+  const { mt } = useMt();
   const [bubble, setBubble] = useState<{ text: string; mood: "ok" | "alert" | "think"; key: number } | null>(null);
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(() => { try { return localStorage.getItem("agz-companion") === "off"; } catch { return false; } });
@@ -138,7 +140,9 @@ export function Companion({ tab, go, client, lang }: { tab: Tab; go: (t: Tab) =>
 
   // what it is doing, step by step
   useEffect(() => {
-    if (live.beat) show(t(live.beat.text), live.beat.bad ? "alert" : live.beat.tool === "human" ? "alert" : "think");
+    const b = live.beat;
+    if (b) show(t(b.entry ? say(mtEntry(b.entry, mt), mtJob(b.job, mt)) : b.text), b.bad ? "alert" : b.tool === "human" ? "alert" : "think");
+    // mt is left out on purpose: a translation arriving later must not pop the same bubble again
   }, [live.beat, t, show]);
 
   // the guide's "Talk to it" step opens the chat

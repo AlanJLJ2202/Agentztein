@@ -12,6 +12,7 @@ import { SetupAlerts } from "./SetupAlerts.js";
 import type { Tab } from "./App.js";
 import { AgentStage, type StageChip, type StageMood, type StageScreen } from "./AgentStage.js";
 import { LangContext, T, useT, type Lang, type Text } from "./i18n.js";
+import { mtJob, useMt } from "./translate.js";
 import { Check } from "./Logos.js";
 
 const E = (en: string, es: string): Text => ({ en, es });
@@ -553,7 +554,8 @@ function phaseStates(job: Job | null, notes: Note[]): { st: PhaseState[]; at: nu
 
 function CycleTrack({ lab, lang, go }: { lab: Lab; lang: Lang; go: (t: Tab) => void }) {
   const t = useT();
-  const job = lab.latest;
+  const { mt } = useMt();
+  const job = useMemo(() => (lab.latest ? mtJob(lab.latest, mt) : lab.latest), [lab.latest, mt]);
   const { st, at } = phaseStates(job, lab.notes);
   const [sel, setSel] = useState<number | null>(null);
   const cur = sel ?? at;

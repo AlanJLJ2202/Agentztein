@@ -9,6 +9,7 @@
 //   POST { op: "exam", scenario, bare? } the sealed held-out exam, with the active skills (or none, to compare)
 //   POST { op: "dream", maxCost? }       it dreams now: digests its finished cycles into lessons (api/_lib/memory.js)
 //   POST { op: "memory", id, action }    a person pins, unpins or forgets one lesson
+//   POST { op: "translate", texts, to }  what the models wrote, in the language the person reads (api/_lib/translate.js)
 import * as core from "@skillab/agent-core";
 import { EFFORTS, familyOf, META_MODELS, pickId } from "@skillab/research";
 import {
@@ -46,6 +47,7 @@ import {
   undigested,
 } from "./_lib/memory.js";
 import { materialize, runSandboxed } from "./_lib/sandbox.js";
+import { cleanTexts, parseTranslation, TRANSLATE_SYSTEM, translatePrompt } from "./_lib/translate.js";
 import { publicScenario, runCore } from "./_lib/solver.js";
 
 const RUNNING = ["dream", "plan", "baseline", "propose", "validate"];
@@ -359,6 +361,19 @@ async function post(request) {
     );
     if (!rows[0]) throw new HttpError(404, "That lesson isn't in its active memory");
     return json({ memory: memoryOut(rows[0]) });
+  }
+
+  if (op === "translate") {
+    const to = body.to === "es" || body.to === "en" ? body.to : null;
+    if (!to) throw new HttpError(400, "Say which language to translate into (en or es)");
+    const texts = cleanTexts(body.texts);
+    const k = await keyOf(pool, user.id);
+    // light work: the everyday model of the key, never the planner, with little reasoning
+    const spark = META_MODELS.find((f) => f.family === "spark");
+    const model = k.model && familyOf(k.model)?.family !== "wonder" ? k.model : (spark && pickId(spark, k.models)) || k.model;
+    if (!model) throw new HttpError(409, "Choose which model to use first", { reason: "no-model" });
+    const run = await harnessed(pool, user.id, k, { kind: "translate", model, effort: effortFor(model, "low", "low"), system: TRANSLATE_SYSTEM, prompt: translatePrompt(texts, to), timeoutMs: 60_000 });
+    return json({ texts: parseTranslation(run.text, texts.length), cost: run.cost, model });
   }
 
   throw new HttpError(400, "Unknown operation");

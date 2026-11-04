@@ -14,6 +14,7 @@ import { Lab3D } from "./Lab3D.js";
 import { useLive } from "./live.js";
 import { RunGraph } from "./RunGraph.js";
 import { E, isRunning, nextUp, say, toolOf } from "./story.js";
+import { mtJob, MtStatus, useMt } from "./translate.js";
 
 /* ---------------------------------------------------------------- the kind of change */
 
@@ -228,7 +229,8 @@ export function Tldr({ job, sc, compact }: { job: Job; sc: BenchScenario | undef
 
 /* ---------------------------------------------------------------- what you approve */
 
-export function Approval({ job, sc, onDecide }: { job: Job; sc: BenchScenario | undefined; onDecide: (skillId: string, d: "approved" | "rejected") => Promise<void> }) {
+/** `job` may come translated for reading; `raw` is the same cycle as the agent wrote it, so you can see the original. */
+export function Approval({ job, raw, sc, onDecide }: { job: Job; raw?: Job; sc: BenchScenario | undefined; onDecide: (skillId: string, d: "approved" | "rejected") => Promise<void> }) {
   const t = useT();
   const [busy, setBusy] = useState<"approved" | "rejected" | null>(null);
   const cand = job.state.candidate;
@@ -288,6 +290,12 @@ export function Approval({ job, sc, onDecide }: { job: Job; sc: BenchScenario | 
       <div>
         <p className="small"><b>{t(E("The skill, word for word", "La habilidad, palabra por palabra"))}</b>{kind === "skill-update" ? ` · ${t(E("green is new, struck out is removed", "lo verde es nuevo, lo tachado se quita"))}` : ""}</p>
         <Diff before={cand.parentInstructions} after={cand.instructions} />
+        {raw?.state.candidate && raw.state.candidate.instructions !== cand.instructions && (
+          <details className="orig">
+            <summary className="fine">{t(E("Translated so you can read it; the agent uses it in its original words. See the original", "Traducida para que la leas; el agente la usa con sus palabras originales. Ver el original"))}</summary>
+            <Diff before={raw.state.candidate.parentInstructions} after={raw.state.candidate.instructions} />
+          </details>
+        )}
       </div>
       <p className="small"><b>{t(E("Why it wrote it", "Por qué la escribió"))}:</b> {cand.rationale}</p>
 
@@ -517,6 +525,7 @@ function MindPanel({ job, memories, skills }: { job: Job; memories: Memory[]; sk
 
 function Changes({ jobs, skills, runs, bench, go }: { jobs: Job[]; skills: Skill[]; runs: EvolveRun[]; bench: BenchScenario[]; go: (t: Tab) => void }) {
   const t = useT();
+  const { mt } = useMt();
   type Row = { at: string; kind: ChangeKind; extra?: string; title: string; status: string; tone: Tone; to?: Tab };
   const title = (id: string) => bench.find((b) => b.id === id)?.title ?? id;
   const SKILL_ST: Record<string, [Text, Tone]> = {
@@ -538,7 +547,7 @@ function Changes({ jobs, skills, runs, bench, go }: { jobs: Job[]; skills: Skill
     rows.push({ at: r.createdAt, kind: "code", title: r.proposal.title, status: t(st), tone, to: "evolve" });
   }
   for (const j of jobs.slice(0, 12)) {
-    for (const p of j.state.plan?.proposals ?? []) rows.push({ at: j.createdAt, kind: "tool", extra: t(capName(p.capability)), title: p.idea, status: t(E("proposal", "propuesta")), tone: "neutral" });
+    for (const p of j.state.plan?.proposals ?? []) rows.push({ at: j.createdAt, kind: "tool", extra: t(capName(p.capability)), title: mt(p.idea), status: t(E("proposal", "propuesta")), tone: "neutral" });
   }
   rows.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
   if (!rows.length) return null;
@@ -565,7 +574,7 @@ function Changes({ jobs, skills, runs, bench, go }: { jobs: Job[]; skills: Skill
 export function Process({ client, go, lang }: { client: Api; go: (t: Tab) => void; lang: Lang }) {
   const t = useT();
   const live = useLive();
-  const [view, setView] = useState<"process" | "3d">(() => (location.hash === "#lab3d" ? "3d" : "process"));
+  const [mode, setMode] = useState<"process" | "3d">(() => (location.hash === "#lab3d" ? "3d" : "process"));
   const [picked, setPicked] = useState<string | null>(null);
   const [runs, setRuns] = useState<EvolveRun[]>([]);
   const [busy, setBusy] = useState(false);
@@ -578,6 +587,10 @@ export function Process({ client, go, lang }: { client: Api; go: (t: Tab) => voi
   const newest = live.job;
   const job = (newest && (isRunning(newest) || newest.phase === "awaiting") && picked === null ? newest : jobs.find((j) => j.id === picked)) ?? newest ?? jobs[0] ?? null;
   const sc = a?.bench.find((b) => b.id === job?.scenario);
+  // what the models wrote, in the language you read (the original stays in `job`)
+  const { mt } = useMt();
+  const view = useMemo(() => (job ? mtJob(job, mt) : null), [job, mt]);
+  const memories = useMemo(() => (a?.memory?.active ?? []).map((m) => ({ ...m, text: mt(m.text) })), [a?.memory, mt]);
   const running = Boolean(newest && isRunning(newest));
 
   const start = async () => {
@@ -600,10 +613,10 @@ export function Process({ client, go, lang }: { client: Api; go: (t: Tab) => voi
         </div>
         <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
           <div className="seg" role="tablist" aria-label={t(E("View", "Vista"))}>
-            <button type="button" role="tab" aria-selected={view === "process"} onClick={() => setView("process")}>{t(E("Process", "Proceso"))}</button>
-            <button type="button" role="tab" aria-selected={view === "3d"} onClick={() => setView("3d")}>{t(E("3D lab", "Lab 3D"))}</button>
+            <button type="button" role="tab" aria-selected={mode === "process"} onClick={() => setMode("process")}>{t(E("Process", "Proceso"))}</button>
+            <button type="button" role="tab" aria-selected={mode === "3d"} onClick={() => setMode("3d")}>{t(E("3D lab", "Lab 3D"))}</button>
           </div>
-          {view === "process" && !running && a?.key && (
+          {mode === "process" && !running && a?.key && (
             <button type="button" className="btn small" onClick={() => void start()} disabled={busy}>
               {busy && <span className="spin light" aria-hidden="true" />}
               {t(E(`Let it improve itself (cap $${savedCap().toFixed(2)})`, `Que se mejore solo (tope $${savedCap().toFixed(2)})`))}
@@ -612,8 +625,9 @@ export function Process({ client, go, lang }: { client: Api; go: (t: Tab) => voi
         </div>
       </div>
       {error && <p className="error" role="alert">{error}</p>}
+      <MtStatus lang={lang} />
 
-      {view === "3d" ? (
+      {mode === "3d" ? (
         <Lab3D go={go} lang={lang} />
       ) : !a ? (
         <p className="muted">{live.failed ? t(E("Couldn't load the lab.", "No se pudo cargar el laboratorio.")) : "…"}</p>
@@ -642,14 +656,14 @@ export function Process({ client, go, lang }: { client: Api; go: (t: Tab) => voi
           )}
           <div className="proc-grid">
             <div className="proc-main">
-              <Tldr job={job} sc={sc} />
-              <Approval job={job} sc={sc} onDecide={decide} />
-              <Thinking job={job} sc={sc} memories={a.memory?.active ?? []} />
+              <Tldr job={view ?? job} sc={sc} />
+              <Approval job={view ?? job} raw={job} sc={sc} onDecide={decide} />
+              <Thinking job={view ?? job} sc={sc} memories={memories} />
             </div>
-            <MindPanel job={job} memories={a.memory?.active ?? []} skills={a.skills} />
+            <MindPanel job={view ?? job} memories={memories} skills={a.skills} />
           </div>
           <div className="runs">
-            <RunGraph key={job.id} job={job} bench={a.bench} lang={lang} />
+            <RunGraph key={job.id} job={view ?? job} bench={a.bench} lang={lang} />
           </div>
           <Changes jobs={a.jobs} skills={a.skills} runs={runs} bench={a.bench} go={go} />
         </>

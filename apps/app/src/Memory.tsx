@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { ApiError, type Api, type BenchScenario, type Memory as Lesson, type MemoryKind, type MemoryState } from "./api.js";
 import { useT, type Lang, type Text } from "./i18n.js";
+import { useMt } from "./translate.js";
 
 const E = (en: string, es: string): Text => ({ en, es });
 const L = {
@@ -53,6 +54,7 @@ const ORDER: MemoryKind[] = ["rule", "dead-end", "strategy", "fact"];
 
 export function Memory({ client, memory, bench, lang, onChange }: { client: Api; memory: MemoryState; bench: BenchScenario[]; lang: Lang; onChange: () => Promise<void> }) {
   const t = useT();
+  const { mt } = useMt();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const scopeName = (scope: string) => {
@@ -102,7 +104,7 @@ export function Memory({ client, memory, bench, lang, onChange }: { client: Api;
             <h3>{t(L.kinds[g.k])} <span className="muted">· {g.items.length}</span></h3>
             {g.items.map((m) => (
               <article key={m.id} className={`mem ${m.kind}${m.pinned ? " pinned" : ""}`}>
-                <p>{m.text}</p>
+                <p>{mt(m.text)}</p>
                 <div className="row between wrap-row">
                   <span className="muted small">
                     {scopeName(m.scope)} · <span className="mem-dots" role="img" aria-label={`${t(L.strength)} ${m.strength}/5`}>{"●".repeat(m.strength)}{"○".repeat(Math.max(0, 5 - m.strength))}</span>
@@ -127,7 +129,7 @@ export function Memory({ client, memory, bench, lang, onChange }: { client: Api;
             {memory.dreams.map((d) => (
               <li key={d.id}>
                 <span className="muted small">{new Date(d.createdAt).toLocaleString(lang === "es" ? "es-MX" : "en-US", { dateStyle: "medium", timeStyle: "short" })} · ${d.cost.toFixed(3)}</span>
-                {d.summary && <p className="small">{d.summary}</p>}
+                {d.summary && <p className="small">{mt(d.summary)}</p>}
                 <p className="muted small">{t(L.dreamLine({ jobs: d.jobs, added: d.stats.added ?? 0, rewritten: d.stats.rewritten ?? 0, faded: d.stats.faded ?? 0 }))}</p>
               </li>
             ))}

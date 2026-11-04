@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Tab } from "./App.js";
 import { useT } from "./i18n.js";
+import { mtEntry, mtJob, useMt } from "./translate.js";
 import { useLive } from "./live.js";
 import { E, isRunning, nextUp, ROOM_NAME, roomFor, say, toolOf } from "./story.js";
 import { savedCap } from "./Companion.js";
@@ -12,6 +13,7 @@ import { savedCap } from "./Companion.js";
 export function Lab3D({ go, lang }: { go: (t: Tab) => void; lang: string }) {
   const t = useT();
   const live = useLive();
+  const { mt } = useMt();
   const frame = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
   const [follow, setFollow] = useState(true);
@@ -33,7 +35,7 @@ export function Lab3D({ go, lang }: { go: (t: Tab) => void; lang: string }) {
     const room = roomFor({ tool: b.tool }, b.job.scenario);
     setWhere(room);
     send({ type: "agz:goto", room });
-    send({ type: "agz:say", text: t(b.text) });
+    send({ type: "agz:say", text: t(b.entry ? say(mtEntry(b.entry, mt), mtJob(b.job, mt)) : b.text) });
   }, [live.beat, ready, follow, t]);
   // while a step runs, it heads to where the next one happens
   const upcoming = job ? nextUp(job) : null;
@@ -90,7 +92,7 @@ export function Lab3D({ go, lang }: { go: (t: Tab) => void; lang: string }) {
               <li key={i} className={i === arr.length - 1 ? "now" : ""} style={{ ["--c" as string]: tl.color }}>
                 <span className="ico" aria-hidden="true">{tl.icon}</span>
                 <span>
-                  {job ? t(say(e, job)) : ""}
+                  {job ? t(say(mtEntry(e, mt), mtJob(job, mt))) : ""}
                   <small>{t(tl.name)} · {t(ROOM_NAME[room] ?? E(room, room))}{e.cost ? ` · $${e.cost.toFixed(4)}` : ""}</small>
                 </span>
               </li>
