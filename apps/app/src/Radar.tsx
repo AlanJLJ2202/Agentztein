@@ -1,6 +1,7 @@
 // The research radar: what's new this week in its four sources (Hacker News, arXiv, Hugging Face Papers and GitHub),
 // and what Agentztein decided about it.
 import { CAPABILITIES, EFFORTS, familyOf, fetchLiveFeed, SOURCE_IDS, SOURCES, type Story } from "@skillab/research";
+import { Robot } from "./Robot.js";
 import { useEffect, useState } from "react";
 import { ApiError, type Api, type Budget, type Note, type SavedKey, type Verdict } from "./api.js";
 import type { Tab } from "./App.js";
@@ -89,7 +90,16 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
         <div>
           <p className="kicker"><SourcesMark size={20} /> {SOURCE_IDS.map((id) => SOURCES[id].name).join(" · ")}</p>
           <h1 className="h1">{t(T.radarTitle)}</h1>
-          <p className="lead">{t(T.radarLead)}</p>
+          <Robot
+            className="radar-robot"
+            pose={!hasKey ? "sleep" : busy ? "think" : "read"}
+            say={!hasKey
+              ? t({ en: "I need my brain to read: connect your Meta key.", es: "Necesito mi cerebro para leer: conecta tu llave de Meta." })
+              : busy
+                ? t({ en: "Reading the four sources and judging each story…", es: "Leyendo las cuatro fuentes y juzgando cada historia…" })
+                : t({ en: "I read what's new in AI and tell you what's worth an experiment. Nothing is adopted without passing the lab.", es: "Leo lo nuevo en IA y te digo qué vale un experimento. Nada se adopta sin pasar por el laboratorio." })}
+          />
+          <details className="more small"><summary>{t({ en: "How it works", es: "Cómo funciona" })}</summary><p className="muted">{t(T.radarLead)}</p></details>
         </div>
         <div className="runbox">
           {hasKey ? (
@@ -147,7 +157,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
           {notes === null ? (
             <p className="muted">{t(T.loading)}</p>
           ) : shown.length === 0 ? (
-            <p className="empty">{t(T.notesEmpty)}</p>
+            <div className="empty"><Robot pose="ok" size={64} say={t(T.notesEmpty)} /></div>
           ) : (
             <ol className="notes">
               {shown.map((n) => (

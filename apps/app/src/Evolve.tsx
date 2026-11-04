@@ -2,6 +2,7 @@
 // it in GitHub Actions on a copy of YOUR core, and the judge gives your current core and the new one an exam nobody
 // has seen. A version that scores higher and breaks nothing becomes your active core; you can always go back.
 import { useCallback, useEffect, useState } from "react";
+import { Robot } from "./Robot.js";
 import { ApiError, type Api, type CoreVersion, type EvolveRun, type EvolveState } from "./api.js";
 import type { Tab } from "./App.js";
 import { useT, type Text } from "./i18n.js";
@@ -109,7 +110,14 @@ export function Evolve({ client, go }: { client: Api; go: (t: Tab) => void }) {
         <div>
           <p className="kicker meta-k"><MetaMark size={20} /> {t(L.kicker)}</p>
           <h1 className="h1">{t(L.title)}</h1>
-          <p className="lead">{t(L.lead)}</p>
+          <Robot
+            className="radar-robot"
+            pose={working ? "think" : "ok"}
+            say={working
+              ? t({ en: "A judge is examining my new code with an exam I've never seen…", es: "Un juez está examinando mi código nuevo con un examen que nunca he visto…" })
+              : t({ en: "Here I can rewrite my own code. A judge tests it, and I only keep a version that does better.", es: "Aquí puedo reescribir mi propio código. Un juez lo prueba y solo me quedo con una versión que lo haga mejor." })}
+          />
+          <details className="more small"><summary>{t({ en: "How it works", es: "Cómo funciona" })}</summary><p className="muted">{t(L.lead)}</p></details>
         </div>
       </div>
       <ol className="evo-pipe">

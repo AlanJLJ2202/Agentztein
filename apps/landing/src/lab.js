@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { renderRoomStill } from "./room.js";
 import {
   SKILLS, C, makeAgent, pose, setArms, makeCoil, makeBolt, makeChip, makePaper, makeBadge, makeBench,
-  setupRenderer, addLights, makeFloor, paintScreen, makeMetaLogo, windowPanel, rr,
+  setupRenderer, addLights, makeFloor, paintScreen, makeMetaLogo, windowPanel, rr, LEG_DROP,
 } from "./agent.js";
 
 const COIL_X = 2.35;
@@ -57,18 +57,31 @@ export function renderStill(canvas, which, size = 900) {
     ped.position.y = -0.1; ped.receiveShadow = true;
     scene.add(ped, makeBench(which.slice(6)));
     look(0, 1.7, 4.3, 0, 0.6, 0);
-  } else if (which === "agent-sleep") {
-    // Agentztein asleep (the app's memory card): eyes almost shut, head down, power low, no floor, transparent.
-    // img/agent-sleep.webp is this still cropped to its outline and scaled to 563 px tall, like agent-ok.webp.
-    const agent = makeAgent();
+  } else if (which.startsWith("agent-")) {
+    // Agentztein in one pose, alone on a transparent background: the app's guide in every screen. Each still is then
+    // cropped to its outline and scaled to 563 px tall (like agent-ok.webp) before it goes in img/.
+    const P = {
+      sleep: { mood: "sleep", power: 0.18, arms: [-0.05, 0.05, 0, 0], screen: "off", look: [0, -0.4] },
+      think: { mood: "think", arms: [-0.12, 0.45, 0, -1.25], screen: "sync", look: [0.35, 0.4] },
+      happy: { mood: "happy", arms: [-2.5, 2.5, 0, 0], screen: "ok", look: [0, 0.15] },
+      wave: { mood: "happy", arms: [-0.12, 2.6, 0, 0], screen: "pulse", look: [0.2, 0.1] },
+      read: { mood: "think", arms: [-0.55, 0.55, -1.05, -1.05], screen: "pulse", look: [0, -0.45], paper: true },
+    }[which.slice(6)] ?? { mood: "idle", arms: [-0.12, 0.12, 0, 0], screen: "pulse", look: [0, 0] };
+    const agent = makeAgent({ legs: true });
     const u = agent.userData;
-    u.power = 0.18;
-    u.look.set(0, -0.4);
-    for (let i = 0; i < 40; i++) pose(agent, "sleep", 0, 0.05);
-    setArms(agent, -0.05, 0.05);
-    paintScreen(u.screenTex, "off", 0);
+    u.power = P.power ?? 1;
+    u.look.set(P.look[0], P.look[1]);
+    for (let i = 0; i < 40; i++) pose(agent, P.mood, 2, 0.05);
+    setArms(agent, ...P.arms);
+    paintScreen(u.screenTex, P.screen, 0.6);
+    agent.position.y = LEG_DROP;
     scene.add(agent);
-    look(0.35, 2.1, 9.8, 0, 1.6, 0);
+    if (P.paper) {
+      const paper = makePaper([["#1", "✓"], ["#2", "?"], ["#3", "✓"]], { title: "arXiv", w: 0.9, h: 1.1 });
+      paper.position.set(0, 1.45, 0.75); paper.rotation.x = -0.35;
+      scene.add(paper);
+    }
+    look(0.4, 2.1, 11, 0, 1.55, 0);
   } else if (which === "muse") {
     const agent = makeAgent();
     agent.userData.look.set(0.25, 0.1);

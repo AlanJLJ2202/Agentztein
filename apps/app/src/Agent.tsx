@@ -11,6 +11,8 @@ import { CAP_KEY, savedCap } from "./Companion.js";
 import { useLive } from "./live.js";
 import { Memory } from "./Memory.js";
 import { RunGraph } from "./RunGraph.js";
+import { nextUp } from "./story.js";
+import { Robot, type Pose } from "./Robot.js";
 
 const E = (en: string, es: string): Text => ({ en, es });
 const L = {
@@ -48,12 +50,20 @@ const L = {
   needKey: E("Connect your Meta key in Settings first.", "Primero conecta tu llave de Meta en Ajustes."),
   modeMine: E("I choose", "Yo elijo"),
   modeAuto: E("Let it decide", "Que él decida"),
-  autoLead: E(
-    "Muse Wonder looks at where it fails most, which Meta models your key has and what each would cost, and picks the exam, the model and the effort by itself. It can also propose new abilities (seeing images, listening…). It never goes over the cap.",
-    "Muse Wonder mira dónde falla más, qué modelos de Meta tiene tu llave y cuánto costaría cada uno, y elige solo el examen, el modelo y el esfuerzo. También puede proponer habilidades nuevas (ver imágenes, escuchar…). Nunca pasa del tope.",
-  ),
+  autoLead: E("It picks the exam, the model and the effort by itself, without going over the cap.", "Él elige el examen, el modelo y el esfuerzo, sin pasarse del tope."),
+  mineLead: E("You pick the exam; the models and the effort are under “More options”.", "Tú eliges el examen; los modelos y el esfuerzo están en «Más opciones»."),
   cap: E("Spending cap for this cycle (USD)", "Tope de gasto de este ciclo (USD)"),
-  capHelp: E("If a step could go over it, the cycle stops cleanly. Your monthly budget still applies.", "Si un paso pudiera pasarlo, el ciclo se detiene limpio. Tu presupuesto mensual sigue aplicando."),
+  capHelp: E("If a step could go over it, it stops cleanly.", "Si un paso pudiera pasarlo, se detiene limpio."),
+  other: E("other", "otro"),
+  more: E("More options", "Más opciones"),
+  models: E("Meta models on your key", "Modelos de Meta en tu llave"),
+  steps4: [
+    { icon: "✓", color: "#0081fb", t: E("Takes an exam", "Presenta un examen") },
+    { icon: "✎", color: "#f0533c", t: E("Learns from its mistakes", "Aprende de sus errores") },
+    { icon: "⛨", color: "#16a394", t: E("Tests the new skill", "Prueba la habilidad nueva") },
+    { icon: "☺", color: "#22b864", t: E("You decide", "Tú decides") },
+  ],
+  idle: E("I haven't run anything yet. Press “Start a cycle” and you'll see every step here, live.", "Todavía no corro nada. Dale a «Iniciar un ciclo» y aquí verás cada paso, en vivo."),
   planTitle: E("What it decided", "Lo que decidió"),
   proposals: E("It proposes", "Propone"),
   proposalNote: E("Proposals only: nothing new switches on without a person.", "Solo propuestas: nada nuevo se enciende sin una persona."),
@@ -111,6 +121,8 @@ const L = {
 };
 
 const RUNNING = ["dream", "plan", "baseline", "propose", "validate"];
+/** Quick picks for a cycle's cap (USD); any other amount goes in "other". */
+const CAPS = [0.25, 0.5, 1, 2];
 const pct = (s?: { correct: number; total: number }) => (s && s.total ? Math.round((100 * s.correct) / s.total) : 0);
 
 function Icon({ d, size = 18 }: { d: string; size?: number }) {
@@ -327,25 +339,34 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
   const candId = job?.state.candidate?.id;
   const delta = (s: Skill) => (s.verdict ? s.verdict.deltas[s.verdict.target] ?? 0 : 0);
 
+  const mem = data.memory;
+  const lastDone = data.jobs.find((j) => j.phase === "done");
+  const mood: { pose: Pose; say: Text } = !hasKey
+    ? { pose: "sleep", say: E("I need my brain: connect your Meta key in Settings.", "Necesito mi cerebro: conecta tu llave de Meta en Ajustes.") }
+    : job && RUNNING.includes(job.phase) && !job.state.error
+      ? { pose: job.phase === "dream" ? "sleep" : "think", say: nextUp(job)?.text ?? E("Working…", "Trabajando…") }
+      : job?.phase === "awaiting"
+        ? { pose: "alert", say: E("I wrote a skill that passed the harness. Will you look at it? It's below.", "Escribí una habilidad que pasó el arnés. ¿La revisas? Está aquí abajo.") }
+        : mem && mem.undigested >= mem.dreamAfter && auto
+          ? { pose: "sleep", say: E("I'm sleepy: if you let me decide, I'll dream first and then practice.", "Tengo sueño: si me dejas decidir, primero sueño y luego practico.") }
+          : lastDone?.state.outcome === "approved" && Date.now() - Date.parse(lastDone.updatedAt) < 86_400_000
+            ? { pose: "happy", say: E("My new skill is active. Shall we go for another one?", "Mi habilidad nueva ya está activa. ¿Vamos por otra?") }
+            : auto
+              ? { pose: "wave", say: E("Tell me how much I can spend and I'll take care of the rest.", "Dime cuánto puedo gastar y yo me encargo del resto.") }
+              : { pose: "think", say: E("Pick the exam and how much I can spend. I'll show you every step.", "Elige el examen y cuánto puedo gastar. Te enseño cada paso.") };
+
   return (
     <section className="agent">
-      <div className="agent-head">
+      <div className="agent-hero">
+        <Robot pose={mood.pose} say={t(mood.say)} />
         <div>
           <p className="kicker meta-k"><MetaMark size={20} /> {t(L.kicker)}</p>
           <h1 className="h1">{t(L.title)}</h1>
-          <p className="lead">{t(L.lead)}</p>
-        </div>
-        <div className="fams" aria-label={t(L.families)}>
-          <p className="muted small">{t(L.families)}</p>
-          <ul>
-            {strip.map((f) => (
-              <li key={f.key} className={f.id ? "on" : ""}>
-                <b>{f.name}</b>
-                <span>{t(L.roles[f.key] ?? E("", ""))}</span>
-                <em>{f.id ? `${t(L.available)} · ${f.id}` : f.key === "voice" || f.key === "image" ? t(L.tryIt) : t(L.notListed)}</em>
-              </li>
+          <ol className="steps4" aria-label={t(L.lead)}>
+            {L.steps4.map((st, i) => (
+              <li key={i} style={{ ["--c" as string]: st.color }}><span aria-hidden="true">{st.icon}</span>{t(st.t)}</li>
             ))}
-          </ul>
+          </ol>
         </div>
       </div>
 
@@ -359,7 +380,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
               <button type="button" role="tab" aria-selected={auto} onClick={() => setAuto(true)} disabled={busy}>✦ {t(L.modeAuto)}</button>
               <button type="button" role="tab" aria-selected={!auto} onClick={() => setAuto(false)} disabled={busy}>{t(L.modeMine)}</button>
             </div>
-            {auto && <p className="small muted">{t(L.autoLead)}</p>}
+            <p className="small muted">{t(auto ? L.autoLead : L.mineLead)}</p>
             {!auto && <>
             <label className="field">
               <span>{t(L.scenario)}</span>
@@ -373,6 +394,36 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
               </div>
             </label>
             {sc && <p className="small muted">{sc.task}</p>}
+            </>}
+            <p className="stepq"><span>2</span>{t(E("How much can it spend in this cycle?", "¿Cuánto puede gastar en esta corrida?"))}</p>
+            <div className="caps" role="radiogroup" aria-label={t(L.cap)}>
+              {CAPS.map((c) => (
+                <button key={c} type="button" role="radio" aria-checked={Number(cap) === c} onClick={() => setCap(c.toFixed(2))} disabled={busy}>${c.toFixed(2)}</button>
+              ))}
+              <label className={`cap-other${CAPS.includes(Number(cap)) ? "" : " on"}`}>
+                <span>{t(L.other)} $</span>
+                <input type="number" inputMode="decimal" min={0.05} max={20} step={0.05} value={cap} onChange={(e) => setCap(e.target.value)} disabled={busy} aria-label={t(L.cap)} />
+              </label>
+            </div>
+            <p className="fine">{t(L.capHelp)} · ${data.budget.spent.toFixed(2)} / ${data.budget.monthly.toFixed(2)} {t(L.spent)}</p>
+            <button type="button" className="btn big-start" onClick={() => void start()} disabled={busy || !executor || !planner} aria-busy={busy}>
+              {busy ? <span className="spin light" aria-hidden="true" /> : <Icon d={I.play} size={16} />}
+              {busy ? t(L.running) : t(L.start)}
+            </button>
+            {error && <p className="error" role="alert">{error}</p>}
+            <details className="more">
+              <summary>{t(L.more)}</summary>
+              <label className="field">
+                <span className="row between">
+                  {t(L.guidance)}
+                  <button type="button" className={`mic ${recorder.recording ? "rec" : ""}`} onClick={() => void dictate()} disabled={voiceBusy || busy}>
+                    <Icon d={recorder.recording ? I.stop : I.mic} size={16} />
+                    {voiceBusy ? t(L.transcribing) : recorder.recording ? t(L.stop) : t(L.speak)}
+                  </button>
+                </span>
+                <textarea rows={2} maxLength={500} value={guidance} onChange={(e) => setGuidance(e.target.value)} placeholder={t(L.guidancePh)} disabled={busy} />
+              </label>
+              {!auto && <>
             <div className="two">
               <label className="field">
                 <span>{t(L.planner)}</span>
@@ -395,31 +446,20 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
                 </div>
               </label>
             )}
-            </>}
-            <p className="stepq"><span>2</span>{t(E("How much can it spend in this cycle?", "¿Cuánto puede gastar en esta corrida?"))}</p>
-            <label className="field">
-              <span>{t(L.cap)}</span>
-              <input type="number" inputMode="decimal" min={0.05} max={20} step={0.05} value={cap} onChange={(e) => setCap(e.target.value)} disabled={busy} />
-              <small className="fine">{t(L.capHelp)}</small>
-            </label>
-            <p className="stepq"><span>3</span>{t(E("Anything to tell it? (optional)", "¿Algo que decirle? (opcional)"))}</p>
-            <label className="field">
-              <span className="row between">
-                {t(L.guidance)}
-                <button type="button" className={`mic ${recorder.recording ? "rec" : ""}`} onClick={() => void dictate()} disabled={voiceBusy || busy}>
-                  <Icon d={recorder.recording ? I.stop : I.mic} size={16} />
-                  {voiceBusy ? t(L.transcribing) : recorder.recording ? t(L.stop) : t(L.speak)}
-                </button>
-              </span>
-              <textarea rows={2} maxLength={500} value={guidance} onChange={(e) => setGuidance(e.target.value)} placeholder={t(L.guidancePh)} disabled={busy} />
-            </label>
-            <button type="button" className="btn" onClick={() => void start()} disabled={busy || !executor || !planner} aria-busy={busy}>
-              {busy ? <span className="spin light" aria-hidden="true" /> : <Icon d={I.play} size={16} />}
-              {busy ? t(L.running) : t(L.start)}
-            </button>
-            {!busy && <p className="fine">{t(E("What happens next: it takes an exam, studies its mistakes, writes a skill and tests it. You watch it live in the network below, and only you approve the result.", "Qué pasa después: presenta un examen, estudia sus errores, escribe una habilidad y la prueba. Lo ves en vivo en la red de abajo y solo tú apruebas el resultado."))}</p>}
-            <p className="muted small">${data.budget.spent.toFixed(4)} / ${data.budget.monthly.toFixed(2)} {t(L.spent)}</p>
-            {error && <p className="error" role="alert">{error}</p>}
+              </>}
+              <div className="fams">
+                <p className="muted small">{t(L.models)}</p>
+                <ul>
+                  {strip.map((f) => (
+                    <li key={f.key} className={f.id ? "on" : ""}>
+                      <b>{f.name}</b>
+                      <span>{t(L.roles[f.key] ?? E("", ""))}</span>
+                      <em>{f.id ? `${t(L.available)} · ${f.id}` : f.key === "voice" || f.key === "image" ? t(L.tryIt) : t(L.notListed)}</em>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </details>
           </div>
 
           <div className="cycle">
@@ -503,7 +543,10 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
                 {job.phase === "done" && job.state.outcome && <p className={`decided ${job.state.outcome === "approved" ? "approved" : "rejected"}`}>{t(L.outcome[job.state.outcome] ?? E("", ""))}{job.state.detail ? ` (${job.state.detail})` : ""}</p>}
               </>
             ) : (
-              <p className="empty">{t(L.lead)}</p>
+              <div className="cycle-idle">
+                <img src="/img/agent-ok.webp" alt="" width={347} height={563} />
+                <p>{t(L.idle)}</p>
+              </div>
             )}
           </div>
         </div>

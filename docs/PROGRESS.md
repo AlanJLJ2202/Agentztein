@@ -138,3 +138,14 @@ pnpm check
   sin digerir. `/api/talk` conoce la memoria y puede sugerir `dream`.
 - App: panel "Memoria y sueños" en la pestaña Agente; herramientas `dream` y `memory` en la traza y la narración.
 - Tests: `test/api/memory.test.ts` (reglas puras) y el ciclo que sueña de punta a punta en `test/api/agent.test.ts`.
+
+## Pantallas más digeribles, con Agentztein como guía (2026-11-04)
+- `Robot.tsx`: Agentztein en una pose (ok, alerta, dormido, explicando, feliz, saludando, leyendo) con una frase. Las
+  poses son fotos del mismo modelo 3D (`render-stills.mjs agent-*`), sin un segundo canvas WebGL.
+- Inicio: tarjeta "Memoria y sueños" con Agentztein dormido, alertas de sueño, KPI de memoria y sueños en la historia.
+- Agente: el robot dice qué pasa; los pasos del ciclo como fichas; tope con botones rápidos; guía, modelos y esfuerzo
+  en "Más opciones"; el panel vacío ya no repite el texto.
+- Ajustes: una fila horizontal por tema con el robot a la izquierda; los modelos de Meta como fichas con ícono, precio
+  en $ y lo que ven; límite mensual con botones rápidos; voz en dos filas de opciones.
+- Radar y Su código: el robot resume la pantalla; la explicación larga queda en "Cómo funciona".
+- Login: cabe en la pantalla en 10 tamaños de 375×667 a 1920×1080 (antes se cortaba en casi cualquier laptop).
