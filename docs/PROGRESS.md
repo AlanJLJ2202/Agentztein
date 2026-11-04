@@ -146,3 +146,9 @@ pnpm check
 - Etiqueta de tipo de cambio (`ChangeTag`): nueva habilidad, mejora de habilidad, cambio de código, nueva herramienta.
 - `/api/agent`: el paso `memory` de la traza guarda los ids de las lecciones recordadas (también las del director).
 - La pestaña Agente muestra el TL;DR compacto y la aprobación; la guía, Inicio y la charla llevan al proceso.
+
+## Traducción, radar resistente y Hero (2026-11-04, ADR-033)
+- `op: "translate"` en `/api/agent` y `apps/app/src/translate.tsx`: lo que escribió el modelo se lee en el idioma de la app.
+- `fetchResearch`: tiempo por fuente, un reintento, respaldo de la última respuesta buena; triage con un reintento.
+- Logos reales de las cuatro fuentes (`packages/research/src/logos.js`) en el Hero, la landing y la app.
+- Nuevo lema del Hero y glosario con los tipos de cambio.

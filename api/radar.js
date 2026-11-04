@@ -2,8 +2,8 @@
 //   GET   the user's past triage notes
 //   PATCH { id, decision } the person's call on an idea ("approved" or "rejected"): nothing goes to the lab without it
 //   GET   ?live=1  what is new this week in every source, no model involved (public, cached a few minutes)
-//   POST  { provider?, lang?, effort? } read what's new in AI this week (Hacker News, arXiv, Hugging Face Papers and
-//         GitHub) and let the user's own model decide, with a trade-off, which items deserve an experiment in the lab.
+//   POST  { provider?, lang?, effort? } read what's new in AI this week (Hacker News and
+//         GitHub, nothing else) and let the user's own model decide, with a trade-off, which items deserve an experiment in the lab.
 import { costOf, EFFORTS, familyOf, fetchResearch, parseTriage, triagePrompt, TRIAGE_SYSTEM } from "@skillab/research";
 import { budgetOf, MAX_OUTPUT_TOKENS } from "./_lib/harness.js";
 import { requireUser } from "./_lib/auth.js";
@@ -11,6 +11,8 @@ import { open } from "./_lib/crypto.js";
 import { db } from "./_lib/db.js";
 import { HttpError, handle, json, readJson } from "./_lib/http.js";
 import { complete, isProvider } from "./_lib/providers.js";
+/** A GitHub token, if the server has one, so the repository search isn't cut by the anonymous rate limit. */
+const githubToken = () => process.env.GITHUB_TOKEN || process.env.AGENT_GH_TOKEN || undefined;
 
 const COOLDOWN_S = 60;
 
@@ -37,7 +39,7 @@ const note = (r) => ({
 
 export const GET = handle(async (request) => {
   if (new URL(request.url).searchParams.get("live")) {
-    const { items, sources } = await fetchResearch({ signal: AbortSignal.timeout(9_000) });
+    const { items, sources } = await fetchResearch({ signal: AbortSignal.timeout(9_000), githubToken: githubToken() });
     if (!items.length) throw new HttpError(502, "None of the sources answered; try again in a moment");
     return new Response(JSON.stringify({ items, sources }), {
       headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, s-maxage=900, stale-while-revalidate=3600" },
@@ -72,8 +74,8 @@ export const POST = handle(async (request) => {
   const wait = last[0]?.at ? COOLDOWN_S - (Date.now() - new Date(last[0].at).getTime()) / 1000 : 0;
   if (wait > 0) throw new HttpError(429, `Give it ${Math.ceil(wait)} s before the next round`);
 
-  const { items: stories, sources } = await fetchResearch({ signal: AbortSignal.timeout(10_000) });
-  if (!stories.length) throw new HttpError(502, "None of the sources answered (Hacker News, arXiv, Hugging Face, GitHub); try again in a moment");
+  const { items: stories, sources } = await fetchResearch({ signal: AbortSignal.timeout(10_000), githubToken: githubToken() });
+  if (!stories.length) throw new HttpError(502, "Neither Hacker News nor GitHub answered; try again in a moment");
 
   const key = open(row.secret, { userId: user.id, provider: row.provider });
   // effort only for models that take it (Muse Spark); Muse Wonder always reasons at full depth
@@ -87,18 +89,30 @@ export const POST = handle(async (request) => {
   if (budget.spent + worst > budget.monthly) {
     throw new HttpError(409, "This run could go over your monthly budget. Raise it or wait until next month.", { reason: "budget", ...budget, worst });
   }
-  const { text: reply, usage } = await complete({ provider: row.provider, key, model: row.model, effort, system: TRIAGE_SYSTEM, user: prompt });
-  const spentNow = costOf(row.model, usage.input, usage.output);
-  await pool.query(
-    `INSERT INTO app.harness_runs (user_id, kind, provider, model, effort, input_tokens, output_tokens, cost_usd, outcome)
-     VALUES ($1, 'radar', $2, $3, $4, $5, $6, $7, 'ok')`,
-    [user.id, row.provider, row.model, effort, usage.input, usage.output, spentNow],
-  );
+  // one call, logged; an answer that isn't readable JSON gets one more try (only if it still fits the budget)
+  let spentNow = 0;
+  const ask = async (/** @type {string} */ extra, /** @type {number} */ timeoutMs) => {
+    const { text, usage } = await complete({ provider: row.provider, key, model: row.model, effort, system: TRIAGE_SYSTEM, user: prompt + extra, timeoutMs });
+    const cost = costOf(row.model, usage.input, usage.output);
+    spentNow += cost;
+    await pool.query(
+      `INSERT INTO app.harness_runs (user_id, kind, provider, model, effort, input_tokens, output_tokens, cost_usd, outcome)
+       VALUES ($1, 'radar', $2, $3, $4, $5, $6, $7, 'ok')`,
+      [user.id, row.provider, row.model, effort, usage.input, usage.output, cost],
+    );
+    return text;
+  };
+  const ids = stories.map((s) => s.id);
   let assessments;
   try {
-    assessments = parseTriage(reply, stories.map((s) => s.id));
-  } catch (err) {
-    throw new HttpError(502, err instanceof Error ? err.message : "Unreadable answer");
+    assessments = parseTriage(await ask("", 55_000), ids);
+  } catch (first) {
+    if (budget.spent + spentNow + worst > budget.monthly) throw new HttpError(502, first instanceof Error ? first.message : "Unreadable answer");
+    try {
+      assessments = parseTriage(await ask("\n\nReply ONLY with the JSON object described above: no prose, no code fences.", 45_000), ids);
+    } catch (err) {
+      throw new HttpError(502, err instanceof Error ? err.message : "Unreadable answer");
+    }
   }
   const byId = new Map(stories.map((s) => [s.id, s]));
   const client = await pool.connect();

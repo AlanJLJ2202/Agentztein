@@ -1,6 +1,6 @@
 /* The page's detail layer: the themed lab inside each step sheet, the benchmark sheets (lab + breakdown +
    how to improve + uses) and the live Hacker News feed of the research section. Works with or without WebGL. */
-import { CAPABILITIES, fetchLiveFeed, SOURCE_STYLE } from "@skillab/research";
+import { CAPABILITIES, fetchLiveFeed, logoSvg, SOURCE_STYLE } from "@skillab/research";
 import { BENCHES } from "./benchmarks.js";
 import { benchScene, stepScene } from "./scenes.js";
 import { createBenchLab } from "./benchlab.js";
@@ -182,7 +182,7 @@ function renderLive() {
     const src = SOURCE_STYLE[s.source] ?? SOURCE_STYLE.hackernews;
     const hn = !s.source || s.source === "hackernews";
     return `<li style="--i:${i}"><a class="hn-t" href="${esc(s.url ?? s.hnUrl)}" target="_blank" rel="noreferrer">${esc(s.title)}</a>
-      <p class="hn-m"><span class="src" style="--c:${src.color}">${esc(src.short)}</span>${c ? `<span class="cap" style="--c:${c.color}"><i></i>${esc(c[lang()])}</span>` : ""}${s.points ? `<span>${fmt(s.points)} ${L(W.points)}</span>·` : ""}${hn ? `<a href="${esc(s.hnUrl)}" target="_blank" rel="noreferrer">${fmt(s.comments)} ${L(W.comments)}</a>·` : ""}<span>${esc(ago(s.postedAt))}</span></p></li>`;
+      <p class="hn-m"><span class="src" style="--c:${src.color}">${logoSvg(s.source ?? "hackernews", 12)}${esc(src.short)}</span>${c ? `<span class="cap" style="--c:${c.color}"><i></i>${esc(c[lang()])}</span>` : ""}${s.points ? `<span>${fmt(s.points)} ${L(W.points)}</span>·` : ""}${hn ? `<a href="${esc(s.hnUrl)}" target="_blank" rel="noreferrer">${fmt(s.comments)} ${L(W.comments)}</a>·` : ""}<span>${esc(ago(s.postedAt))}</span></p></li>`;
   }).join("");
   if (stamp && fetchedAt) stamp.textContent = `${L(W.updated)} ${fetchedAt.toLocaleTimeString(lang() === "es" ? "es-MX" : "en-US", { hour: "numeric", minute: "2-digit" })}`;
 }

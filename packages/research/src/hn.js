@@ -84,7 +84,8 @@ export function mergeStories(hitLists, limit) {
  * @returns {Promise<Story[]>}
  */
 export async function fetchAiStories({ days = 7, minPoints = 40, limit = 12, fetchImpl = fetch, signal } = {}) {
-  const lists = await Promise.all(
+  // one search that fails doesn't sink the others; only when none answers does Hacker News count as down
+  const settled = await Promise.allSettled(
     HN_QUERIES.map(async (q) => {
       const res = await fetchImpl(searchUrl(q, { days, minPoints }), signal ? { signal } : {});
       if (!res.ok) throw new Error(`Hacker News search failed (${res.status})`);
@@ -92,5 +93,7 @@ export async function fetchAiStories({ days = 7, minPoints = 40, limit = 12, fet
       return Array.isArray(body?.hits) ? body.hits : [];
     }),
   );
+  const lists = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+  if (!lists.length) throw settled.find((r) => r.status === "rejected")?.reason ?? new Error("Hacker News didn't answer");
   return mergeStories(lists, limit);
 }

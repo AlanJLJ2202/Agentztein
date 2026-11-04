@@ -122,6 +122,7 @@ export const T = {
   liveNote: { en: "Tags are a keyword guess from the title, not the agent's verdict.", es: "Las etiquetas son una suposición por palabras del título, no el veredicto del agente." },
   liveError: { en: "The sources didn't answer. Try again in a moment.", es: "Las fuentes no respondieron. Intenta en un momento." },
   sourceDown: { en: "didn't answer this time", es: "no respondió esta vez" },
+  sourceStale: { en: "didn't answer this time: you see what it had a few hours ago", es: "no respondió esta vez: ves lo que tenía hace unas horas" },
   notesTitle: { en: "What it decided", es: "Lo que decidió" },
   notesEmpty: { en: "No decisions yet. Run the radar to see the first ones.", es: "Aún no hay decisiones. Corre el radar para ver las primeras." },
   all: { en: "All", es: "Todo" },

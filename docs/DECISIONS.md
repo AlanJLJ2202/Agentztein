@@ -563,3 +563,24 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
     misma tarjeta de aprobación, con un enlace al proceso completo.
 - **Alternativas descartadas:** pedir al modelo un resumen del ciclo (cuesta y puede inventar; el estado ya tiene
   todo); dejar el Lab 3D como vista principal (es bonito pero no dice qué decidió ni qué apruebas).
+
+## ADR-033 — Lo que escribe el modelo en tu idioma, un radar que no truena y un Hero que dice qué es
+- **Contexto (4 nov 2026):** Alan vio la app en inglés con el razonamiento del director, la habilidad y su porqué en
+  español (el ciclo corrió en español). También pidió que el radar no falle, que sus cuatro fuentes se distingan por
+  su logo en el Hero y un lema más fuerte que diga que es un *agente* de IA, no "una IA".
+- **Decisión:**
+  - **Traducción bajo demanda** (`POST /api/agent { op: "translate" }`, `api/_lib/translate.js`): lotes de hasta 24
+    textos, con el modelo ligero de la llave de la persona y dentro del arnés (presupuesto y registro, `kind =
+    'translate'`). El prompt conserva identificadores, valores de etiqueta, números y nombres de modelos. En la app,
+    `mt(text)` (`apps/app/src/translate.tsx`) adivina el idioma del texto y solo pide lo que está claramente en el
+    otro; guarda las traducciones en el navegador. La tarjeta de aprobación avisa que el agente usa la habilidad con
+    sus palabras originales y muestra el original.
+  - **Radar resistente, con sus cuatro fuentes** (`fetchResearch`): cada fuente tiene su propio tiempo (6.5 s), así una
+    lenta no tumba a las demás; un error transitorio (429, 5xx, red) se reintenta una vez; si sigue fallando se usa su
+    última respuesta buena de las últimas 6 h (`stale`); las búsquedas de Hacker News ya no caen todas si falla una;
+    GitHub usa `GITHUB_TOKEN` o `AGENT_GH_TOKEN` si el servidor tiene uno. La evaluación con el modelo reintenta una
+    vez si la respuesta no es JSON legible (solo si cabe en el presupuesto); `api/radar.js` sube a 120 s.
+  - **Logos de las fuentes** (`packages/research/src/logos.js`, trazos de Simple Icons): Y Combinator (Hacker News),
+    arXiv, Hugging Face y GitHub, iguales en el Hero, la landing y la app.
+  - **Lema:** «El agente de IA que se mejora solo. Y lo demuestra.» / «The AI agent that improves itself. And proves
+    it.»; el lead abre con «No es un modelo ni un chatbot». El glosario suma *Cambio de código* y *Nueva herramienta*.

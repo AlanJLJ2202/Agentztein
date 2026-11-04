@@ -6,7 +6,7 @@
   "framework": null,
   "functions": {
     "api/radar.js": {
-      "maxDuration": 60
+      "maxDuration": 120
     },
     "api/keys.js": {
       "maxDuration": 30

@@ -980,3 +980,6 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 .mt-status { display: flex; align-items: center; gap: 8px; }
 .mt-status .spin { width: 14px; height: 14px; border-width: 2px; }
 .orig summary { cursor: pointer; margin-bottom: 6px; }
+.srcmark { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
+.srctag svg { flex: 0 0 auto; }
+.srctag { gap: 4px; }

@@ -53,7 +53,7 @@ packages/db          esquema Drizzle + migraciones (tablas append-only, esquema 
 apps/panel           panel estático de solo lectura (Vite + React): validación del entorno, sin agentes aún
 apps/app             app con sesión (Vite + React) en /app/: acceso con Google o correo + código; Inicio en vista sencilla o completa con Agentztein en 3D; Agentztein como compañero en todas las pestañas (explica, narra y se le habla en voz alta, /api/talk); Cerebro (grafo de lo que sabe y las herramientas que usa); Lab 3D (el edificio de la landing, siguiendo al agente cuarto por cuarto); ciclos que él decide con tope de gasto (ADR-027); llave de Meta por usuario y radar
 api/_lib/memory.js   la memoria del agente: lecciones que consolida al soñar sobre sus ciclos y que cada paso recibe con presupuesto (ADR-031)
-api/                 funciones de Vercel: /api/config, /api/keys (llaves cifradas), /api/radar (Hacker News, arXiv, Hugging Face Papers y GitHub + triage con el modelo del usuario)
+api/                 funciones de Vercel: /api/config, /api/keys (llaves cifradas), /api/radar (Hacker News, arXiv, Hugging Face Papers y GitHub, con tiempo por fuente, reintento y respaldo + triage con el modelo del usuario)
 packages/research    lógica compartida del radar: fuentes (Hacker News, arXiv, Hugging Face, GitHub), capacidades y triage (prompt + validación)
 apps/landing         landing de presentación: Agentztein en 3D (three.js); un edificio recorrible (cuna + un cuarto por benchmark, 1.ª/3.ª persona) y un laboratorio 3D por benchmark; `pnpm --filter @skillab/landing stills` regenera sus imágenes
 datasets/manifest.json  hashes de todos los splits (los datos se regeneran desde semillas)

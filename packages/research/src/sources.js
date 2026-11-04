@@ -158,34 +158,68 @@ export function parseGithub(body) {
     .filter((/** @type {unknown} */ s) => s !== null));
 }
 
+/** Last good answer of each source, so a source that is down for a while still shows what it had (per server instance). */
+/** @type {Map<string, { at: number, items: import("./hn.js").Story[] }>} */
+const lastGood = new Map();
+/** How long a source's last good answer can stand in for it. */
+export const STALE_MS = 6 * 3600_000;
+/** Time each source gets before the others go on without it. */
+export const SOURCE_TIMEOUT_MS = 6500;
+
+/** A fetch that gives up on its own after `ms`, or when the caller's signal aborts, whichever comes first. */
+function within(/** @type {AbortSignal | undefined} */ outer, /** @type {number} */ ms) {
+  const own = AbortSignal.timeout(ms);
+  return outer && typeof AbortSignal.any === "function" ? AbortSignal.any([outer, own]) : own;
+}
+const transient = (/** @type {number} */ status) => status === 429 || status >= 500;
+
 /**
- * Everything new from every source, a few per source so none drowns the others.
- * @param {{ perSource?: Partial<Record<Source, number>>, fetchImpl?: typeof fetch, signal?: AbortSignal, now?: number }} [opts]
- * @returns {Promise<{ items: import("./hn.js").Story[], sources: { id: Source, ok: boolean, count: number }[] }>}
+ * Everything new from every source, a few per source so none drowns the others. It never fails as a whole: each
+ * source has its own time limit (a slow arXiv doesn't take Hacker News down with it), a transient error (429, 5xx,
+ * network) is retried once, and a source that still fails falls back to its last good answer from the past few hours
+ * (marked `stale`). `githubToken` lifts GitHub's limit for anonymous searches, which a shared server address can hit.
+ * @param {{ perSource?: Partial<Record<Source, number>>, fetchImpl?: typeof fetch, signal?: AbortSignal, now?: number, githubToken?: string, timeoutMs?: number, retryDelayMs?: number }} [opts]
+ * @returns {Promise<{ items: import("./hn.js").Story[], sources: { id: Source, ok: boolean, count: number, stale?: boolean }[] }>}
  */
-export async function fetchResearch({ perSource = {}, fetchImpl = fetch, signal, now = Date.now() } = {}) {
+export async function fetchResearch({ perSource = {}, fetchImpl = fetch, signal, now = Date.now(), githubToken, timeoutMs = SOURCE_TIMEOUT_MS, retryDelayMs = 400 } = {}) {
   const want = { hackernews: 8, arxiv: 4, huggingface: 4, github: 3, ...perSource };
-  const init = signal ? { signal } : {};
-  const get = async (/** @type {string} */ url, /** @type {"json" | "text"} */ as) => {
-    const res = await fetchImpl(url, { ...init, headers: { accept: as === "json" ? "application/json" : "application/atom+xml" } });
-    if (!res.ok) throw new Error(`${url} answered ${res.status}`);
-    return as === "json" ? res.json() : res.text();
+  /** @param {string} url @param {"json" | "text"} as @param {Record<string, string>} [extra] @param {AbortSignal} [sig] */
+  const get = async (url, as, extra = {}, sig) => {
+    const headers = { accept: as === "json" ? "application/json" : "application/atom+xml", ...extra };
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const res = await fetchImpl(url, { headers, ...(sig ? { signal: sig } : {}) });
+        if (res.ok) return as === "json" ? res.json() : res.text();
+        if (attempt === 0 && transient(res.status) && !sig?.aborted) { await new Promise((r) => setTimeout(r, retryDelayMs)); continue; }
+        throw new Error(`${url} answered ${res.status}`);
+      } catch (err) {
+        if (attempt === 0 && !sig?.aborted && !(err instanceof Error && /answered \d+/.test(err.message))) { await new Promise((r) => setTimeout(r, retryDelayMs)); continue; }
+        throw err;
+      }
+    }
   };
-  /** @type {Record<Source, () => Promise<import("./hn.js").Story[]>>} */
+  const gh = { accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28", ...(githubToken ? { authorization: `Bearer ${githubToken}` } : {}) };
+  /** @type {Record<Source, (sig: AbortSignal) => Promise<import("./hn.js").Story[]>>} */
   const run = {
-    hackernews: async () => (await fetchAiStories({ limit: want.hackernews, fetchImpl, signal })).map((s) => ({ ...s, source: "hackernews", discussionUrl: s.hnUrl })),
-    arxiv: async () => parseArxiv(String(await get(ARXIV_URL, "text"))),
-    huggingface: async () => parseHfPapers(await get(HF_URL, "json")),
-    github: async () => parseGithub(await get(githubUrl(14, now), "json")),
+    hackernews: async (sig) => (await fetchAiStories({ limit: want.hackernews, fetchImpl, signal: sig })).map((s) => ({ ...s, source: "hackernews", discussionUrl: s.hnUrl })),
+    arxiv: async (sig) => parseArxiv(String(await get(ARXIV_URL, "text", {}, sig))),
+    huggingface: async (sig) => parseHfPapers(await get(HF_URL, "json", {}, sig)),
+    github: async (sig) => parseGithub(await get(githubUrl(14, now), "json", gh, sig)),
   };
-  const settled = await Promise.allSettled(SOURCE_IDS.map((id) => run[id]()));
+  const settled = await Promise.allSettled(SOURCE_IDS.map((id) => run[id](within(signal, timeoutMs))));
   const items = [];
   const sources = [];
   for (const [i, r] of settled.entries()) {
     const id = /** @type {Source} */ (SOURCE_IDS[i]);
-    const got = r.status === "fulfilled" ? r.value.slice(0, want[id] ?? 4) : [];
+    if (r.status === "fulfilled" && r.value.length) lastGood.set(id, { at: now, items: r.value });
+    const old = lastGood.get(id);
+    const stale = r.status === "rejected" && old && now - old.at < STALE_MS ? old.items : null;
+    const got = (r.status === "fulfilled" ? r.value : stale ?? []).slice(0, want[id] ?? 4);
     items.push(...got);
-    sources.push({ id, ok: r.status === "fulfilled", count: got.length });
+    sources.push({ id, ok: r.status === "fulfilled", count: got.length, ...(stale ? { stale: true } : {}) });
   }
   return { items, sources };
 }
+
+/** Forgets the last good answers (for tests). */
+export const resetResearchCache = () => lastGood.clear();

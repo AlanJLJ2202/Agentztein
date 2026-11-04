@@ -30,6 +30,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
   const [stories, setStories] = useState<Story[] | null>(null);
   const [liveError, setLiveError] = useState(false);
   const [down, setDown] = useState<string[]>([]);
+  const [stale, setStale] = useState<string[]>([]);
   const [notes, setNotes] = useState<Note[] | null>(null);
   const [filter, setFilter] = useState<Verdict | "all">("all");
   const [provider, setProvider] = useState<string | null>(null);
@@ -49,7 +50,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
   useEffect(() => {
     const ctl = new AbortController();
     fetchLiveFeed({ limit: 14, signal: ctl.signal })
-      .then((r) => { setStories(r.items); setDown(r.sources.filter((s) => !s.ok).map((s) => s.id)); })
+      .then((r) => { setStories(r.items); setDown(r.sources.filter((s) => !s.ok && !(s as { stale?: boolean }).stale).map((s) => s.id)); setStale(r.sources.filter((s) => (s as { stale?: boolean }).stale).map((s) => s.id)); })
       .catch(() => !ctl.signal.aborted && setLiveError(true));
     client.notes().then((r) => { setNotes(r.notes); onNotes(r.notes.length); }).catch(() => setNotes([]));
     return () => ctl.abort();
@@ -204,6 +205,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
             </ol>
           )}
           {down.length > 0 && <p className="fine">{down.map((d) => SOURCES[d as keyof typeof SOURCES]?.name ?? d).join(", ")} {t(T.sourceDown)}.</p>}
+          {stale.length > 0 && <p className="fine">{stale.map((d) => SOURCES[d as keyof typeof SOURCES]?.name ?? d).join(", ")} {t(T.sourceStale)}.</p>}
           <p className="fine">{t(T.liveNote)} {t(T.hnNote)}</p>
         </aside>
       </div>

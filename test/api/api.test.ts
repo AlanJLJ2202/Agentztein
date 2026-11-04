@@ -92,6 +92,7 @@ describe.skipIf(!hasDatabase)("endpoints (Postgres)", () => {
   const calls: Array<{ url: string; body?: unknown }> = [];
   let who = USER;
 
+  let garbleNext = false;
   beforeAll(async () => {
     const fresh = await freshDatabase();
     close = fresh.close;
@@ -117,6 +118,10 @@ describe.skipIf(!hasDatabase)("endpoints (Postgres)", () => {
         ] });
       }
       if (url === "https://api.meta.ai/v1/chat/completions") {
+        if (garbleNext) {
+          garbleNext = false;
+          return Response.json({ choices: [{ message: { content: "Sure! Here are my thoughts on each story…" } }], usage: { prompt_tokens: 2000, completion_tokens: 100 } });
+        }
         return Response.json({ choices: [{ message: { content: JSON.stringify({ items: [
           { id: "501", capability: "terminal", verdict: "experiment", gain: "Fewer stuck builds", cost: "A day of runs", why: "Concrete and testable" },
           { id: "502", capability: "none", verdict: "watch", gain: "Maybe a better brain", cost: "Unknown", why: "Self-reported score" },
@@ -231,6 +236,23 @@ describe.skipIf(!hasDatabase)("endpoints (Postgres)", () => {
     expect(await res.json()).toMatchObject({ reason: "budget" });
     expect(calls.filter((x) => x.url.endsWith("/chat/completions")).length).toBe(before); // Meta was never called
     await limits.PUT(req("/api/limits", "PUT", { monthly: 5 }));
+  });
+
+  it("asks once more when the model's answer isn't readable, and logs both calls", async () => {
+    const c = new pg.Client({ connectionString: dbUrl });
+    await c.connect();
+    await c.query("UPDATE app.research_notes SET created_at = now() - interval '2 minutes' WHERE user_id = $1", [USER.id]);
+    const runs = async () => Number((await c.query("SELECT COUNT(*)::int AS n FROM app.harness_runs WHERE user_id = $1 AND kind = 'radar'", [USER.id])).rows[0].n);
+    const before = await runs();
+    const chats = calls.filter((x) => x.url.endsWith("/chat/completions")).length;
+    garbleNext = true;
+    const res = await radar.POST(req("/api/radar", "POST", {}));
+    expect(res.status).toBe(200);
+    expect((await res.json()).notes).toHaveLength(2);
+    expect(calls.filter((x) => x.url.endsWith("/chat/completions")).length).toBe(chats + 2);
+    expect(JSON.stringify(calls.at(-1)?.body)).toContain("Reply ONLY with the JSON object");
+    expect(await runs()).toBe(before + 2);
+    await c.end();
   });
 
   it("records the person's decision on an idea", async () => {

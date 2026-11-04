@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fetchAiStories, fetchResearch, githubUrl, hintCapability, mergeStories, parseArxiv, parseGithub, parseHfPapers, parseTriage, searchUrl, toStory, triagePrompt } from "../src/index.js";
+import { fetchAiStories, fetchResearch, resetResearchCache, githubUrl, hintCapability, mergeStories, parseArxiv, parseGithub, parseHfPapers, parseTriage, searchUrl, toStory, triagePrompt } from "../src/index.js";
 
 const hit = (id: string, title: string, points: number, extra: Record<string, unknown> = {}) => ({
   objectID: id,
@@ -131,7 +131,8 @@ describe("more sources than Hacker News", () => {
       if (url.startsWith("https://huggingface.co/")) return new Response("down", { status: 503 });
       return Response.json({ items: [] });
     }) as unknown as typeof fetch;
-    const r = await fetchResearch({ fetchImpl: f });
+    resetResearchCache();
+    const r = await fetchResearch({ fetchImpl: f, retryDelayMs: 0 });
     expect(r.sources).toEqual([
       { id: "hackernews", ok: true, count: 1 },
       { id: "arxiv", ok: true, count: 1 },
@@ -140,5 +141,48 @@ describe("more sources than Hacker News", () => {
     ]);
     expect(r.items.map((s) => s.source)).toEqual(["hackernews", "arxiv"]);
     expect(triagePrompt(r.items)).toContain('"source": "arxiv"');
+  });
+
+  it("doesn't break when a source is slow, flaky or down: own time limit, one retry, last good answer", async () => {
+    resetResearchCache();
+    const calls: Record<string, number> = {};
+    let hfDown = false;
+    const auth: string[] = [];
+    const f = (async (url: string, init?: RequestInit) => {
+      const host = new URL(url).host;
+      calls[host] = (calls[host] ?? 0) + 1;
+      if (host === "hn.algolia.com") return Response.json({ hits: [{ objectID: "1", title: "New LLM agent", points: 99, created_at_i: 1 }] });
+      // arXiv hangs until it is cut by its own time limit
+      if (host === "export.arxiv.org") return new Promise<Response>((_, reject) => init?.signal?.addEventListener("abort", () => reject(new Error("aborted"))));
+      // Hugging Face answers the first time, then is down
+      if (host === "huggingface.co") return hfDown ? new Response("down", { status: 503 }) : Response.json([{ paper: { id: "2611.7", title: "An agent benchmark", upvotes: 9 } }]);
+      // GitHub: rate limited once (retried), then fine
+      auth.push(String((init?.headers as Record<string, string>)?.authorization ?? ""));
+      return calls[host] === 1 ? new Response("slow down", { status: 429 }) : Response.json({ items: [{ full_name: "a/b", html_url: "https://github.com/a/b", stargazers_count: 60 }] });
+    }) as unknown as typeof fetch;
+    const t0 = Date.now();
+    const first = await fetchResearch({ fetchImpl: f, timeoutMs: 80, retryDelayMs: 0, githubToken: "tok", now: 1_000 });
+    expect(Date.now() - t0).toBeLessThan(2000);
+    expect(first.sources).toEqual([
+      { id: "hackernews", ok: true, count: 1 },
+      { id: "arxiv", ok: false, count: 0 },
+      { id: "huggingface", ok: true, count: 1 },
+      { id: "github", ok: true, count: 1 },
+    ]);
+    expect(auth).toEqual(["Bearer tok", "Bearer tok"]);
+    hfDown = true;
+    const later = await fetchResearch({ fetchImpl: f, timeoutMs: 80, retryDelayMs: 0, now: 1_000 + 3600_000 });
+    expect(later.sources.find((s) => s.id === "huggingface")).toEqual({ id: "huggingface", ok: false, count: 1, stale: true });
+    expect(later.items.some((s) => s.id === "hf:2611.7")).toBe(true);
+    const muchLater = await fetchResearch({ fetchImpl: f, timeoutMs: 80, retryDelayMs: 0, now: 1_000 + 7 * 3600_000 });
+    expect(muchLater.sources.find((s) => s.id === "huggingface")).toEqual({ id: "huggingface", ok: false, count: 0 });
+  });
+
+  it("keeps Hacker News up when only some of its searches fail", async () => {
+    let n = 0;
+    const f = (async () => (n++ === 0 ? new Response("down", { status: 502 }) : Response.json({ hits: [{ objectID: "9", title: "Agents", points: 80, created_at_i: 1 }] }))) as unknown as typeof fetch;
+    expect((await fetchAiStories({ fetchImpl: f })).map((s) => s.id)).toEqual(["9"]);
+    const down = (async () => new Response("down", { status: 502 })) as unknown as typeof fetch;
+    await expect(fetchAiStories({ fetchImpl: down })).rejects.toThrow();
   });
 });
