@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fetchAiStories, hintCapability, mergeStories, parseTriage, searchUrl, toStory, triagePrompt } from "../src/index.js";
+import { fetchAiStories, fetchResearch, githubUrl, hintCapability, mergeStories, parseArxiv, parseGithub, parseHfPapers, parseTriage, searchUrl, toStory, triagePrompt } from "../src/index.js";
 
 const hit = (id: string, title: string, points: number, extra: Record<string, unknown> = {}) => ({
   objectID: id,
@@ -99,5 +99,46 @@ describe("Meta models", () => {
     const wonder = META_MODELS.find((m) => m.family === "wonder");
     if (!wonder) throw new Error("no wonder");
     expect(pickId(wonder, ["muse-spark-1.3"])).toBeNull();
+  });
+});
+
+describe("more sources than Hacker News", () => {
+  const ATOM = `<feed><entry><id>http://arxiv.org/abs/2611.01234v2</id><published>2026-11-02T10:00:00Z</published>
+    <title>Self-Improving Agents on SWE-bench &amp; Terminal Tasks</title><summary>We study agents that write their own tools.</summary>
+    <author><name>Ada L.</name></author></entry>
+    <entry><id>http://arxiv.org/abs/2611.09999v1</id><published>2026-11-02T09:00:00Z</published>
+    <title>Protein folding with diffusion</title><summary>Biology only.</summary></entry></feed>`;
+
+  it("reads arXiv's Atom feed and keeps only what an agent can use", () => {
+    const papers = parseArxiv(ATOM);
+    expect(papers).toHaveLength(1);
+    expect(papers[0]).toMatchObject({ id: "arxiv:2611.01234", source: "arxiv", title: "Self-Improving Agents on SWE-bench & Terminal Tasks", url: "https://arxiv.org/abs/2611.01234", hint: "code", author: "Ada L." });
+  });
+
+  it("reads Hugging Face papers (most upvoted first) and GitHub repositories", () => {
+    const hf = parseHfPapers([{ paper: { id: "2611.1", title: "A", upvotes: 3, summary: "x" } }, { paper: { id: "2611.2", title: "B benchmark", upvotes: 40 } }, { nope: true }]);
+    expect(hf.map((p) => p.id)).toEqual(["hf:2611.2", "hf:2611.1"]);
+    expect(hf[0]).toMatchObject({ source: "huggingface", points: 40, url: "https://huggingface.co/papers/2611.2" });
+    const gh = parseGithub({ items: [{ full_name: "meta/agent-kit", description: "An AI agent toolkit", html_url: "https://github.com/meta/agent-kit", stargazers_count: 812, owner: { login: "meta" }, topics: ["llm"] }] });
+    expect(gh[0]).toMatchObject({ id: "gh:meta/agent-kit", source: "github", points: 812, title: "meta/agent-kit: An AI agent toolkit" });
+    expect(githubUrl(14, Date.parse("2026-11-04T00:00:00Z"))).toContain(encodeURIComponent("created:>2026-10-21"));
+  });
+
+  it("keeps whatever answered and says which source failed", async () => {
+    const f = (async (url: string) => {
+      if (url.startsWith("https://hn.algolia.com/")) return Response.json({ hits: [{ objectID: "1", title: "New LLM agent", points: 99, created_at_i: 1 }] });
+      if (url.startsWith("https://export.arxiv.org/")) return new Response(ATOM);
+      if (url.startsWith("https://huggingface.co/")) return new Response("down", { status: 503 });
+      return Response.json({ items: [] });
+    }) as unknown as typeof fetch;
+    const r = await fetchResearch({ fetchImpl: f });
+    expect(r.sources).toEqual([
+      { id: "hackernews", ok: true, count: 1 },
+      { id: "arxiv", ok: true, count: 1 },
+      { id: "huggingface", ok: false, count: 0 },
+      { id: "github", ok: true, count: 0 },
+    ]);
+    expect(r.items.map((s) => s.source)).toEqual(["hackernews", "arxiv"]);
+    expect(triagePrompt(r.items)).toContain('"source": "arxiv"');
   });
 });

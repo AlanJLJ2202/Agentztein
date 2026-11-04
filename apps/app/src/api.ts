@@ -24,6 +24,8 @@ export type SavedKey = { provider: string; hint: string; model: string | null; m
 export type Verdict = "experiment" | "watch" | "skip";
 export type Note = {
   id: string;
+  /** where it came from: hackernews, arxiv, huggingface or github */
+  source: string;
   title: string;
   url: string | null;
   discussionUrl: string | null;
@@ -46,6 +48,12 @@ export type BenchScenario = {
   id: string;
   title: string;
   industry: string;
+  /** the frontier benchmark this exam mirrors (null for the retired business cases) */
+  benchmark: string | null;
+  /** its room in the 3D lab */
+  room: string;
+  /** a retired business case: kept so old skills and cycles read, no new cycles */
+  legacy: boolean;
   task: string;
   labels: { id: string; meaning: string }[];
   contexts: { id: string; name: string }[];

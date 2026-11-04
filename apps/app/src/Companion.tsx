@@ -244,7 +244,7 @@ export function Companion({ tab, go, client, lang }: { tab: Tab; go: (t: Tab) =>
           <header>
             <img src={mood === "alert" ? "/img/agent-alert.webp" : "/img/agent-ok.webp"} alt="" width={30} height={45} />
             <div>
-              <b>Agentztein</b>
+              <img className="wm" src="/img/logo.webp" alt="Agentztein" width={78} height={16} />
               <small>{working && now ? t(now.text) : voice !== "off" ? t(voiceLabel[voice]) : t(E(`With you in ${t(TAB_NAME[tab] ?? E("the app", "la app"))}`, `Contigo en ${t(TAB_NAME[tab] ?? E("the app", "la app"))}`))}</small>
             </div>
             <button type="button" className="x" aria-label={t(E("Close", "Cerrar"))} onClick={() => setOpen(false)}>×</button>

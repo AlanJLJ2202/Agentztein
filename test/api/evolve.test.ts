@@ -201,7 +201,7 @@ describe.skipIf(!hasDatabase)("/api/evolve and /api/evolve-ci (Postgres)", () =>
     expect(code.files["src/index.js"]).toContain("core@2");
 
     // the user's exam now runs their own core, in the sandbox
-    const exam = await agent.POST(req("POST", { op: "exam", scenario: "manufactura" }, "/api/agent"));
+    const exam = await agent.POST(req("POST", { op: "exam", scenario: "codigo" }, "/api/agent"));
     expect(exam.status).toBe(200);
     expect((await exam.json()).core).toBe("v1 · core@2");
 

@@ -16,17 +16,17 @@ const L = {
   title: E("The agent improves itself", "El agente se mejora a sí mismo"),
   lead: E(
     "It takes an exam it can't see the answers to, studies its own mistakes, writes itself a new skill, takes the exam again and shows you the result. The harness throws out anything that doesn't help; what helps waits for your approval.",
-    "Presenta un examen cuyas respuestas no ve, estudia sus propios errores, se escribe una skill nueva, vuelve a presentar el examen y te muestra el resultado. El arnés descarta lo que no ayuda; lo que ayuda espera tu aprobación.",
+    "Presenta un examen cuyas respuestas no ve, estudia sus propios errores, se escribe una habilidad nueva, vuelve a presentar el examen y te muestra el resultado. El arnés descarta lo que no ayuda; lo que ayuda espera tu aprobación.",
   ),
   families: E("Meta families on your key", "Familias de Meta en tu llave"),
   roles: {
-    wonder: E("plans: writes the skills", "planifica: escribe las skills"),
+    wonder: E("plans: writes the skills", "planifica: escribe las habilidades"),
     spark: E("executes: takes the exams", "ejecuta: presenta los exámenes"),
     "spark-contributor": E("cheaper executor", "ejecutor más barato"),
     glimmer: E("light executor", "ejecutor ligero"),
     "spark-open": E("open weights", "pesos abiertos"),
     voice: E("listens: your voice becomes guidance", "escucha: tu voz se vuelve guía"),
-    image: E("draws: an emblem per skill", "dibuja: un emblema por skill"),
+    image: E("draws: an emblem per skill", "dibuja: un emblema por habilidad"),
   } as Record<string, Text>,
   available: E("on your key", "en tu llave"),
   notListed: E("not listed", "no aparece"),
@@ -59,8 +59,8 @@ const L = {
   watch: E("Watch it in 3D", "Verlo en 3D"),
   phases: [
     { id: "plan", t: E("Decides", "Decide"), d: E("only when you let it choose", "solo si lo dejas elegir") },
-    { id: "baseline", t: E("First exam", "Primer examen"), d: E("practice + validation, with today's skills", "práctica + validación, con las skills de hoy") },
-    { id: "propose", t: E("Writes a skill", "Escribe una skill"), d: E("the planner studies the practice mistakes", "el planificador estudia los errores de práctica") },
+    { id: "baseline", t: E("First exam", "Primer examen"), d: E("practice + validation, with today's skills", "práctica + validación, con las habilidades de hoy") },
+    { id: "propose", t: E("Writes a skill", "Escribe una habilidad"), d: E("the planner studies the practice mistakes", "el planificador estudia los errores de práctica") },
     { id: "validate", t: E("Exam again", "Examen de nuevo"), d: E("validation, now with the candidate", "validación, ahora con la candidata") },
     { id: "awaiting", t: E("Your decision", "Tu decisión"), d: E("only if the harness passed it", "solo si el arnés la aprobó") },
   ],
@@ -71,7 +71,7 @@ const L = {
   mistakes: E("Some of its practice mistakes", "Algunos de sus errores de práctica"),
   said: E("said", "dijo"),
   right: E("right", "correcta"),
-  candidate: E("Candidate skill", "Skill candidata"),
+  candidate: E("Candidate skill", "Habilidad candidata"),
   forCtx: E("for", "para"),
   why: E("Why", "Por qué"),
   diffNew: E("new version", "versión nueva"),
@@ -82,29 +82,29 @@ const L = {
   reject: E("Reject", "Rechazar"),
   outcome: {
     "nothing-to-learn": E("Perfect score: nothing to learn here.", "Calificación perfecta: no hay nada que aprender aquí."),
-    "planner-failed": E("The planner's answer wasn't a usable skill. Nothing changed.", "La respuesta del planificador no fue una skill usable. No cambió nada."),
+    "planner-failed": E("The planner's answer wasn't a usable skill. Nothing changed.", "La respuesta del planificador no fue una habilidad usable. No cambió nada."),
     "harness-rejected": E("The harness threw this candidate out. Nothing changed.", "El arnés descartó esta candidata. No cambió nada."),
-    approved: E("Approved: the agent now uses this skill.", "Aprobada: el agente ya usa esta skill."),
+    approved: E("Approved: the agent now uses this skill.", "Aprobada: el agente ya usa esta habilidad."),
     rejected: E("You rejected it. Nothing changed.", "La rechazaste. No cambió nada."),
     "run-budget": E("It reached this cycle's spending cap and stopped. Nothing changed.", "Llegó al tope de gasto de este ciclo y se detuvo. No cambió nada."),
   } as Record<string, Text>,
   cost: E("this cycle", "este ciclo"),
-  skills: E("Its skills (its own code, versioned)", "Sus skills (su propio código, versionado)"),
+  skills: E("Its skills (versioned, never erased)", "Sus habilidades (versionadas, nunca se borran)"),
   skillsLead: E("Each version is frozen once written; the agent can only add new ones. Only active skills are used.", "Cada versión queda congelada al escribirse; el agente solo puede agregar nuevas. Solo usa las activas."),
-  noSkills: E("No skills yet. Run a cycle.", "Aún no tiene skills. Corre un ciclo."),
+  noSkills: E("No skills yet. Run a cycle.", "Aún no tiene habilidades. Corre un ciclo."),
   status: { candidate: E("candidate", "candidata"), active: E("active", "activa"), rejected: E("rejected", "rechazada"), retired: E("retired", "retirada") } as Record<string, Text>,
   retire: E("Retire", "Retirar"),
   emblem: E("Emblem with Muse Image", "Emblema con Muse Image"),
   exam: E("Sealed exam", "Examen sellado"),
-  examLead: E("Held-out records it has never seen, with and without its skills. Two calls.", "Registros reservados que nunca ha visto, con y sin sus skills. Dos llamadas."),
+  examLead: E("Held-out records it has never seen, with and without its skills. Two calls.", "Registros reservados que nunca ha visto, con y sin sus habilidades. Dos llamadas."),
   runExam: E("Take the sealed exam", "Presentar el examen sellado"),
-  bare: E("without skills", "sin skills"),
-  withSkills: E("with its skills", "con sus skills"),
+  bare: E("without skills", "sin habilidades"),
+  withSkills: E("with its skills", "con sus habilidades"),
   overBudget: E("Stopped by the harness: this step could go over your monthly budget.", "Detenido por el arnés: este paso podría pasarse de tu presupuesto mensual."),
   spent: E("spent this month", "gastado este mes"),
   honest: E(
-    "What \"modifies its own code\" means here: it rewrites its own skills (the instructions it works with), versioned and reversible. It doesn't touch the app's source or Meta's model weights.",
-    "Qué significa aquí \"modifica su propio código\": reescribe sus propias skills (las instrucciones con las que trabaja), versionadas y reversibles. No toca el código de la app ni los pesos del modelo de Meta.",
+    "What changes here: it writes itself skills, short scoped instructions, versioned and reversible. In “Its code” it can also rewrite its own core, behind a judge. It never touches the app or the weights of Meta's models.",
+    "Qué cambia aquí: se escribe habilidades, instrucciones cortas con alcance, versionadas y reversibles. En «Su código» también puede reescribir su núcleo, con un juez. Nunca toca la app ni los pesos de los modelos de Meta.",
   ),
 };
 
@@ -191,7 +191,7 @@ function useRecorder() {
 export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void; lang: Lang }) {
   const t = useT();
   const [data, setData] = useState<AgentState | null>(null);
-  const [scenario, setScenario] = useState("manufactura");
+  const [scenario, setScenario] = useState("codigo");
   const [executor, setExecutor] = useState("");
   const [planner, setPlanner] = useState("");
   const [effort, setEffort] = useState("medium");
@@ -360,9 +360,9 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
             <label className="field">
               <span>{t(L.scenario)}</span>
               <div className="scen">
-                {data.bench.map((b) => (
+                {data.bench.filter((b) => !b.legacy).map((b) => (
                   <button key={b.id} type="button" aria-pressed={scenario === b.id} onClick={() => setScenario(b.id)} disabled={busy}>
-                    <b>{b.title}</b>
+                    <b>{b.title}{b.benchmark ? <span className="bm"> · {b.benchmark}</span> : null}</b>
                     <small>{b.contexts.map((c) => c.name).join(" · ")}</small>
                   </button>
                 ))}

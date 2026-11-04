@@ -9,8 +9,8 @@ export type ToolId = "director" | "radar" | "exam" | "grader" | "planner" | "lib
 export type ToolInfo = { name: Text; does: Text; icon: string; color: string; room: string };
 
 export const TOOLS: Record<ToolId, ToolInfo> = {
-  director: { name: E("Director · Muse Wonder", "Director · Muse Wonder"), does: E("decides what to work on and with which model", "decide en qué trabajar y con qué modelo"), icon: "✦", color: "#6d5ce8", room: "cuna" },
-  radar: { name: E("News radar", "Radar de noticias"), does: E("reads what's new in AI for ideas", "lee lo nuevo en IA para sacar ideas"), icon: "Y", color: "#ff6600", room: "research" },
+  director: { name: E("Director · Muse Wonder", "Director · Muse Wonder"), does: E("decides what to work on and with which model", "decide en qué trabajar y con qué modelo"), icon: "✦", color: "#6d5ce8", room: "horizon" },
+  radar: { name: E("Research radar", "Radar de investigación"), does: E("reads Hacker News, arXiv, Hugging Face and GitHub for ideas", "lee Hacker News, arXiv, Hugging Face y GitHub para sacar ideas"), icon: "Y", color: "#ff6600", room: "research" },
   exam: { name: E("Exam · Muse Spark", "Examen · Muse Spark"), does: E("answers the exam questions", "contesta las preguntas del examen"), icon: "✓", color: "#0081fb", room: "exam" },
   grader: { name: E("Grader", "Calificador"), does: E("checks the answers it can't see", "revisa las respuestas que el agente no ve"), icon: "#", color: "#16a394", room: "exam" },
   planner: { name: E("Planner · Muse Wonder", "Planificador · Muse Wonder"), does: E("studies the mistakes and writes a skill", "estudia los errores y escribe una habilidad"), icon: "✎", color: "#9b5de5", room: "taller" },
@@ -23,13 +23,23 @@ export const TOOLS: Record<ToolId, ToolInfo> = {
 };
 export const toolOf = (id: string): ToolInfo => TOOLS[id as ToolId] ?? TOOLS.exam;
 
-/** Where each exam happens in the 3D lab (the building's rooms). */
-export const EXAM_ROOM: Record<string, string> = { manufactura: "terminal", devoluciones: "web", mensajes: "arc", envios: "horizon" };
+/** Where each exam happens in the 3D lab: each one is in the style of a benchmark, and each benchmark has its room. */
+export const EXAM_ROOM: Record<string, string> = { codigo: "swe", terminal: "terminal", razonamiento: "arc", web: "web", investigacion: "research" };
+/** One color per exam (validated for color-blind separation in this order); identity is always labeled too. */
+export const EXAM_STYLE: Record<string, { color: string; icon: string }> = {
+  codigo: { color: "#3b7bf0", icon: "</>" },
+  terminal: { color: "#16a394", icon: ">_" },
+  razonamiento: { color: "#e8682f", icon: "▦" },
+  web: { color: "#9b5de5", icon: "⌕" },
+  investigacion: { color: "#b58100", icon: "⚗" },
+};
+export const examColor = (id: string) => EXAM_STYLE[id]?.color ?? "#8a99a6";
 export const ROOM_NAME: Record<string, Text> = {
   cuna: E("the cradle", "la cuna"),
   research: E("the science lab", "el laboratorio científico"),
   taller: E("the central workshop", "el taller central"),
   terminal: E("the machine room", "la sala de máquinas"),
+  swe: E("the software repair shop", "el taller de reparación de software"),
   web: E("the detective's library", "la biblioteca del detective"),
   arc: E("the game room", "la sala de juegos"),
   horizon: E("the time observatory", "el observatorio del tiempo"),

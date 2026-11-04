@@ -74,15 +74,18 @@ export function buildWorkshop(g, H) {
       return { hits: d.hits, act: () => { sound.sfx("chirps"); d.state.s = 0; d.paint(0); anim(0.01, () => { sound.sfx("pickup"); d.state.s = 1; d.paint(1); }, 1.3); } };
     }, { stand: 1.7 });
   }
-  // 4. Hacker News radar: a dish that sweeps and a front page
+  // 4. Research radar: a dish that sweeps and a board with its four sources
   {
     let dish, rows;
-    station("radar", 5.15, 1.6, -Math.PI / 2, 0xff6600, { en: "Hacker News radar", es: "Radar de Hacker News" }, (grp) => {
+    station("radar", 5.15, 1.6, -Math.PI / 2, 0xff6600, { en: "Research radar", es: "Radar de investigación" }, (grp) => {
       grp.add(place(box(1.5, 0.8, 0.65, 0xffffff), 0, 0.4, 0));
       const board = plane(1.4, 0.9, 512, (c, W, Hh) => {
-        c.fillStyle = "#f6f6ef"; c.fillRect(0, 0, W, Hh); c.fillStyle = "#ff6600"; c.fillRect(0, 0, W, 60); c.fillStyle = "#fff"; c.fillRect(14, 12, 36, 36); c.fillStyle = "#ff6600"; font(c, 800, 30); c.fillText("Y", 23, 42);
-        c.fillStyle = "#fff"; font(c, 800, 28); c.fillText("Hacker News", 64, 42);
-        ["Agents that improve themselves", "Show HN: tiny lab for benchmarks", "Why sealed exams beat boards"].forEach((s, i) => { c.fillStyle = "#828282"; font(c, 600, 20); c.fillText(`${i + 1}.`, 16, 106 + i * 56); c.fillStyle = "#1c2b33"; font(c, 700, 22); c.fillText(s, 46, 104 + i * 56); });
+        c.fillStyle = "#f6f8fb"; c.fillRect(0, 0, W, Hh); c.fillStyle = "#1c2b33"; c.fillRect(0, 0, W, 60);
+        c.fillStyle = "#fff"; font(c, 800, 28); c.fillText("Radar", 18, 42);
+        [["HN", "#ff6600", "Agents that improve themselves"], ["arXiv", "#b31b1b", "Self-play for SWE agents"], ["HF", "#e8a200", "A new eval for tool use"], ["GitHub", "#1c2b33", "open agent harness · 2.1k ★"]].forEach(([tagText, col, s], i) => {
+          const y = 82 + i * 52; c.fillStyle = col; c.fillRect(14, y, 86, 32); c.fillStyle = "#fff"; font(c, 800, 18); c.fillText(tagText, 22, y + 23);
+          c.fillStyle = "#1c2b33"; font(c, 700, 21); c.fillText(s, 112, y + 23);
+        });
       }, { basic: true });
       board.position.set(0, 1.55, -0.05); grp.add(board);
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.5, 10), std(0xc9d2dc)); post.position.set(0, 2.25, -0.1); grp.add(post);

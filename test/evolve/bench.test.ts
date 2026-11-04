@@ -35,14 +35,14 @@ describe("fresh exams", () => {
     const a = freshExam(123, 2);
     const b = freshExam(123, 2);
     const c = freshExam(124, 2);
-    expect(a.map((s) => s.id)).toEqual(["manufactura", "devoluciones", "mensajes", "envios"]);
+    expect(a.map((s) => s.id)).toEqual(["codigo", "terminal", "razonamiento", "web", "investigacion"]);
     expect(a).toEqual(b);
     expect(JSON.stringify(a)).not.toEqual(JSON.stringify(c));
     // never one of the bench's records
     const known = new Set(JSON.stringify(EVALSET).match(/i_[0-9a-f]{12}/g));
     for (const s of a) for (const bt of s.batches) for (const it of bt.items) expect(known.has(it.id)).toBe(false);
     expect(new Set(a[0]?.batches.map((x) => x.context)).size).toBe(2);
-    expect(freshSeed(123, "manufactura", 0) % 1_000_000).toBeGreaterThanOrEqual(500_000);
+    expect(freshSeed(123, "codigo", 0) % 1_000_000).toBeGreaterThanOrEqual(500_000);
     expect(practiceExam()[0]?.batches.length).toBe(4);
   });
 });
@@ -53,12 +53,12 @@ describe("the bench", () => {
     const { call, calls } = oracle(exam, 2);
     const r = await runBench({ coreDir: CORE, exam, call, set: "fresh", seed: 5, model: "fake", mistakes: true });
     expect(r.core.version).toMatch(/^core@/);
-    expect(calls).toHaveLength(4);
+    expect(calls).toHaveLength(5);
     expect(calls[0]?.user).not.toMatch(/truth|i_[0-9a-f]{12}/);
     expect(r.total).toBe(exam.reduce((n, s) => n + s.batches.reduce((m, b) => m + b.items.length, 0), 0));
     expect(r.correct).toBeGreaterThan(r.total * 0.3);
     expect(r.correct).toBeLessThan(r.total * 0.7);
-    expect(r.scenarios.manufactura?.mistakes?.length).toBeGreaterThan(0);
+    expect(r.scenarios.codigo?.mistakes?.length).toBeGreaterThan(0);
   });
 
   it("enforces the core's call limit and survives a crash, a hang or a core that breaks the rules", async () => {
@@ -102,11 +102,11 @@ describe("the workshop", () => {
     expect(b).toContain("Votar entre dos pasadas");
     expect(b).toMatch(/core@\d/);
     const tasks = practiceTasks();
-    expect(tasks).toHaveLength(4);
+    expect(tasks).toHaveLength(5);
     expect(JSON.stringify(tasks[0]?.task)).not.toContain("truth");
     expect(Object.keys(tasks[0]?.truth ?? {}).length).toBeGreaterThan(10);
     // the practice set only: no validation or sealed record reaches the workshop
-    const sealed = (JSON.stringify((EVALSET.scenarios as Record<string, { sets: { sealed: unknown } }>).manufactura?.sets.sealed).match(/"medida":[\d.]+/g) ?? []).slice(0, 3);
+    const sealed = (JSON.stringify((EVALSET.scenarios as Record<string, { sets: { sealed: unknown } }>).codigo?.sets.sealed).match(/"repositorio":"[^"]+"/g) ?? []).slice(0, 3);
     expect(sealed).toHaveLength(3);
     expect(sealed.some((m) => readFileSync(join(out, "practice.json"), "utf8").includes(m))).toBe(false);
   });

@@ -410,3 +410,29 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
   - **Vista sencilla** por defecto en Inicio (su historia en sus palabras, tres números, tres puertas); "Todo el
     detalle" conserva el tablero completo. La pestaña de la llave pasa a llamarse "Ajustes"; el taller 2D se
     reemplazó por el Lab 3D.
+
+## ADR-028 — Exámenes al estilo de los benchmarks, radar con cuatro fuentes y textos alineados
+- **Contexto (4 nov 2026):** Alan pidió que las pruebas se relacionen con los benchmarks de evaluación de modelos
+  (los mismos cuartos del laboratorio 3D), que el radar no dependa solo de Hacker News, que el logo se vea en todos
+  lados y que la landing, el acceso y la app digan lo mismo y estén al día.
+- **Decisión:**
+  - **Cinco exámenes nuevos** en `packages/scenarios` (índices 5–9, el máximo del rango de semillas), uno por
+    benchmark, calificados como él: `codigo` (SWE-bench Pro: FAIL_TO_PASS y PASS_TO_PASS), `terminal`
+    (Terminal-Bench: las pruebas de la tarea, no el código de salida), `razonamiento` (ARC-AGI: cuadrícula exacta y
+    dos intentos en concurso), `web` (BrowseComp: todas las pistas y fuente) e `investigacion` (MLE-bench: medallas
+    de Kaggle según el tamaño de la competencia). Conservan el diseño de la pregunta de investigación: una regla
+    oculta distinta por contexto (trampa) y un cambio R1→R2 que solo afecta a un contexto. Son sintéticos: se dice
+    "al estilo de", nunca que son el benchmark.
+  - `AGENT_SCENARIOS` (app, director, exámenes de `evolve`) pasa a esos cinco. Los cuatro escenarios de negocio
+    siguen en el banco marcados `legacy` para que sus habilidades y ciclos se lean, pero no aceptan ciclos nuevos.
+    Cada examen trae su `benchmark` y su `room`: el Lab 3D lleva al agente al cuarto de su benchmark.
+  - **Radar:** `fetchResearch` lee Hacker News, arXiv (cs.AI/CL/LG, filtrado a agentes, benchmarks y
+    razonamiento), Hugging Face Daily Papers y repositorios de GitHub con tema `llm` que suben; cada fuente puede
+    fallar sola. Las notas guardan su `source`; los ids de las fuentes nuevas llevan prefijo (`arxiv:`, `hf:`,
+    `gh:`) para no chocar con los de Hacker News. `/api/radar?live=1` sirve el feed público con caché de CDN.
+  - **Marca:** el logo más grande en barras, en el hero, en el acceso, en la pantalla de carga y en el compañero;
+    favicon e ícono a partir de la "a" del logotipo.
+  - **Textos:** la landing deja de decir que solo lee Hacker News, actualiza "¿En qué vamos?" (cerebro conectado;
+    ahora practica y se mejora en exámenes al estilo de los benchmarks; después, los benchmarks reales), marca como
+    "Ya en la app" los controles que ya existen y cambia los ejemplos de conciliación bancaria por los nuevos
+    exámenes. En español la app dice "habilidad", nunca "skill".

@@ -1,9 +1,10 @@
 // /api/radar: the research radar.
 //   GET   the user's past triage notes
 //   PATCH { id, decision } the person's call on an idea ("approved" or "rejected"): nothing goes to the lab without it
-//   POST  { provider?, lang?, effort? } read the most discussed AI stories on Hacker News this week and let the
-//         user's own model decide, with a trade-off, which ones deserve an experiment in the lab.
-import { costOf, EFFORTS, familyOf, fetchAiStories, parseTriage, triagePrompt, TRIAGE_SYSTEM } from "@skillab/research";
+//   GET   ?live=1  what is new this week in every source, no model involved (public, cached a few minutes)
+//   POST  { provider?, lang?, effort? } read what's new in AI this week (Hacker News, arXiv, Hugging Face Papers and
+//         GitHub) and let the user's own model decide, with a trade-off, which items deserve an experiment in the lab.
+import { costOf, EFFORTS, familyOf, fetchResearch, parseTriage, triagePrompt, TRIAGE_SYSTEM } from "@skillab/research";
 import { budgetOf, MAX_OUTPUT_TOKENS } from "./_lib/harness.js";
 import { requireUser } from "./_lib/auth.js";
 import { open } from "./_lib/crypto.js";
@@ -35,6 +36,13 @@ const note = (r) => ({
 });
 
 export const GET = handle(async (request) => {
+  if (new URL(request.url).searchParams.get("live")) {
+    const { items, sources } = await fetchResearch({ signal: AbortSignal.timeout(9_000) });
+    if (!items.length) throw new HttpError(502, "None of the sources answered; try again in a moment");
+    return new Response(JSON.stringify({ items, sources }), {
+      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, s-maxage=900, stale-while-revalidate=3600" },
+    });
+  }
   const user = await requireUser(request);
   const { rows } = await db().query(
     "SELECT * FROM app.research_notes WHERE user_id = $1 ORDER BY created_at DESC, points DESC NULLS LAST LIMIT 120",
@@ -63,13 +71,8 @@ export const POST = handle(async (request) => {
   const wait = last[0]?.at ? COOLDOWN_S - (Date.now() - new Date(last[0].at).getTime()) / 1000 : 0;
   if (wait > 0) throw new HttpError(429, `Give it ${Math.ceil(wait)} s before the next round`);
 
-  let stories;
-  try {
-    stories = await fetchAiStories({ days: 7, minPoints: 40, limit: 12, signal: AbortSignal.timeout(10_000) });
-  } catch {
-    throw new HttpError(502, "Hacker News did not answer; try again in a moment");
-  }
-  if (!stories.length) return json({ notes: [], read: 0 });
+  const { items: stories, sources } = await fetchResearch({ signal: AbortSignal.timeout(10_000) });
+  if (!stories.length) throw new HttpError(502, "None of the sources answered (Hacker News, arXiv, Hugging Face, GitHub); try again in a moment");
 
   const key = open(row.secret, { userId: user.id, provider: row.provider });
   // effort only for models that take it (Muse Spark); Muse Wonder always reasons at full depth
@@ -107,12 +110,12 @@ export const POST = handle(async (request) => {
       const { rows } = await client.query(
         `INSERT INTO app.research_notes (user_id, source, external_id, title, url, discussion_url, points, posted_at,
            capability, verdict, gain, cost, why, provider, model)
-         VALUES ($1, 'hackernews', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         VALUES ($1, $15, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
          ON CONFLICT (user_id, source, external_id) DO UPDATE SET title = EXCLUDED.title, points = EXCLUDED.points,
            capability = EXCLUDED.capability, verdict = EXCLUDED.verdict, gain = EXCLUDED.gain, cost = EXCLUDED.cost,
            why = EXCLUDED.why, provider = EXCLUDED.provider, model = EXCLUDED.model, created_at = now()
          RETURNING *`,
-        [user.id, s.id, s.title, s.url, s.hnUrl, s.points, s.postedAt, a.capability, a.verdict, a.gain, a.cost, a.why, row.provider, row.model],
+        [user.id, s.id, s.title, s.url, s.discussionUrl ?? s.hnUrl, s.points, s.postedAt, a.capability, a.verdict, a.gain, a.cost, a.why, row.provider, row.model, s.source ?? "hackernews"],
       );
       saved.push(note(rows[0]));
     }
@@ -123,7 +126,7 @@ export const POST = handle(async (request) => {
   } finally {
     client.release();
   }
-  return json({ notes: saved, read: stories.length, provider: row.provider, model: row.model, effort, cost: spentNow, budget: { ...budget, spent: budget.spent + spentNow } });
+  return json({ notes: saved, read: stories.length, sources, provider: row.provider, model: row.model, effort, cost: spentNow, budget: { ...budget, spent: budget.spent + spentNow } });
 });
 
 export const PATCH = handle(async (request) => {
@@ -134,7 +137,7 @@ export const PATCH = handle(async (request) => {
   if (!id || !decision) throw new HttpError(400, "Send the idea and your decision");
   const { rows } = await db().query(
     `UPDATE app.research_notes SET decision = $3, decided_at = now()
-     WHERE user_id = $1 AND source = 'hackernews' AND external_id = $2 RETURNING *`,
+     WHERE user_id = $1 AND external_id = $2 RETURNING *`,
     [user.id, id, decision],
   );
   if (!rows[0]) throw new HttpError(404, "That idea isn't in your notes");

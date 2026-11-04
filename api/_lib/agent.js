@@ -12,7 +12,7 @@ export const PHASES = /** @type {const} */ (["baseline", "propose", "validate", 
 export const MAX_INSTRUCTIONS = 1500;
 
 /** @typedef {{ context: string, items: { id: string, fields: Record<string, unknown> }[], truth: string[] }} Batch */
-/** @typedef {{ id: string, title: string, industry: string, task: string, labels: { id: string, meaning: string }[], contexts: { id: string, name: string }[], sets: Record<"practice" | "validation" | "sealed", Batch[]> }} Scenario */
+/** @typedef {{ id: string, title: string, industry: string, benchmark?: string | null, room?: string, legacy?: boolean, task: string, labels: { id: string, meaning: string }[], contexts: { id: string, name: string }[], sets: Record<"practice" | "validation" | "sealed", Batch[]> }} Scenario */
 /** @typedef {{ context: string, version: number, instructions: string }} SkillText */
 /** @typedef {Record<string, { correct: number, total: number }>} Scores */
 
@@ -28,6 +28,9 @@ export function benchSummary() {
     id: s.id,
     title: s.title,
     industry: s.industry,
+    benchmark: s.benchmark ?? null,
+    room: s.room ?? "cuna",
+    legacy: Boolean(s.legacy),
     task: s.task,
     labels: s.labels,
     contexts: s.contexts,

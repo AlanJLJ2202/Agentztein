@@ -14,7 +14,7 @@ import type * as TalkApi from "../../api/talk.js";
 
 const SECRET = "x".repeat(40);
 const USER = { id: "8d7c2c1e-4f7e-4b8f-9d0a-0f4c1f6b9a11", email: "alan@example.com" };
-const SC = "manufactura";
+const SC = "codigo";
 
 describe("the bench", () => {
   it("is generated from the scenarios and up to date", () => {
@@ -98,9 +98,9 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
         const prompt = body.messages[1].content as string;
         chats.push({ model: body.model, system });
         const content = system.includes("planificador")
-          ? JSON.stringify({ context: ctxB, instructions: "REGLA-OK: en esta línea la tolerancia es ±0.10 mm.", rationale: "Los rechazos caen fuera de ±0.10", noteId: null })
+          ? JSON.stringify({ context: ctxB, instructions: "REGLA-OK: en este repositorio la cobertura no puede bajar.", rationale: "Los rechazos bajan la cobertura", noteId: null })
           : system.includes("director de Agentztein")
-            ? JSON.stringify({ scenario: "devoluciones", executor: "spark", effort: "high", why: "Ahí hay más que ganar.", steps: [{ tool: "exam", why: "medirme" }], proposals: [{ capability: "vision", model: "spark", idea: "Ver fotos de los paquetes", why: "Las devoluciones traen fotos" }] })
+            ? JSON.stringify({ scenario: "investigacion", executor: "spark", effort: "high", why: "Ahí hay más que ganar.", steps: [{ tool: "exam", why: "medirme" }], proposals: [{ capability: "vision", model: "spark", idea: "Ver fotos de los paquetes", why: "Las devoluciones traen fotos" }] })
             : system.startsWith("Eres Agentztein")
               ? JSON.stringify({ say: system.includes("Habilidades activas: ninguna") ? "Aún no sé nada." : "Ya sé algo.", action: "auto-cycle" })
               : fakeExecutor(prompt);
@@ -142,7 +142,11 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
     expect(saved.status).toBe(201);
 
     const overview = await (await agent.GET(req())).json();
-    expect(overview.bench.map((b: { id: string }) => b.id)).toEqual(["manufactura", "devoluciones", "mensajes", "envios"]);
+    // the benchmark-style exams first; the first business cases stay listed (retired) so old skills still read
+    expect(overview.bench.filter((b: { legacy: boolean }) => !b.legacy).map((b: { id: string }) => b.id)).toEqual(["codigo", "terminal", "razonamiento", "web", "investigacion"]);
+    expect(overview.bench.find((b: { id: string }) => b.id === "terminal")).toMatchObject({ benchmark: "Terminal-Bench", room: "terminal" });
+    expect(overview.bench.filter((b: { legacy: boolean }) => b.legacy).map((b: { id: string }) => b.id)).toEqual(["manufactura", "devoluciones", "mensajes", "envios"]);
+    expect((await post({ op: "start", scenario: "manufactura" })).body).toMatchObject({ reason: "legacy" });
     expect(JSON.stringify(overview.bench)).not.toContain("truth");
     expect(overview.families.find((f: { family: string }) => f.family === "wonder").id).toBe("muse-wonder-1.0");
 
@@ -194,11 +198,11 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
   });
 
   it("rejects a candidate that doesn't help, without asking anyone", async () => {
-    const start = await post({ op: "start", scenario: "envios" });
+    const start = await post({ op: "start", scenario: "terminal" });
     const jobId = start.body.job.id;
     let job = start.body.job;
     while (["baseline", "propose", "validate"].includes(job.phase)) job = (await post({ op: "step", jobId })).body.job;
-    // the fake planner writes for manufactura's context, which doesn't exist in envios
+    // the fake planner writes for codigo's context, which doesn't exist in terminal
     expect(job).toMatchObject({ phase: "done", state: { outcome: "planner-failed" } });
   });
 
@@ -207,7 +211,7 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
     expect(start.body.job).toMatchObject({ phase: "plan", planner: "muse-wonder-1.0", state: { auto: true, maxCost: 1 } });
     const jobId = start.body.job.id;
     const planned = (await post({ op: "step", jobId })).body.job;
-    expect(planned).toMatchObject({ phase: "baseline", scenario: "devoluciones", executor: "muse-spark-1.3", effort: "high" });
+    expect(planned).toMatchObject({ phase: "baseline", scenario: "investigacion", executor: "muse-spark-1.3", effort: "high" });
     expect(planned.state.plan).toMatchObject({ why: "Ahí hay más que ganar.", proposals: [{ capability: "vision" }] });
     let job = planned;
     while (["plan", "baseline", "propose", "validate"].includes(job.phase)) job = (await post({ op: "step", jobId })).body.job;
@@ -218,7 +222,7 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
   });
 
   it("stops a cycle at its own cap, before calling Meta, and leaves nothing waiting", async () => {
-    const start = await post({ op: "start", scenario: "mensajes", maxCost: 0.05 });
+    const start = await post({ op: "start", scenario: "web", maxCost: 0.05 });
     const jobId = start.body.job.id;
     const s1 = await post({ op: "step", jobId });
     expect(s1.body.job.phase).toBe("propose");
@@ -252,7 +256,7 @@ describe.skipIf(!hasDatabase)("agent loop (Postgres)", () => {
       VALUES ($1, 'eval', 'meta', 'x', 0, 0, 0.49, 'ok')`, [USER.id]);
     await c.end();
     const n = chats.length;
-    const start = await post({ op: "start", scenario: "mensajes" });
+    const start = await post({ op: "start", scenario: "razonamiento" });
     const step = await post({ op: "step", jobId: start.body.job.id });
     expect(step.status).toBe(409);
     expect(step.body.reason).toBe("budget");

@@ -8,10 +8,13 @@ export const HN_QUERIES = ["LLM", "AI agent", "benchmark", "AI model", "AI resea
 
 /**
  * @typedef {object} Story
- * @property {string} id Hacker News item id
+ * @property {string} id Item id: the Hacker News id, or prefixed by its source ("arxiv:…", "hf:…", "gh:…")
+ * @property {import("./sources.js").Source} [source] Where it came from (Hacker News when missing)
  * @property {string} title
  * @property {string | null} url Link of the story (null for Ask HN and similar)
- * @property {string} hnUrl Discussion thread on Hacker News
+ * @property {string} hnUrl Discussion thread on Hacker News (for other sources, the item's own page)
+ * @property {string} [discussionUrl] Where people discuss it
+ * @property {string} [summary] Abstract or description, when the source gives one
  * @property {number} points
  * @property {number} comments
  * @property {string} author
@@ -47,6 +50,8 @@ export function toStory(hit) {
     title,
     url: typeof hit.url === "string" && /^https?:\/\//.test(hit.url) ? hit.url : null,
     hnUrl: `https://news.ycombinator.com/item?id=${encodeURIComponent(hit.objectID)}`,
+    source: "hackernews",
+    discussionUrl: `https://news.ycombinator.com/item?id=${encodeURIComponent(hit.objectID)}`,
     points: Number(hit.points) || 0,
     comments: Number(hit.num_comments) || 0,
     author: typeof hit.author === "string" ? hit.author : "",

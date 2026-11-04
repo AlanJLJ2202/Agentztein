@@ -167,8 +167,9 @@ async function post(request) {
   if (op === "start") {
     const auto = body.auto === true;
     // letting it decide: the director picks the scenario in its first step; until then the cycle points at the asked one
-    const sc = scenarioOf(body.scenario) ?? (auto ? scenarioOf(benchSummary()[0]?.id) : null);
+    const sc = scenarioOf(body.scenario) ?? (auto ? scenarioOf(benchSummary().find((b) => !b.legacy)?.id) : null);
     if (!sc) throw new HttpError(400, "Choose one of the bench scenarios");
+    if (sc.legacy) throw new HttpError(400, "That exam was retired: choose one of the benchmark-style exams", { reason: "legacy" });
     const asked = Number(body.maxCost);
     const maxCost = Number.isFinite(asked) && asked > 0 ? Math.min(RUN_CAP.max, Math.max(RUN_CAP.min, Math.round(asked * 100) / 100)) : RUN_CAP.default;
     const lang = body.lang === "es" ? "es" : "en";
@@ -299,6 +300,7 @@ async function post(request) {
   if (op === "exam") {
     const sc = scenarioOf(body.scenario);
     if (!sc) throw new HttpError(400, "Choose one of the bench scenarios");
+    if (sc.legacy) throw new HttpError(400, "That exam was retired: choose one of the benchmark-style exams", { reason: "legacy" });
     const k = await keyOf(pool, user.id);
     const model = typeof body.executor === "string" && MODEL_ID.test(body.executor) ? body.executor : k.model;
     if (!model) throw new HttpError(409, "Choose which model to use first", { reason: "no-model" });
@@ -433,7 +435,7 @@ function trace(/** @type {Record<string, any>} */ state, /** @type {Record<strin
  * @param {Record<string, any>} state @param {number | undefined} cap
  */
 async function direct(pool, userId, k, job, state, cap) {
-  const bench = benchSummary();
+  const bench = benchSummary().filter((b) => !b.legacy);
   const [{ rows: jobs }, { rows: skills }, { rows: ideas }] = await Promise.all([
     pool.query("SELECT scenario, executor, state FROM app.agent_jobs WHERE user_id = $1 AND id <> $2 ORDER BY created_at DESC LIMIT 20", [userId, job.id]),
     pool.query("SELECT scenario, COUNT(*)::int AS n FROM app.agent_skills WHERE user_id = $1 AND status = 'active' GROUP BY scenario", [userId]),

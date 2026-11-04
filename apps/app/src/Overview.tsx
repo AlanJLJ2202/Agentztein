@@ -7,6 +7,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import type { AgentState, Api, BenchScenario, HealthCheck, Job, Note, SavedKey, Scores, Skill } from "./api.js";
 import { savedCap } from "./Companion.js";
 import { useLive } from "./live.js";
+import { EXAM_STYLE, examColor } from "./story.js";
 import { SetupAlerts } from "./SetupAlerts.js";
 import type { Tab } from "./App.js";
 import { AgentStage, type StageChip, type StageMood, type StageScreen } from "./AgentStage.js";
@@ -26,14 +27,9 @@ type Props = {
 };
 
 /* ---------- small helpers ---------- */
-// one color per bench scenario (validated for color-blind separation); identity is always labeled too
-const SC: Record<string, { color: string; icon: string }> = {
-  manufactura: { color: "#3b7bf0", icon: "⚙" },
-  devoluciones: { color: "#e8682f", icon: "↺" },
-  mensajes: { color: "#16a394", icon: "✉" },
-  envios: { color: "#9b5de5", icon: "⇄" },
-};
-const scColor = (id: string) => SC[id]?.color ?? "#8a99a6";
+// one color per exam (validated for color-blind separation); identity is always labeled too
+const SC = EXAM_STYLE;
+const scColor = examColor;
 const sum = (s?: Scores) =>
   s ? Object.values(s).reduce((a, b) => ({ c: a.c + b.correct, t: a.t + b.total }), { c: 0, t: 0 }) : null;
 const pct = (s?: Scores) => {
@@ -63,7 +59,10 @@ const money = (n: number, lang: Lang) =>
 
 type Lab = {
   hasKey: boolean;
+  /** the exams it practices on now (one per benchmark) */
   bench: BenchScenario[];
+  /** every exam, including the retired business cases, to name old skills and cycles */
+  all: BenchScenario[];
   skills: Skill[];
   active: Skill[];
   candidates: Skill[];
@@ -73,8 +72,8 @@ type Lab = {
   agent: AgentState | null;
 };
 
-const scTitle = (lab: Lab, id: string) => lab.bench.find((b) => b.id === id)?.title ?? id;
-const ctxName = (lab: Lab, sc: string, ctx: string) => lab.bench.find((b) => b.id === sc)?.contexts.find((c) => c.id === ctx)?.name ?? ctx;
+const scTitle = (lab: Lab, id: string) => lab.all.find((b) => b.id === id)?.title ?? id;
+const ctxName = (lab: Lab, sc: string, ctx: string) => lab.all.find((b) => b.id === sc)?.contexts.find((c) => c.id === ctx)?.name ?? ctx;
 
 /* ---------- what the creature says and does ---------- */
 type Status = { mood: StageMood; screen: StageScreen; say: Text; cta: Text; to: Tab };
@@ -203,7 +202,8 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
     const jobs = agent?.jobs ?? [];
     return {
       hasKey: Boolean(keys?.length) || Boolean(agent?.key),
-      bench: agent?.bench ?? [],
+      bench: (agent?.bench ?? []).filter((b) => !b.legacy),
+      all: agent?.bench ?? [],
       skills,
       active: skills.filter((s) => s.status === "active"),
       candidates: skills.filter((s) => s.status === "candidate"),
@@ -252,6 +252,7 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
             <button type="button" role="tab" aria-selected={view === "simple"} onClick={() => pickView("simple")}>{t(E("Simple", "Sencilla"))}</button>
             <button type="button" role="tab" aria-selected={view === "full"} onClick={() => pickView("full")}>{t(E("All the detail", "Todo el detalle"))}</button>
           </div>
+          <img className="hero-logo" src="/img/logo.webp" alt="Agentztein" width={145} height={30} />
           <h1 className="h1">{t(T.hello)}{name ? `, ${name}` : ""}.</h1>
           <p className="lead">
             {t(E(
@@ -344,7 +345,7 @@ function BigThree({ lab, lang }: { lab: Lab; lang: Lang }) {
   return (
     <section className="big3" aria-label={t(E("In three numbers", "En tres números"))}>
       <article>
-        <p className="big">{n}<small>/{contexts.length || 8}</small></p>
+        <p className="big">{n}<small>/{contexts.length || 10}</small></p>
         <p>{t(E("situations it already handles with a skill of its own", "situaciones que ya resuelve con una habilidad propia"))}</p>
         {contexts.length > 0 && <div className="cells">{contexts.map((c) => <i key={c.sc + c.ctx} className={covered(c.sc, c.ctx) ? "on" : ""} style={{ ["--c" as string]: covered(c.sc, c.ctx) ? scColor(c.sc) : undefined }} />)}</div>}
       </article>
@@ -438,7 +439,7 @@ function Kpis({ lab, lang, loading }: { lab: Lab; lang: Lang; loading: boolean }
             {contexts.map((c) => <i key={c.sc + c.ctx} style={{ ["--c" as string]: covered(c.sc, c.ctx) ? scColor(c.sc) : undefined }} className={covered(c.sc, c.ctx) ? "on" : ""} />)}
           </div>
         )}
-        <p className="sub">{t(E(`Covers ${ncov} of ${contexts.length || 8} situations`, `Cubre ${ncov} de ${contexts.length || 8} situaciones`))}</p>
+        <p className="sub">{t(E(`Covers ${ncov} of ${contexts.length || 10} situations`, `Cubre ${ncov} de ${contexts.length || 10} situaciones`))}</p>
       </article>
       <article className="kpi">
         <h3>{t(E("Improvement cycles", "Ciclos de mejora"))}</h3>
@@ -476,7 +477,7 @@ const PHASES: [PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo]
   },
   {
     short: E("Research", "Investiga"), name: E("Researches", "Investiga"), color: "#ff6600",
-    what: E("It reads the most discussed AI stories on Hacker News and decides which deserve an experiment, a watch or a skip. Optional, but it gives it ideas.", "Lee las historias de IA más comentadas en Hacker News y decide cuáles merecen un experimento, vigilarse o descartarse. Es opcional, pero le da ideas."),
+    what: E("It reads four sources (Hacker News, arXiv, Hugging Face and GitHub) and decides which items deserve an experiment, a watch or a skip. Optional, but it gives it ideas.", "Lee cuatro fuentes (Hacker News, arXiv, Hugging Face y GitHub) y decide qué merece un experimento, vigilarse o descartarse. Es opcional, pero le da ideas."),
   },
   {
     short: E("Mistakes", "Errores"), name: E("Learns from its mistakes", "Aprende de sus errores"), color: "#f0533c",

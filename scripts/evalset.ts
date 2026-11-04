@@ -7,8 +7,22 @@ import { fileURLToPath } from "node:url";
 import { SCENARIOS, generateScenarioDataset, scenarioIndex, type ScenarioDefinition } from "@skillab/scenarios";
 import type { Split } from "@skillab/contracts";
 
-/** The scenarios whose answer is one label per item (conciliación also names a target row). */
-export const AGENT_SCENARIOS = ["manufactura", "devoluciones", "mensajes", "envios"] as const;
+/**
+ * The exams the agent practices on and is judged by: one per frontier benchmark it aims at, in that benchmark's
+ * style (they are also the rooms of the 3D lab). Synthetic: they mirror how each benchmark grades, they are not it.
+ */
+export const AGENT_SCENARIOS = ["codigo", "terminal", "razonamiento", "web", "investigacion"] as const;
+/** The first business cases (one label per item; conciliación also names a target row). Kept so skills and
+ * cycles made on them still read; new cycles use the benchmark-style exams. */
+export const LEGACY_SCENARIOS = ["manufactura", "devoluciones", "mensajes", "envios"] as const;
+/** The real benchmark each exam mirrors, and its room in the 3D lab. */
+export const BENCHMARK: Record<(typeof AGENT_SCENARIOS)[number], { name: string; room: string }> = {
+  codigo: { name: "SWE-bench Pro", room: "swe" },
+  terminal: { name: "Terminal-Bench", room: "terminal" },
+  razonamiento: { name: "ARC-AGI", room: "arc" },
+  web: { name: "BrowseComp", room: "web" },
+  investigacion: { name: "MLE-bench", room: "research" },
+};
 const COUNTS: Record<Split, number> = { adaptation: 4, validation: 6, test: 4 };
 
 function setOf(def: ScenarioDefinition, split: Split) {
@@ -25,13 +39,17 @@ function setOf(def: ScenarioDefinition, split: Split) {
 
 export function buildEvalset() {
   const scenarios: Record<string, unknown> = {};
-  for (const id of AGENT_SCENARIOS) {
+  for (const id of [...AGENT_SCENARIOS, ...LEGACY_SCENARIOS]) {
     const def = SCENARIOS.find((s) => s.id === id);
     if (!def) throw new Error(`missing scenario ${id}`);
     const { info } = def;
+    const bench = BENCHMARK[id as (typeof AGENT_SCENARIOS)[number]];
     scenarios[id] = {
       id,
       version: def.version,
+      benchmark: bench?.name ?? null,
+      room: bench?.room ?? "cuna",
+      legacy: !bench,
       industry: info.industry,
       title: info.title,
       task: info.task,
@@ -41,7 +59,7 @@ export function buildEvalset() {
       sets: { practice: setOf(def, "adaptation"), validation: setOf(def, "validation"), sealed: setOf(def, "test") },
     };
   }
-  return { version: "evalset@1", scenarios };
+  return { version: "evalset@2", scenarios };
 }
 
 export function renderEvalset(): string {

@@ -35,7 +35,7 @@ describe("the director's plan", () => {
   });
 
   it("estimates a cycle and only offers the key's families, never the contributor one", () => {
-    const sc = scenarioOf("manufactura");
+    const sc = scenarioOf("codigo");
     const cheap = estimateCycle(sc, "muse-spark-1.3", "muse-wonder-1.0");
     expect(cheap).toBeGreaterThan(0);
     expect(estimateCycle(sc, "muse-wonder-1.0", "muse-wonder-1.0")).toBeGreaterThan(cheap);

@@ -7,39 +7,42 @@ import type { Job, Note, Skill } from "./api.js";
 import type { Tab } from "./App.js";
 import { useT, type Text } from "./i18n.js";
 import { useLive } from "./live.js";
-import { E, isRunning, nextUp, say, TOOLS, type ToolId } from "./story.js";
+import { E, examColor, isRunning, nextUp, say, TOOLS, type ToolId } from "./story.js";
 
 const W = 1000, H = 700, CX = 500, CY = 300;
-const SC_COLOR: Record<string, string> = { manufactura: "#3b7bf0", devoluciones: "#e8682f", mensajes: "#16a394", envios: "#9b5de5" };
-const SC_ANGLE = [-150, -30, 30, 150];
+// five exams around it: two up the sides, two down the sides and one below (ideas go on top, tools at the bottom)
+const SC_ANGLE = [-152, -28, 28, 152, 90];
+/** Short names for the graph (the card beside it shows the full title). */
+const KIND: Record<string, string> = { codigo: "Código", terminal: "Terminal", razonamiento: "Razonamiento", web: "Web", investigacion: "Investigación" };
+const short = (t: string, n = 26) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
 const TOOL_ROW: ToolId[] = ["director", "radar", "planner", "library", "exam", "grader", "harness", "human"];
 const rad = (d: number) => (d * Math.PI) / 180;
 const at = (deg: number, rx: number, ry: number) => ({ x: CX + Math.cos(rad(deg)) * rx, y: CY + Math.sin(rad(deg)) * ry });
 
 type Kind = "me" | "scenario" | "context" | "skill" | "idea" | "tool";
-type Node = { id: string; kind: Kind; x: number; y: number; r: number; color: string; label: string; at: number; info: { title: string; body: Text | string; extra?: string } ; status?: string; uses?: number };
+type Node = { below?: boolean; id: string; kind: Kind; x: number; y: number; r: number; color: string; label: string; at: number; info: { title: string; body: Text | string; extra?: string } ; status?: string; uses?: number };
 type Link = { a: string; b: string; kind: "own" | "version" | "inspired" | "uses"; at: number; w?: number };
 
-function build(bench: { id: string; title: string; task: string; contexts: { id: string; name: string }[] }[], skills: Skill[], notes: Note[], jobs: Job[]) {
+function build(bench: { id: string; title: string; task: string; benchmark: string | null; contexts: { id: string; name: string }[] }[], skills: Skill[], notes: Note[], jobs: Job[]) {
   const nodes: Node[] = [];
   const links: Link[] = [];
   const firstJob = (sc: string) => Math.min(...jobs.filter((j) => j.scenario === sc).map((j) => Date.parse(j.createdAt)), Infinity);
   nodes.push({ id: "me", kind: "me", x: CX, y: CY, r: 38, color: "#0081fb", label: "Agentztein", at: -Infinity, info: { title: "Agentztein", body: E("This is me. Everything around me is what I practice on, what I learned and the tools I use.", "Este soy yo. Todo lo que me rodea es en qué practico, lo que aprendí y las herramientas que uso.") } });
   bench.forEach((b, i) => {
-    const ang = SC_ANGLE[i % 4] ?? 0;
-    const p = at(ang, 190, 150);
-    const color = SC_COLOR[b.id] ?? "#8a99a6";
+    const ang = SC_ANGLE[i % SC_ANGLE.length] ?? 0;
+    const p = at(ang, ang === 90 ? 170 : 200, ang === 90 ? 120 : 150);
+    const color = examColor(b.id);
     const t0 = firstJob(b.id);
-    nodes.push({ id: `sc:${b.id}`, kind: "scenario", ...p, r: 22, color, label: b.title, at: -Infinity, info: { title: b.title, body: b.task } });
+    nodes.push({ id: `sc:${b.id}`, kind: "scenario", ...p, r: 22, color, label: b.benchmark ? `${KIND[b.id] ?? b.title} · ${b.benchmark}` : short(b.title), at: -Infinity, below: ang === 90, info: { title: b.title, body: b.benchmark ? `${b.task} (Estilo ${b.benchmark}.)` : b.task } });
     links.push({ a: "me", b: `sc:${b.id}`, kind: "own", at: Number.isFinite(t0) ? t0 : -Infinity });
     b.contexts.forEach((c, k) => {
-      const ca = ang + (k ? 14 : -14) * (Math.abs(ang) > 90 ? -1 : 1);
-      const q = at(ca, 300, 210);
-      nodes.push({ id: `cx:${b.id}:${c.id}`, kind: "context", ...q, r: 11, color, label: c.name, at: -Infinity, info: { title: c.name, body: E(`A situation inside “${b.title}”. A skill only applies to its own situation.`, `Una situación dentro de «${b.title}». Una habilidad solo aplica a su propia situación.`) } });
+      const ca = ang + (k ? 1 : -1) * (ang === 90 ? 30 : 14) * (Math.abs(ang) > 90 ? -1 : 1);
+      const q = at(ca, ang === 90 ? 250 : 300, ang === 90 ? 170 : 210);
+      nodes.push({ id: `cx:${b.id}:${c.id}`, kind: "context", ...q, r: 11, color, label: short(c.name, 24), at: -Infinity, info: { title: c.name, body: E(`A situation inside “${b.title}”. A skill only applies to its own situation.`, `Una situación dentro de «${b.title}». Una habilidad solo aplica a su propia situación.`) } });
       links.push({ a: `sc:${b.id}`, b: `cx:${b.id}:${c.id}`, kind: "own", at: -Infinity });
       const chain = skills.filter((s) => s.scenario === b.id && s.context === c.id).sort((x, y) => x.version - y.version);
       chain.forEach((s, v) => {
-        const sp = at(ca, 370 + v * 34, 250 + v * 20);
+        const sp = at(ca, (ang === 90 ? 300 : 370) + v * 34, (ang === 90 ? 205 : 250) + v * 20);
         nodes.push({
           id: `sk:${s.id}`, kind: "skill", ...sp, r: s.status === "active" ? 10 : 7, color, label: `v${s.version}`, at: Date.parse(s.createdAt), status: s.status,
           info: { title: `${c.name} · v${s.version}`, body: s.instructions, extra: s.rationale },
@@ -81,7 +84,7 @@ const curve = (a: { x: number; y: number }, b: { x: number; y: number }, bend = 
 export function Mind({ go }: { go: (t: Tab) => void }) {
   const t = useT();
   const live = useLive();
-  const bench = live.agent?.bench ?? [];
+  const bench = useMemo(() => (live.agent?.bench ?? []).filter((b) => !b.legacy), [live.agent]);
   const skills = live.agent?.skills ?? [];
   const jobs = useMemo(() => live.agent?.jobs ?? [], [live.agent]);
   const notes = live.notes ?? [];
@@ -186,7 +189,7 @@ export function Mind({ go }: { go: (t: Tab) => void }) {
                       </>
                     )}
                     {n.kind !== "me" && (
-                      <text className="lbl" y={n.kind === "tool" ? n.r + 16 : n.kind === "scenario" ? -n.r - 8 : n.r + 13} textAnchor="middle">
+                      <text className="lbl" y={n.kind === "tool" || n.below ? n.r + 16 : n.kind === "scenario" ? -n.r - 8 : n.r + 13} textAnchor="middle">
                         {n.kind === "tool" ? toolName(n.label).split(" · ")[0] : n.label}
                       </text>
                     )}

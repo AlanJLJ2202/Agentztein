@@ -6,7 +6,7 @@ import type { Config } from "./api.js";
 import { LangSwitch } from "./App.js";
 import { GoogleButton } from "./GoogleButton.js";
 import { T, useT, type Lang } from "./i18n.js";
-import { Check, HnMark } from "./Logos.js";
+import { Check, SourcesMark } from "./Logos.js";
 
 type Mode = "signin" | "signup" | "verify" | "forgot" | "reset";
 const A = T.auth;
@@ -136,7 +136,7 @@ export function SignIn({ supabase, google: gconf, lang, setLang }: { supabase: S
       </section>
       <section className="signin-box">
         <div className="row between">
-          <a className="word" href="/"><img src="/img/logo.webp" alt="Agentztein" width={126} height={26} /></a>
+          <a className="word big" href="/"><img src="/img/logo.webp" alt="Agentztein" width={203} height={42} /></a>
           <LangSwitch lang={lang} setLang={setLang} />
         </div>
         <div className="signin-copy">
@@ -146,7 +146,7 @@ export function SignIn({ supabase, google: gconf, lang, setLang }: { supabase: S
               <p className="lead">{t(T.signInLead)}</p>
               <ul className="checks">
                 {T.signInBullets[lang].map((b, i) => (
-                  <li key={b}>{i === 1 ? <HnMark size={18} /> : <span className="tick" aria-hidden="true"><Check size={11} /></span>}{b}</li>
+                  <li key={b}>{i === 1 ? <SourcesMark size={18} /> : <span className="tick" aria-hidden="true"><Check size={11} /></span>}{b}</li>
                 ))}
               </ul>
               <GoogleButton

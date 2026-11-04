@@ -58,6 +58,7 @@ function Splash() {
   const t = useT();
   return (
     <div className="splash" role="status">
+      <img className="splash-logo" src="/img/logo.webp" alt="Agentztein" width={213} height={44} />
       <span className="spin" aria-hidden="true" />
       {t(T.loading)}
     </div>
@@ -82,7 +83,7 @@ function Setup({ missing, lang, setLang }: { missing: string[]; lang: Lang; setL
     <main className="center">
       <div className="panel narrow">
         <div className="row between">
-          <a className="word" href="/"><img src="/img/logo.webp" alt="Agentztein" width={126} height={26} /></a>
+          <a className="word" href="/"><img src="/img/logo.webp" alt="Agentztein" width={155} height={32} /></a>
           <LangSwitch lang={lang} setLang={setLang} />
         </div>
         <h1 className="h2">{t(T.setupTitle)}</h1>
@@ -135,7 +136,7 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
     <LiveProvider client={client}>
       <header className="bar">
         <div className="wrap row">
-          <a className="word" href="/" aria-label="Agentztein"><img src="/img/logo.webp" alt="Agentztein" width={126} height={26} /></a>
+          <a className="word" href="/" aria-label="Agentztein"><img src="/img/logo.webp" alt="Agentztein" width={155} height={32} /></a>
           <nav className="tabs" aria-label={lang === "es" ? "Secciones" : "Sections"}>
             {TABS.map((id) => (
               <a key={id} href={`#${id}`} aria-current={tab === id ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(id); }}>

@@ -1,6 +1,6 @@
 /* The page's detail layer: the themed lab inside each step sheet, the benchmark sheets (lab + breakdown +
    how to improve + uses) and the live Hacker News feed of the research section. Works with or without WebGL. */
-import { CAPABILITIES, fetchAiStories } from "@skillab/research";
+import { CAPABILITIES, fetchLiveFeed, SOURCE_STYLE } from "@skillab/research";
 import { BENCHES } from "./benchmarks.js";
 import { benchScene, stepScene } from "./scenes.js";
 import { createBenchLab } from "./benchlab.js";
@@ -43,7 +43,7 @@ const W = {
   illus: { en: "Illustration of how it works, not a result.", es: "Ilustración de cómo funciona, no un resultado." },
   points: { en: "points", es: "puntos" },
   comments: { en: "comments", es: "comentarios" },
-  liveErr: { en: "Hacker News didn't answer right now. Open it directly:", es: "Hacker News no respondió ahora. Ábrelo directo:" },
+  liveErr: { en: "The sources didn't answer right now. Open one directly:", es: "Las fuentes no respondieron ahora. Abre una directo:" },
   liveEmpty: { en: "Quiet week: no AI story above the threshold yet.", es: "Semana tranquila: aún no hay historias de IA sobre el umbral." },
   updated: { en: "Updated", es: "Actualizado" },
 };
@@ -157,7 +157,7 @@ if (dlg) {
   });
 }
 
-/* ---------- Research: live Hacker News ---------- */
+/* ---------- Research: live feed from its four sources (Hacker News, arXiv, Hugging Face, GitHub) ---------- */
 const live = $("#hnLive");
 let stories = null, failed = false, fetchedAt = null;
 
@@ -179,8 +179,10 @@ function renderLive() {
   if (!stories.length) { live.innerHTML = `<li class="hn-msg">${L(W.liveEmpty)}</li>`; return; }
   live.innerHTML = stories.map((s, i) => {
     const c = s.hint ? CAPABILITIES[s.hint] : null;
+    const src = SOURCE_STYLE[s.source] ?? SOURCE_STYLE.hackernews;
+    const hn = !s.source || s.source === "hackernews";
     return `<li style="--i:${i}"><a class="hn-t" href="${esc(s.url ?? s.hnUrl)}" target="_blank" rel="noreferrer">${esc(s.title)}</a>
-      <p class="hn-m">${c ? `<span class="cap" style="--c:${c.color}"><i></i>${esc(c[lang()])}</span>` : ""}<span>${fmt(s.points)} ${L(W.points)}</span>·<a href="${esc(s.hnUrl)}" target="_blank" rel="noreferrer">${fmt(s.comments)} ${L(W.comments)}</a>·<span>${esc(ago(s.postedAt))}</span></p></li>`;
+      <p class="hn-m"><span class="src" style="--c:${src.color}">${esc(src.short)}</span>${c ? `<span class="cap" style="--c:${c.color}"><i></i>${esc(c[lang()])}</span>` : ""}${s.points ? `<span>${fmt(s.points)} ${L(W.points)}</span>·` : ""}${hn ? `<a href="${esc(s.hnUrl)}" target="_blank" rel="noreferrer">${fmt(s.comments)} ${L(W.comments)}</a>·` : ""}<span>${esc(ago(s.postedAt))}</span></p></li>`;
   }).join("");
   if (stamp && fetchedAt) stamp.textContent = `${L(W.updated)} ${fetchedAt.toLocaleTimeString(lang() === "es" ? "es-MX" : "en-US", { hour: "numeric", minute: "2-digit" })}`;
 }
@@ -190,8 +192,8 @@ let requested = false;
 document.addEventListener("step:open", (e) => {
   if (!live || e.detail !== 1 || requested) return;
   requested = true;
-  fetchAiStories({ limit: 5, signal: AbortSignal.timeout(9000) })
-    .then((s) => { stories = s; fetchedAt = new Date(); })
+  fetchLiveFeed({ limit: 6, signal: AbortSignal.timeout(9000) })
+    .then((r) => { stories = r.items; fetchedAt = new Date(); })
     .catch(() => { failed = true; })
     .finally(renderLive);
 });

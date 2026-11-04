@@ -4,9 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Agentztein · The AI that builds itself</title>
-<meta name="description" content="Agentztein is an AI research agent that creates its own skills, tests them on frontier benchmarks and keeps only the ones that make it better. With Meta's Muse Spark as its brain." />
+<meta name="description" content="Agentztein is an AI research agent that writes its own skills and code, tests them on exams in the style of the frontier benchmarks and keeps only what makes it better, with a person's approval. With Meta's Muse models as its brain." />
+<link rel="icon" type="image/png" href="img/favicon.png" />
+<link rel="apple-touch-icon" href="img/mark.png" />
 <meta property="og:title" content="Agentztein: the AI that builds itself" />
-<meta property="og:description" content="An AI research agent that improves itself and is measured on frontier benchmarks. With Meta's Muse Spark." />
+<meta property="og:description" content="An AI research agent that improves itself on exams in the style of the frontier benchmarks. With Meta's Muse models." />
 <meta property="og:image" content="img/lab.webp" />
 <meta name="theme-color" content="#ffffff" />
 <link rel="preload" href="fonts/figtree.woff2" as="font" type="font/woff2" crossorigin />
@@ -103,7 +105,8 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 .bar { position: sticky; top: 0; z-index: 50; background: rgba(255, 255, 255, .92); backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px); }
 .bar .wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
 .word { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.3rem; letter-spacing: -.035em; text-decoration: none; }
-.word img { display: block; height: 28px; width: auto; }
+.word img { display: block; height: 34px; width: auto; }
+.hero-logo { display: block; height: clamp(40px, 3.4vw, 58px); width: auto; margin-top: 22px; }
 .links { display: flex; gap: 26px; margin-left: auto; }
 .links a { text-decoration: none; color: var(--muted); font-weight: 500; transition: color .2s var(--ease); }
 .links a:hover, .links a.on { color: var(--ink); }
@@ -285,7 +288,7 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 @media (max-width: 480px) { .facts { grid-template-columns: minmax(0, 1fr); } }
 
 /* ---------- Progress ---------- */
-.road { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; list-style: none; margin: 0; padding: 0; }
+.road { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; list-style: none; margin: 0; padding: 0; }
 .road li { background: var(--soft); border-radius: 22px; padding: 22px 22px 26px; display: grid; gap: 8px; align-content: start; }
 .road .st { justify-self: start; padding: 6px 12px; border-radius: 999px; font-size: .875rem; font-weight: 700; background: #fff; color: var(--muted); }
 .road .done .st { background: var(--ok-bg); color: var(--ok); }
@@ -409,6 +412,7 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .hn-t:hover { text-decoration: underline; }
 .hn-m { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--muted); font-size: .8125rem; }
 .hn-m a { text-decoration: none; } .hn-m a:hover { text-decoration: underline; }
+.hn-m .src { display: inline-flex; padding: 1px 7px; border-radius: 999px; font-size: .7rem; font-weight: 800; color: #fff; background: var(--c); }
 .hn-msg { color: var(--muted); }
 .hn-msg a { color: var(--blue); font-weight: 600; }
 .hnlist .sk { height: 40px; border-radius: 12px; border: 0; background: linear-gradient(90deg, #fff3ea, #fffaf6, #fff3ea); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
@@ -872,7 +876,7 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
 
 <header class="bar">
   <div class="wrap">
-    <a class="word" href="#inicio" aria-label="Agentztein, home" data-es-aria-label="Agentztein, inicio"><img src="img/logo.webp" alt="Agentztein" width="136" height="28"></a>
+    <a class="word" href="#inicio" aria-label="Agentztein, home" data-es-aria-label="Agentztein, inicio"><img src="img/logo.webp" alt="Agentztein" width="165" height="34"></a>
     <nav class="links" id="menu" aria-label="Sections" data-es-aria-label="Secciones">
       <a href="#como-funciona" data-es="Cómo funciona">How it works</a>
       <a href="#laboratorio" data-es="Laboratorio">The lab</a>
@@ -906,8 +910,9 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
   <div class="wrap hero-copy-wrap">
     <div class="hero-copy">
       <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#metalogo"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Global AI Developer Hackathon 2026</span></span>
+      <img class="hero-logo" src="img/logo.webp" alt="Agentztein" width="1665" height="344" />
       <h1 data-es='<span class="w">La</span> <span class="w">IA</span> <span class="w">que</span> <span class="w">se</span> <span class="w">desarrolla</span> <span class="w">sola</span>'><span class="w">The</span> <span class="w">AI</span> <span class="w">that</span> <span class="w">builds</span> <span class="w">itself</span></h1>
-      <p class="lead" data-es="Agentztein es un agente de investigación de IA que crea sus propias habilidades, las pone a prueba en benchmarks de frontera y solo se queda con las que lo hacen mejor, sin olvidar lo que ya sabía.">Agentztein is an AI research agent that creates its own skills, tests them on frontier benchmarks and keeps only the ones that make it better, without forgetting what it already knew.</p>
+      <p class="lead" data-es="Agentztein es un agente de investigación de IA que se escribe sus propias habilidades y hasta su código, los pone a prueba en exámenes al estilo de los benchmarks de frontera y solo se queda con lo que lo hace mejor, sin olvidar lo que ya sabía.">Agentztein is an AI research agent that writes its own skills and even its own code, tests them on exams in the style of the frontier benchmarks and keeps only what makes it better, without forgetting what it already knew.</p>
       <div class="cta">
         <a class="btn" href="#labStage"><span data-es="Entra a su laboratorio">Enter its lab</span>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -915,8 +920,8 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
         <a class="btn ghost" href="/app/"><span data-es="Crea tu cuenta">Create your account</span></a>
       </div>
       <a class="hn-pill" href="#como-funciona">
-        <svg class="hn-y" viewBox="0 0 24 24" role="img" aria-label="Hacker News"><use href="#hn"/></svg>
-        <span><b data-es="Vigila Hacker News a diario">Watches Hacker News every day</b><small data-es="Investiga lo nuevo en IA y decide qué probar">Researches what's new in AI and decides what to try</small></span>
+        <svg class="hn-y" viewBox="0 0 24 24" role="img" aria-label="Hacker News, arXiv, Hugging Face, GitHub"><circle cx="7" cy="7" r="5.2" fill="#ff6600"/><circle cx="17" cy="7" r="5.2" fill="#b31b1b"/><circle cx="7" cy="17" r="5.2" fill="#e8a200"/><circle cx="17" cy="17" r="5.2" fill="#1c2b33"/></svg>
+        <span><b data-es="Lee Hacker News, arXiv, Hugging Face y GitHub">Reads Hacker News, arXiv, Hugging Face and GitHub</b><small data-es="Investiga lo nuevo en IA y decide qué probar">Researches what's new in AI and decides what to try</small></span>
         <span class="live-dot" aria-hidden="true"></span>
       </a>
     </div>
@@ -988,7 +993,7 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
         <article class="pt" role="tabpanel" id="cp1" aria-labelledby="ct1" data-phase="1">
           <p class="kick" data-es="Fase 2 de 6">Phase 2 of 6</p>
           <h3 data-es="Investiga">Researches</h3>
-          <p data-es="Lee las historias de IA más comentadas en Hacker News y, juzgando titular y fuente de cada una, decide si merece un experimento, solo vigilarla o descartarla.">Reads the most discussed AI stories on Hacker News and, judging each headline and source, decides whether it deserves an experiment, a watch or a skip.</p>
+          <p data-es="Lee lo nuevo en IA en cuatro fuentes (Hacker News, arXiv, Hugging Face y GitHub) y, juzgando título, resumen y fuente de cada publicación, decide si merece un experimento, solo vigilarla o descartarla.">Reads what's new in AI in four sources (Hacker News, arXiv, Hugging Face and GitHub) and, judging each item's title, summary and source, decides whether it deserves an experiment, a watch or a skip.</p>
           <button class="more" type="button" data-step="1"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <article class="pt" role="tabpanel" id="cp2" aria-labelledby="ct2" data-phase="2">
@@ -1037,9 +1042,9 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
       <h4 data-es="Cómo lo cuidamos">How we keep it safe</h4>
       <ul id="dlgList"></ul>
       <div class="dlg-live" id="dlgLiveWrap" hidden>
-        <h4><span class="live-dot" aria-hidden="true"></span><span data-es="En Hacker News esta semana">On Hacker News this week</span></h4>
+        <h4><span class="live-dot" aria-hidden="true"></span><span data-es="Lo nuevo de la semana en sus fuentes">New this week in its sources</span></h4>
         <ol class="hnlist" id="hnLive" aria-live="polite" aria-busy="true"><li class="sk"></li><li class="sk"></li><li class="sk"></li></ol>
-        <p class="fine" data-es="Etiquetas por palabras del titular; el veredicto lo da el agente con Muse Spark. Sin afiliación con Y Combinator.">Tags are keyword guesses; the verdict comes from the agent with Muse Spark. Not affiliated with Y Combinator.</p>
+        <p class="fine" data-es="Etiquetas por palabras del título; el veredicto lo da el agente con tu modelo Muse. Sin afiliación con Y Combinator, arXiv, Hugging Face ni GitHub.">Tags are keyword guesses; the verdict comes from the agent with your Muse model. Not affiliated with Y Combinator, arXiv, Hugging Face or GitHub.</p>
       </div>
       <div class="sheet-nav">
         <button class="btn ghost" type="button" id="dlgPrev" data-es="Anterior">Previous</button>
@@ -1126,7 +1131,7 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
       <button class="pick" aria-pressed="false" data-id="horizon" style="--c:#8a7dff"><i></i><span data-es="Horizonte de METR">METR time horizon</span></button>
       <button class="pick" aria-pressed="false" data-id="taller" style="--c:#f2b01e"><i></i><span data-es="Taller central">Central workshop</span></button>
     </div>
-    <p class="note" data-es="Aún no hay resultados de Agentztein en estos benchmarks: son la meta. Cuando los haya, se publicarán todos, también los malos.">There are no Agentztein results on these benchmarks yet: they are the goal. When there are, all of them will be published, including the bad ones.</p>
+    <p class="note" data-es="Aún no hay resultados de Agentztein en estos benchmarks: son la meta. Mientras tanto practica, dentro de la app, en exámenes sintéticos al estilo de cinco de ellos (SWE-bench Pro, Terminal-Bench, ARC-AGI, BrowseComp y MLE-bench), que se califican como ellos. Cuando haya resultados reales, se publicarán todos, también los malos.">There are no Agentztein results on these benchmarks yet: they are the goal. Meanwhile, in the app, it practices on synthetic exams in the style of five of them (SWE-bench Pro, Terminal-Bench, ARC-AGI, BrowseComp and MLE-bench), graded the way they are. When there are real results, all of them will be published, including the bad ones.</p>
     <div class="bl-head">
       <h3 data-es="Cada benchmark, en detalle">Each benchmark, in detail</h3>
       <p data-es="Ábrelo para ver su laboratorio: cómo funciona, de qué partes está hecho, cómo se califica y cómo podría mejorar Agentztein.">Open one to see its lab: how it works, what it's made of, how it's scored and how Agentztein could improve on it.</p>
@@ -1220,9 +1225,9 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
       </div>
       <ol class="gates">
           <li class="gate" data-g="0"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19.5 6v6c0 4.4-3.2 8.1-7.5 9-4.3-.9-7.5-4.6-7.5-9V6z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></svg><b data-es="Pruebas validadas">Validated tests</b><span data-es="Un examen sellado que nunca ve, criterios escritos antes y resultados con rangos.">A sealed exam it never sees, criteria written beforehand and results with ranges.</span><em class="" data-es="Diseño">Design</em></li>
-          <li class="gate" data-g="1"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></svg><b data-es="No se sale del camino">Stays on track</b><span data-es="Cada habilidad tiene alcance: fuera de él no se activa. Nunca toca el modelo ni el arnés.">Each skill has a scope: outside it, it doesn't switch on. It never touches the model or the harness.</span><em class="" data-es="Diseño">Design</em></li>
-          <li class="gate" data-g="2"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-14z"/><path d="M3.5 7.5 15 4v3.5"/><circle cx="16" cy="13.5" r="1"/></svg><b data-es="No gasta de más">Doesn't overspend</b><span data-es="Antes de llamar al modelo revisa el peor caso contra tu presupuesto mensual. Si podría pasarse, no corre.">Before calling the model it checks the worst case against your monthly budget. If it could go over, it doesn't run.</span><em class="live" data-es="Ya en la app">Live in the app</em></li>
-          <li class="gate" data-g="3"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.2M12 17h.01"/></svg><b data-es="Nada riesgoso">No risky moves</b><span data-es="Las páginas son datos, nunca órdenes. Todo corre en un contenedor aislado y se puede deshacer.">Web pages are data, never orders. Everything runs in an isolated container and can be undone.</span><em class="" data-es="Diseño">Design</em></li>
+          <li class="gate" data-g="1"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></svg><b data-es="No se sale del camino">Stays on track</b><span data-es="Cada habilidad tiene alcance: fuera de él no se activa. Nunca toca el modelo ni el arnés.">Each skill has a scope: outside it, it doesn't switch on. It never touches the model or the harness.</span><em class="live" data-es="Ya en la app">Live in the app</em></li>
+          <li class="gate" data-g="2"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-14z"/><path d="M3.5 7.5 15 4v3.5"/><circle cx="16" cy="13.5" r="1"/></svg><b data-es="No gasta de más">Doesn't overspend</b><span data-es="Antes de llamar al modelo revisa el peor caso contra tu presupuesto mensual y contra el tope de cada ciclo. Si podría pasarse, no corre.">Before calling the model it checks the worst case against your monthly budget and the cap of each cycle. If it could go over, it doesn't run.</span><em class="live" data-es="Ya en la app">Live in the app</em></li>
+          <li class="gate" data-g="3"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.2M12 17h.01"/></svg><b data-es="Nada riesgoso">No risky moves</b><span data-es="Lo que lee son datos, nunca órdenes. Su código corre aislado, sin red ni archivos, y cada versión se puede deshacer.">What it reads is data, never orders. Its code runs isolated, with no network or files, and every version can be undone.</span><em class="live" data-es="Ya en la app">Live in the app</em></li>
           <li class="gate" data-g="4"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="m16 11 2 2 4-4.2"/></svg><b data-es="Lo crítico, por el humano">A person decides</b><span data-es="Cada habilidad nueva espera tu aprobación y cada llamada queda en un registro que no se edita.">Every new skill waits for your approval, and every call stays in a log that can't be edited.</span><em class="live" data-es="Ya en la app">Live in the app</em></li>
       </ol>
     </div>
@@ -1233,12 +1238,13 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
   <div class="wrap">
     <div class="head ent">
       <h2 data-es="¿En qué vamos?">Where are we?</h2>
-      <p class="lead" data-es="El laboratorio ya está armado. Ahora toca conectarle el cerebro y despertar a Agentztein.">The lab is built. Next: connect its brain and wake Agentztein up.</p>
+      <p class="lead" data-es="Ya despertó: practica, se escribe habilidades y hasta cambia su código, siempre con tu aprobación. Lo que sigue es medirlo en los benchmarks reales.">It's awake: it practices, writes itself skills and even changes its code, always with your approval. Next: measuring it on the real benchmarks.</p>
     </div>
     <ol class="road ent" id="road">
       <li class="done"><span class="st" data-es="Listo">Done</span><h3 data-es="Laboratorio armado">Lab built</h3><p data-es="El sistema para crear, probar y aprobar habilidades, con registro de todo, ya probado con tareas de práctica.">The system to create, test and approve skills, with a record of everything, already tested on practice tasks.</p><div class="bar-prog" aria-hidden="true"><i style="--w:100%"></i></div></li>
-      <li class="now"><span class="st" data-es="Ahora">Now</span><h3 data-es="Conectar el cerebro">Connect the brain</h3><p data-es="Muse Spark resolviendo su primer benchmark de frontera y dejando registro de todo.">Muse Spark solving its first frontier benchmark and recording everything.</p><div class="bar-prog" aria-hidden="true"><i style="--w:20%"></i></div></li>
-      <li><span class="st" data-es="Después">Next</span><h3 data-es="Crear sus habilidades">Create its skills</h3><p data-es="Que proponga sus propias habilidades y las pruebe sin romper lo anterior.">Have it propose its own skills and test them without breaking what came before.</p><div class="bar-prog" aria-hidden="true"><i></i></div></li>
+      <li class="done"><span class="st" data-es="Listo">Done</span><h3 data-es="Conectar el cerebro">Connect the brain</h3><p data-es="Los modelos Muse de Meta con la llave de cada quien, tope de gasto por ciclo y registro de todo.">Meta's Muse models with each person's own key, a spending cap per cycle and a record of everything.</p><div class="bar-prog" aria-hidden="true"><i style="--w:100%"></i></div></li>
+      <li class="now"><span class="st" data-es="Ahora">Now</span><h3 data-es="Practicar y mejorarse solo">Practice and improve itself</h3><p data-es="Se escribe habilidades y cambia su código en exámenes al estilo de SWE-bench, Terminal-Bench, ARC-AGI, BrowseComp y MLE-bench; tú apruebas.">It writes itself skills and changes its code on exams in the style of SWE-bench, Terminal-Bench, ARC-AGI, BrowseComp and MLE-bench; you approve.</p><div class="bar-prog" aria-hidden="true"><i style="--w:60%"></i></div></li>
+      <li><span class="st" data-es="Después">Next</span><h3 data-es="Los benchmarks reales">The real benchmarks</h3><p data-es="Correr los benchmarks públicos de verdad y publicar cada resultado, también los malos.">Run the real public benchmarks and publish every result, the bad ones too.</p><div class="bar-prog" aria-hidden="true"><i></i></div></li>
       <li><span class="st" data-es="Al final">Finally</span><h3 data-es="Un reporte honesto">An honest report</h3><p data-es="Lo comparamos con otras tres formas de mejorarse. Si no gana, lo diremos.">We compare it with three other ways of improving. If it doesn't win, we'll say so.</p><div class="bar-prog" aria-hidden="true"><i></i></div></li>
     </ol>
   </div>
@@ -1267,7 +1273,7 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
     <span data-es="Proyecto participante en el Meta Global AI Developer Hackathon 2026, organizado con Cerebral Valley">Participating project in the Meta Global AI Developer Hackathon 2026, organized with Cerebral Valley</span>
     <span data-es="Sin resultados inventados">No made-up results</span>
     <span data-es="Agentztein es un homenaje a Muse; no es un producto oficial de Meta">Agentztein is a tribute to Muse; not an official Meta product</span>
-    <span data-es="Hacker News y su logo «Y» son de Y Combinator; Agentztein solo lee su API pública y no está afiliado a Y Combinator">Hacker News and its “Y” logo belong to Y Combinator; Agentztein only reads its public API and is not affiliated with Y Combinator</span>
+    <span data-es="Hacker News (Y Combinator), arXiv, Hugging Face y GitHub son de sus dueños; Agentztein solo lee sus APIs públicas y no está afiliado a ninguno">Hacker News (Y Combinator), arXiv, Hugging Face and GitHub belong to their owners; Agentztein only reads their public APIs and is not affiliated with any of them</span>
     <a href="/panel/" data-es="Ver los datos del laboratorio">See the lab's data</a>
   </div></div>
 </footer>
@@ -1295,8 +1301,8 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
   document.querySelectorAll("[data-es]").forEach((el) => { el.dataset.en = el.innerHTML; });
   ATTRS.forEach((a) => document.querySelectorAll(`[data-es-${a}]`).forEach((el) => { el.dataset[`en${a.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase())}`] = el.getAttribute(a); }));
   const META = {
-    en: { title: "Agentztein · The AI that builds itself", desc: "Agentztein is an AI research agent that creates its own skills, tests them on frontier benchmarks and keeps only the ones that make it better. With Meta's Muse Spark as its brain." },
-    es: { title: "Agentztein · La IA que se desarrolla sola", desc: "Agentztein es un agente de investigación de IA que crea sus propias habilidades, las pone a prueba en benchmarks de frontera y solo se queda con las que lo hacen mejor. Con Muse Spark de Meta como cerebro." },
+    en: { title: "Agentztein · The AI that builds itself", desc: "Agentztein is an AI research agent that writes its own skills and code, tests them on exams in the style of the frontier benchmarks and keeps only what makes it better, with a person's approval. With Meta's Muse models as its brain." },
+    es: { title: "Agentztein · La IA que se desarrolla sola", desc: "Agentztein es un agente de investigación de IA que se escribe sus propias habilidades y su código, los pone a prueba en exámenes al estilo de los benchmarks de frontera y solo se queda con lo que lo hace mejor, con la aprobación de una persona. Con los modelos Muse de Meta como cerebro." },
   };
   const applyLang = (l, announce) => {
     lang = l;
@@ -1351,8 +1357,8 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
         "es": "Cada ciclo de mejora empieza con una medición. El agente contesta un examen de tareas cuya respuesta correcta se conoce, usando solo las habilidades que ya tiene activas. De cada tarea guarda su respuesta, cuánto tardó y cuánto costó la llamada. Las tareas se dividen en dos conjuntos: uno de práctica, cuyos errores sí puede estudiar, y uno de validación, que solo usa después para comprobar si un cambio de verdad ayuda."
       },
       "ex": {
-        "en": "Illustrative example, not a real result: in a bank-reconciliation exercise it labels 40 records and gets 26 right. “26 of 40” is the baseline: any new skill has to beat that number.",
-        "es": "Ejemplo ilustrativo, no es un resultado real: en un ejercicio de conciliación bancaria etiqueta 40 movimientos y acierta 26. «26 de 40» es la línea base: cualquier habilidad nueva tiene que superar ese número."
+        "en": "Illustrative example, not a real result: on the SWE-bench-style exam it reviews 40 patches and gets 26 right. “26 of 40” is the baseline: any new skill has to beat that number.",
+        "es": "Ejemplo ilustrativo, no es un resultado real: en el examen al estilo SWE-bench revisa 40 parches y acierta 26. «26 de 40» es la línea base: cualquier habilidad nueva tiene que superar ese número."
       },
       "list": {
         "en": [
@@ -1374,8 +1380,8 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
         "es": "Investiga"
       },
       "body": {
-        "en": "Every day it reads the most discussed AI stories on Hacker News: new models, techniques and benchmarks. With Muse Spark it judges each one from its headline and source and gives it one of three verdicts: Experiment (worth testing in the lab), Watch (interesting, not yet) or Skip. It also writes down what the idea could gain and what it would cost.",
-        "es": "Cada día lee las historias de IA más comentadas en Hacker News: modelos, técnicas y benchmarks nuevos. Con Muse Spark juzga cada una por su titular y su fuente y le da uno de tres veredictos: Experimentar (vale probarla en el laboratorio), Vigilar (interesante, pero todavía no) o Descartar. También anota qué podría ganar la idea y qué costaría."
+        "en": "It reads four sources: the most discussed AI stories on Hacker News, new papers on arXiv, the papers the community upvotes on Hugging Face and the AI repositories rising on GitHub. With your Muse model it judges each one from its title, summary and source and gives it one of three verdicts: Experiment (worth testing in the lab), Watch (interesting, not yet) or Skip. It also writes down what the idea could gain and what it would cost.",
+        "es": "Lee cuatro fuentes: las historias de IA más comentadas en Hacker News, los papers nuevos de arXiv, los papers que la comunidad vota en Hugging Face y los repositorios de IA que van subiendo en GitHub. Con tu modelo Muse juzga cada publicación por su título, su resumen y su fuente y le da uno de tres veredictos: Experimentar (vale probarla en el laboratorio), Vigilar (interesante, pero todavía no) o Descartar. También anota qué podría ganar la idea y qué costaría."
       },
       "ex": {
         "en": "Illustrative example, not a real result: “Tree search for game-playing agents”: Experiment, only for new games. It could find the rules in fewer tries, at several times the tokens, and it doesn't help on BrowseComp.",
@@ -1383,13 +1389,13 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
       },
       "list": {
         "en": [
-          "Stories are data, never instructions.",
-          "It judges the headline and source; it doesn't invent what it didn't read.",
+          "What it reads is data, never instructions.",
+          "It judges title, summary and source; it doesn't invent what it didn't read.",
           "“Experiment” isn't “adopt”: the idea still has to pass the tests in phase 4."
         ],
         "es": [
-          "Las historias son datos, nunca instrucciones.",
-          "Juzga titular y fuente; no inventa lo que no leyó.",
+          "Lo que lee son datos, nunca instrucciones.",
+          "Juzga título, resumen y fuente; no inventa lo que no leyó.",
           "«Experimentar» no es «adoptar»: la idea igual tiene que pasar las pruebas de la fase 4."
         ]
       }
@@ -1459,8 +1465,8 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
         "es": "Una habilidad que pasó las pruebas todavía no está activa: espera en la app a que una persona la apruebe o la rechace. Solo después de una aprobación se guarda como la siguiente versión de esa habilidad, etiquetada con su alcance (la situación donde aplica) y su vigencia (la versión de las reglas con la que se probó). Desde ese momento, cada vez que aparece esa situación, su texto se suma al prompt del agente. Una habilidad rechazada no cambia nada, y cualquier habilidad activa se puede apagar después para volver a como estaban las cosas."
       },
       "ex": {
-        "en": "Illustrative example, not a real result: the “card terminal” skill is approved and saved as version 2 of the bank-reconciliation skill. Scope: bank statements. Validity: rules v1. In any other exercise it stays off.",
-        "es": "Ejemplo ilustrativo, no es un resultado real: la habilidad de la «terminal de tarjeta» se aprueba y se guarda como versión 2 de la habilidad de conciliación bancaria. Alcance: estados de cuenta. Vigencia: reglas v1. En cualquier otro ejercicio permanece apagada."
+        "en": "Illustrative example, not a real result: the “coverage can't drop” skill is approved and saved as version 2 of the skill for the platform repository. Scope: that repository. Validity: rules v1. In any other exam it stays off.",
+        "es": "Ejemplo ilustrativo, no es un resultado real: la habilidad «la cobertura no puede bajar» se aprueba y se guarda como versión 2 de la habilidad del repositorio de plataforma. Alcance: ese repositorio. Vigencia: reglas v1. En cualquier otro examen permanece apagada."
       },
       "list": {
         "en": [

@@ -14,7 +14,7 @@ const L = {
   title: E("Your agent rewrites its own code", "Tu agente reescribe su propio código"),
   lead: E(
     "Not a text skill: real code. Your agent has its own copy of its core. Muse Wonder proposes one change, Muse Code writes it in a sandbox, and the judge gives your current version and the new one an exam generated on the spot. The new one replaces yours only if it scores higher and breaks nothing.",
-    "No una skill de texto: código real. Tu agente tiene su propia copia de su núcleo. Muse Wonder propone un cambio, Muse Code lo escribe en un sandbox y el juez examina tu versión actual y la nueva con un examen generado en el momento. La nueva reemplaza a la tuya solo si saca más y no rompe nada.",
+    "No una habilidad de texto: código real. Tu agente tiene su propia copia de su núcleo. Muse Wonder propone un cambio, Muse Code lo escribe en un sandbox y el juez examina tu versión actual y la nueva con un examen generado en el momento. La nueva reemplaza a la tuya solo si saca más y no rompe nada.",
   ),
   pipeline: [
     { who: "Muse Wonder", what: E("proposes a hypothesis", "propone una hipótesis") },

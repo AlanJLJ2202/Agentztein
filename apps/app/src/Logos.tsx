@@ -1,4 +1,5 @@
-// The Google "G" (as Google's sign-in guidelines ask) and a Hacker News style mark.
+// The Google "G" (as Google's sign-in guidelines ask), a Hacker News style mark and the radar's source tags.
+import { SOURCE_STYLE, SOURCES } from "@skillab/research";
 
 export function GoogleG() {
   return (
@@ -16,6 +17,23 @@ export function HnMark({ size = 18 }: { size?: number }) {
     <svg viewBox="0 0 24 24" width={size} height={size} role="img" aria-label="Hacker News">
       <rect width="24" height="24" rx="3" fill="#ff6600" />
       <path d="M7.2 5.5h2.3l2.5 5.3 2.5-5.3h2.3l-3.7 7.3v5.7h-2.2v-5.7z" fill="#fff" />
+    </svg>
+  );
+}
+
+/** A small tag for where a radar item came from: Hacker News, arXiv, Hugging Face Papers or GitHub. */
+export function SourceTag({ source }: { source?: string | null }) {
+  const id = (source && source in SOURCE_STYLE ? source : "hackernews") as keyof typeof SOURCE_STYLE;
+  const st = SOURCE_STYLE[id];
+  return <span className="srctag" style={{ ["--c" as string]: st.color }} title={SOURCES[id].name}>{st.short}</span>;
+}
+
+/** The four sources at once, as four dots in their colors. */
+export function SourcesMark({ size = 18 }: { size?: number }) {
+  const ids = Object.keys(SOURCE_STYLE) as (keyof typeof SOURCE_STYLE)[];
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} role="img" aria-label={ids.map((i) => SOURCES[i].name).join(", ")}>
+      {ids.map((id, i) => <circle key={id} cx={i % 2 ? 17 : 7} cy={i < 2 ? 7 : 17} r={5.2} fill={SOURCE_STYLE[id].color} />)}
     </svg>
   );
 }

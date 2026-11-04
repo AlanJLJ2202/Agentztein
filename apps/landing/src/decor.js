@@ -382,14 +382,25 @@ DRESS.web = (g, { color, ceil, updates }) => {
 };
 
 DRESS.research = (g, { color, ceil, updates }) => {
-  // a Hacker News front page on the left wall, in its own orange
-  const rows = ["Agents that improve themselves, safely", "Show HN: a tiny lab for AI benchmarks", "Why sealed exams beat leaderboards", "METR: the doubling time of task length", "A gentle intro to rubric grading"];
+  // the research radar on the left wall: what's new in its four sources, each with its tag
+  const rows = [
+    ["HN", "#ff6600", "Agents that improve themselves, safely", "312 points"],
+    ["arXiv", "#b31b1b", "Self-play for software-engineering agents", "cs.AI · new"],
+    ["HF Papers", "#e8a200", "A benchmark for tool use in the terminal", "▲ 87"],
+    ["GitHub", "#1c2b33", "open-agent-harness: sandboxes for agents", "★ 2.1k"],
+    ["HN", "#ff6600", "METR: the doubling time of task length", "188 points"],
+  ];
   const hn = screen(2.3, 1.45, 640, (c, W, H) => {
-    c.fillStyle = "#f6f6ef"; c.fillRect(0, 0, W, H);
-    c.fillStyle = "#ff6600"; c.fillRect(0, 0, W, 70);
-    c.fillStyle = "#fff"; c.fillRect(16, 14, 42, 42); c.fillStyle = "#ff6600"; c.font = `800 34px ${FONT}`; c.textAlign = "center"; c.fillText("Y", 37, 48);
-    c.textAlign = "left"; c.fillStyle = "#1c2b33"; c.font = `800 30px ${FONT}`; c.fillText("Hacker News", 74, 46);
-    rows.forEach((r, i) => { c.fillStyle = "#828282"; c.font = `600 22px ${FONT}`; c.fillText(`${i + 1}.`, 18, 118 + i * 62); c.fillStyle = "#1c2b33"; c.font = `700 25px ${FONT}`; c.fillText(r, 52, 116 + i * 62); c.fillStyle = "#828282"; c.font = `500 18px ${FONT}`; c.fillText(`${312 - i * 41} points · ${64 - i * 9} comments`, 52, 140 + i * 62); });
+    c.fillStyle = "#f6f8fb"; c.fillRect(0, 0, W, H);
+    c.fillStyle = "#1c2b33"; c.fillRect(0, 0, W, 70);
+    c.textAlign = "left"; c.fillStyle = "#fff"; c.font = `800 30px ${FONT}`; c.fillText("Research radar", 20, 46);
+    c.font = `600 18px ${FONT}`; c.fillStyle = "#c9d2dc"; c.fillText("Hacker News · arXiv · Hugging Face · GitHub", 280, 44);
+    rows.forEach(([tg, col, r, meta], i) => {
+      const y = 92 + i * 62;
+      c.fillStyle = col; c.fillRect(18, y, 112, 34); c.fillStyle = "#fff"; c.font = `800 18px ${FONT}`; c.fillText(tg, 26, y + 24);
+      c.fillStyle = "#1c2b33"; c.font = `700 24px ${FONT}`; c.fillText(r, 144, y + 20);
+      c.fillStyle = "#828282"; c.font = `500 17px ${FONT}`; c.fillText(meta, 144, y + 44);
+    });
   }, { x: -2.86, y: 1.55, z: 1.9, ry: Math.PI / 2, frame: 0xff6600 });
   g.add(hn); hn.userData.redraw(0);
   // a microscope and a rack of flasks with bubbling liquid

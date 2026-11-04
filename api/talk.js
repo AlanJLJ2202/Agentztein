@@ -47,14 +47,15 @@ async function labSummary(pool, userId) {
     pool.query("SELECT COUNT(*)::int AS n, COUNT(*) FILTER (WHERE verdict = 'experiment')::int AS e FROM app.research_notes WHERE user_id = $1", [userId]),
     budgetOf(pool, userId),
   ]);
-  const bench = benchSummary();
-  const title = (/** @type {string} */ id) => bench.find((b) => b.id === id)?.title ?? id;
+  const all = benchSummary();
+  const bench = all.filter((b) => !b.legacy);
+  const title = (/** @type {string} */ id) => all.find((b) => b.id === id)?.title ?? id;
   const frac = (/** @type {any} */ s) => {
     const t = Object.values(s ?? {}).reduce((/** @type {{ c: number, t: number }} */ a, /** @type {any} */ b) => ({ c: a.c + b.correct, t: a.t + b.total }), { c: 0, t: 0 });
     return t.t ? `${t.c}/${t.t}` : "—";
   };
   const lines = [
-    `Escenarios del banco: ${bench.map((b) => `${b.title} (${b.contexts.map((c) => c.name).join(", ")})`).join("; ")}.`,
+    `Exámenes (cada uno al estilo de un benchmark de frontera): ${bench.map((b) => `${b.title}, estilo ${b.benchmark} (${b.contexts.map((c) => c.name).join(", ")})`).join("; ")}.`,
     `Habilidades activas: ${skills.rows.length ? skills.rows.map((s) => `${title(s.scenario)} · ${s.context} v${s.version}`).join("; ") : "ninguna todavía"}.`,
     `Últimos ciclos: ${jobs.rows.length ? jobs.rows.map((j) => `${title(j.scenario)} con ${j.executor}: fase ${j.phase}${j.state?.outcome ? `, resultado ${j.state.outcome}` : ""}, validación antes ${frac(j.state?.before?.validation)}${j.state?.after ? ` y con la candidata ${frac(j.state.after)}` : ""}`).join(" | ") : "ninguno todavía"}.`,
     `Radar: ${notes.rows[0]?.n ?? 0} historias evaluadas, ${notes.rows[0]?.e ?? 0} valen un experimento.`,

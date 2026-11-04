@@ -586,7 +586,592 @@
         34200009
       ],
       "path": "sealed/test/envios/temporal_shift.json"
+    },
+    {
+      "scenario": "codigo",
+      "family": "stable",
+      "split": "adaptation",
+      "hash": "79efaab58ced2addaf6714e05a7ebc9dda08f8543d6de6be8e47e218b9bdb4e0",
+      "caseCount": 20,
+      "rowCount": 217,
+      "seedRange": [
+        15000000,
+        15000019
+      ],
+      "path": "adaptation/codigo/stable.json"
+    },
+    {
+      "scenario": "codigo",
+      "family": "interleaved",
+      "split": "adaptation",
+      "hash": "173e66ab7d9d58bcb81878d2f7ca058aadd730773b498fbad96b52e26b677adb",
+      "caseCount": 20,
+      "rowCount": 211,
+      "seedRange": [
+        15100000,
+        15100019
+      ],
+      "path": "adaptation/codigo/interleaved.json"
+    },
+    {
+      "scenario": "codigo",
+      "family": "temporal_shift",
+      "split": "adaptation",
+      "hash": "e877bdddb9cad76a77515aaf4237a7cc1b45051c2edce175af4deddd9700ce31",
+      "caseCount": 20,
+      "rowCount": 211,
+      "seedRange": [
+        15200000,
+        15200019
+      ],
+      "path": "adaptation/codigo/temporal_shift.json"
+    },
+    {
+      "scenario": "codigo",
+      "family": "stable",
+      "split": "validation",
+      "hash": "a65e1e4cbada1e38b08a918632619c46affa175a77d45a00254b24267f4f724a",
+      "caseCount": 10,
+      "rowCount": 102,
+      "seedRange": [
+        25000000,
+        25000009
+      ],
+      "path": "validation/codigo/stable.json"
+    },
+    {
+      "scenario": "codigo",
+      "family": "interleaved",
+      "split": "validation",
+      "hash": "757a3687b2040a11374fb7ce60c733c6afa2e7cf88342af3a2e4be38b8b26c91",
+      "caseCount": 10,
+      "rowCount": 104,
+      "seedRange": [
+        25100000,
+        25100009
+      ],
+      "path": "validation/codigo/interleaved.json"
+    },
+    {
+      "scenario": "codigo",
+      "family": "temporal_shift",
+      "split": "validation",
+      "hash": "6f4f79d2596aed1929ed9c809b83a238ae2bdb1587b56de5a30b9a9b64b28c9b",
+      "caseCount": 10,
+      "rowCount": 99,
+      "seedRange": [
+        25200000,
+        25200009
+      ],
+      "path": "validation/codigo/temporal_shift.json"
+    },
+    {
+      "scenario": "codigo",
+      "family": "stable",
+      "split": "test",
+      "hash": "bd798c6221a0d3d4377f87caaccde3eb5d223021198a06ce42b0258091344e4d",
+      "caseCount": 10,
+      "rowCount": 149,
+      "seedRange": [
+        35000000,
+        35000009
+      ],
+      "path": "sealed/test/codigo/stable.json"
+    },
+    {
+      "scenario": "codigo",
+      "family": "interleaved",
+      "split": "test",
+      "hash": "407c8d0ef2630aa6946f3a243bec9f1e7ce29ab9529ce058cbe83ca017b62646",
+      "caseCount": 10,
+      "rowCount": 157,
+      "seedRange": [
+        35100000,
+        35100009
+      ],
+      "path": "sealed/test/codigo/interleaved.json"
+    },
+    {
+      "scenario": "codigo",
+      "family": "temporal_shift",
+      "split": "test",
+      "hash": "dfc297fa8c9de9f90b90a1b04f5bcfdf7c988a293c6ef576d5acf6c113b8dbd5",
+      "caseCount": 10,
+      "rowCount": 152,
+      "seedRange": [
+        35200000,
+        35200009
+      ],
+      "path": "sealed/test/codigo/temporal_shift.json"
+    },
+    {
+      "scenario": "terminal",
+      "family": "stable",
+      "split": "adaptation",
+      "hash": "09ec4d51aec9df4c7f6bf58048b32a117c99b99e3703007320d874eb8f938449",
+      "caseCount": 20,
+      "rowCount": 214,
+      "seedRange": [
+        16000000,
+        16000019
+      ],
+      "path": "adaptation/terminal/stable.json"
+    },
+    {
+      "scenario": "terminal",
+      "family": "interleaved",
+      "split": "adaptation",
+      "hash": "c9a3d9bb81eaebdd9fea66224e89e54ed51055ad291496f338c4bee537e3aad5",
+      "caseCount": 20,
+      "rowCount": 204,
+      "seedRange": [
+        16100000,
+        16100019
+      ],
+      "path": "adaptation/terminal/interleaved.json"
+    },
+    {
+      "scenario": "terminal",
+      "family": "temporal_shift",
+      "split": "adaptation",
+      "hash": "64ae29e17da8182872d1d394f8cb5ab645596e7727f0ddc48fc376fe326c93b0",
+      "caseCount": 20,
+      "rowCount": 203,
+      "seedRange": [
+        16200000,
+        16200019
+      ],
+      "path": "adaptation/terminal/temporal_shift.json"
+    },
+    {
+      "scenario": "terminal",
+      "family": "stable",
+      "split": "validation",
+      "hash": "301eb39cdd9aad5fdbeed67cacd37a363c6ffdd0663ac72eba4daba1cd8ae47b",
+      "caseCount": 10,
+      "rowCount": 106,
+      "seedRange": [
+        26000000,
+        26000009
+      ],
+      "path": "validation/terminal/stable.json"
+    },
+    {
+      "scenario": "terminal",
+      "family": "interleaved",
+      "split": "validation",
+      "hash": "7ffd87f29b432a66afdfa2a94e8f26b2e89825f87c762edc71f8273903e705be",
+      "caseCount": 10,
+      "rowCount": 105,
+      "seedRange": [
+        26100000,
+        26100009
+      ],
+      "path": "validation/terminal/interleaved.json"
+    },
+    {
+      "scenario": "terminal",
+      "family": "temporal_shift",
+      "split": "validation",
+      "hash": "b7c5f7380711a456e819735df2ce4729b7d48c1eb846a460cdb463adf0811247",
+      "caseCount": 10,
+      "rowCount": 104,
+      "seedRange": [
+        26200000,
+        26200009
+      ],
+      "path": "validation/terminal/temporal_shift.json"
+    },
+    {
+      "scenario": "terminal",
+      "family": "stable",
+      "split": "test",
+      "hash": "4c62dd8e01907bd96359e87c137e60934969918177e64412fc71762104fa4f5b",
+      "caseCount": 10,
+      "rowCount": 148,
+      "seedRange": [
+        36000000,
+        36000009
+      ],
+      "path": "sealed/test/terminal/stable.json"
+    },
+    {
+      "scenario": "terminal",
+      "family": "interleaved",
+      "split": "test",
+      "hash": "538121dc71d15f0f709982bc3e9e1fcc66c457946ca9856119767fd38d0b6449",
+      "caseCount": 10,
+      "rowCount": 151,
+      "seedRange": [
+        36100000,
+        36100009
+      ],
+      "path": "sealed/test/terminal/interleaved.json"
+    },
+    {
+      "scenario": "terminal",
+      "family": "temporal_shift",
+      "split": "test",
+      "hash": "7accd75d2a7a5a2bbb2a9e823158818c1e34840bc1b91e68a0e7b4b4c7f0865b",
+      "caseCount": 10,
+      "rowCount": 149,
+      "seedRange": [
+        36200000,
+        36200009
+      ],
+      "path": "sealed/test/terminal/temporal_shift.json"
+    },
+    {
+      "scenario": "razonamiento",
+      "family": "stable",
+      "split": "adaptation",
+      "hash": "7cb15d1bdd1481ba380c801cd397877470a34f1bc2368349fac46e5c22dc49d2",
+      "caseCount": 20,
+      "rowCount": 216,
+      "seedRange": [
+        17000000,
+        17000019
+      ],
+      "path": "adaptation/razonamiento/stable.json"
+    },
+    {
+      "scenario": "razonamiento",
+      "family": "interleaved",
+      "split": "adaptation",
+      "hash": "47ca9408df06be5306dc276d671c1fc145c7597fd3a3e49987af39c30c518ede",
+      "caseCount": 20,
+      "rowCount": 217,
+      "seedRange": [
+        17100000,
+        17100019
+      ],
+      "path": "adaptation/razonamiento/interleaved.json"
+    },
+    {
+      "scenario": "razonamiento",
+      "family": "temporal_shift",
+      "split": "adaptation",
+      "hash": "bba01de38c22c7ec52c825535e3cd2443a704aea7da46f68c7b72f01daf9c1f3",
+      "caseCount": 20,
+      "rowCount": 204,
+      "seedRange": [
+        17200000,
+        17200019
+      ],
+      "path": "adaptation/razonamiento/temporal_shift.json"
+    },
+    {
+      "scenario": "razonamiento",
+      "family": "stable",
+      "split": "validation",
+      "hash": "b13ec7fa0feb845456c1c2b1c218d5567e2e802ef8ec270b9dcb252b02b4eb4e",
+      "caseCount": 10,
+      "rowCount": 106,
+      "seedRange": [
+        27000000,
+        27000009
+      ],
+      "path": "validation/razonamiento/stable.json"
+    },
+    {
+      "scenario": "razonamiento",
+      "family": "interleaved",
+      "split": "validation",
+      "hash": "d465048abf5a9bfc3e8168352df02e3102dc2377b20913d5af08e820ca29cc08",
+      "caseCount": 10,
+      "rowCount": 102,
+      "seedRange": [
+        27100000,
+        27100009
+      ],
+      "path": "validation/razonamiento/interleaved.json"
+    },
+    {
+      "scenario": "razonamiento",
+      "family": "temporal_shift",
+      "split": "validation",
+      "hash": "d72c42e673a12dc5a92d8396d3f56a5cbc8f757a1e5b919a4cfe995788d5537a",
+      "caseCount": 10,
+      "rowCount": 103,
+      "seedRange": [
+        27200000,
+        27200009
+      ],
+      "path": "validation/razonamiento/temporal_shift.json"
+    },
+    {
+      "scenario": "razonamiento",
+      "family": "stable",
+      "split": "test",
+      "hash": "a9cc1f4ce126df62700265bb22a6bfecbff51701e677f5b90b167a28d6c881bf",
+      "caseCount": 10,
+      "rowCount": 168,
+      "seedRange": [
+        37000000,
+        37000009
+      ],
+      "path": "sealed/test/razonamiento/stable.json"
+    },
+    {
+      "scenario": "razonamiento",
+      "family": "interleaved",
+      "split": "test",
+      "hash": "17ce1bf5f66a13b01850de132bbd5d34e2a914e2accaaa12370aab74dd7cbef2",
+      "caseCount": 10,
+      "rowCount": 150,
+      "seedRange": [
+        37100000,
+        37100009
+      ],
+      "path": "sealed/test/razonamiento/interleaved.json"
+    },
+    {
+      "scenario": "razonamiento",
+      "family": "temporal_shift",
+      "split": "test",
+      "hash": "d720112201c3fcb5135bf71396800a63ccfa1773572b27470a74917f095898dc",
+      "caseCount": 10,
+      "rowCount": 150,
+      "seedRange": [
+        37200000,
+        37200009
+      ],
+      "path": "sealed/test/razonamiento/temporal_shift.json"
+    },
+    {
+      "scenario": "web",
+      "family": "stable",
+      "split": "adaptation",
+      "hash": "ea742c3a110a5efa163323990b23f4899e4230770610ad73e1e59c01f61f436f",
+      "caseCount": 20,
+      "rowCount": 219,
+      "seedRange": [
+        18000000,
+        18000019
+      ],
+      "path": "adaptation/web/stable.json"
+    },
+    {
+      "scenario": "web",
+      "family": "interleaved",
+      "split": "adaptation",
+      "hash": "1e5f0ea8e8251615934df9a74d172604050bac031dc119190523e0ac497a59f4",
+      "caseCount": 20,
+      "rowCount": 202,
+      "seedRange": [
+        18100000,
+        18100019
+      ],
+      "path": "adaptation/web/interleaved.json"
+    },
+    {
+      "scenario": "web",
+      "family": "temporal_shift",
+      "split": "adaptation",
+      "hash": "2b6b91c7c4fbf7312bde36d346f7d64a17737f3e79b4643019f1f02230ca8ca5",
+      "caseCount": 20,
+      "rowCount": 207,
+      "seedRange": [
+        18200000,
+        18200019
+      ],
+      "path": "adaptation/web/temporal_shift.json"
+    },
+    {
+      "scenario": "web",
+      "family": "stable",
+      "split": "validation",
+      "hash": "be6dda321645a30b847f96b0b5881cf52f76c5ef36568da37635569ac4af7222",
+      "caseCount": 10,
+      "rowCount": 104,
+      "seedRange": [
+        28000000,
+        28000009
+      ],
+      "path": "validation/web/stable.json"
+    },
+    {
+      "scenario": "web",
+      "family": "interleaved",
+      "split": "validation",
+      "hash": "82ceae739c89a243508b8ceafe94db6ebe5514d24fb36df4c29fe86aaae83268",
+      "caseCount": 10,
+      "rowCount": 104,
+      "seedRange": [
+        28100000,
+        28100009
+      ],
+      "path": "validation/web/interleaved.json"
+    },
+    {
+      "scenario": "web",
+      "family": "temporal_shift",
+      "split": "validation",
+      "hash": "df425dc36d624ed8ef22fd0db91c32d313cb4b7acdc6b16fb8a69145423d77e1",
+      "caseCount": 10,
+      "rowCount": 106,
+      "seedRange": [
+        28200000,
+        28200009
+      ],
+      "path": "validation/web/temporal_shift.json"
+    },
+    {
+      "scenario": "web",
+      "family": "stable",
+      "split": "test",
+      "hash": "e0da7a598a45cec619d3a2397439cc9072872e7b4edcfc525e5840d062808080",
+      "caseCount": 10,
+      "rowCount": 152,
+      "seedRange": [
+        38000000,
+        38000009
+      ],
+      "path": "sealed/test/web/stable.json"
+    },
+    {
+      "scenario": "web",
+      "family": "interleaved",
+      "split": "test",
+      "hash": "7cbfa9dd9b51d8421ad1bad52953433e0691fc6715c9f17ca10765f5042f3ded",
+      "caseCount": 10,
+      "rowCount": 155,
+      "seedRange": [
+        38100000,
+        38100009
+      ],
+      "path": "sealed/test/web/interleaved.json"
+    },
+    {
+      "scenario": "web",
+      "family": "temporal_shift",
+      "split": "test",
+      "hash": "6907faac428bb8757678d43c81888b284226061513483f673475a6fa60175248",
+      "caseCount": 10,
+      "rowCount": 152,
+      "seedRange": [
+        38200000,
+        38200009
+      ],
+      "path": "sealed/test/web/temporal_shift.json"
+    },
+    {
+      "scenario": "investigacion",
+      "family": "stable",
+      "split": "adaptation",
+      "hash": "85fd398a559afa5b055737ef136bfaa993425f7399dcb0c66939bb7fd0347351",
+      "caseCount": 20,
+      "rowCount": 212,
+      "seedRange": [
+        19000000,
+        19000019
+      ],
+      "path": "adaptation/investigacion/stable.json"
+    },
+    {
+      "scenario": "investigacion",
+      "family": "interleaved",
+      "split": "adaptation",
+      "hash": "3de66be27dbee630bf24ccc12abd9707c255e0b48af77e345aed673f2b8497b2",
+      "caseCount": 20,
+      "rowCount": 218,
+      "seedRange": [
+        19100000,
+        19100019
+      ],
+      "path": "adaptation/investigacion/interleaved.json"
+    },
+    {
+      "scenario": "investigacion",
+      "family": "temporal_shift",
+      "split": "adaptation",
+      "hash": "405f3e8f8566a046cb513c41517d5f50e5685206f99212e8e699e26ff593aefb",
+      "caseCount": 20,
+      "rowCount": 202,
+      "seedRange": [
+        19200000,
+        19200019
+      ],
+      "path": "adaptation/investigacion/temporal_shift.json"
+    },
+    {
+      "scenario": "investigacion",
+      "family": "stable",
+      "split": "validation",
+      "hash": "3d37c231dcec6facd5a50bd417b738c23c011da2c72119cfad336d0553e1a5f4",
+      "caseCount": 10,
+      "rowCount": 108,
+      "seedRange": [
+        29000000,
+        29000009
+      ],
+      "path": "validation/investigacion/stable.json"
+    },
+    {
+      "scenario": "investigacion",
+      "family": "interleaved",
+      "split": "validation",
+      "hash": "c0f8ec4c60f400d17b862275e72c5e26805d49138873276519891cce0f010e09",
+      "caseCount": 10,
+      "rowCount": 107,
+      "seedRange": [
+        29100000,
+        29100009
+      ],
+      "path": "validation/investigacion/interleaved.json"
+    },
+    {
+      "scenario": "investigacion",
+      "family": "temporal_shift",
+      "split": "validation",
+      "hash": "c009319c9f0892913a5a55f3c7fde464c5d40e2879e4ca7f43e5983f45cd20e9",
+      "caseCount": 10,
+      "rowCount": 108,
+      "seedRange": [
+        29200000,
+        29200009
+      ],
+      "path": "validation/investigacion/temporal_shift.json"
+    },
+    {
+      "scenario": "investigacion",
+      "family": "stable",
+      "split": "test",
+      "hash": "cd16fd80fce88b1170eecce3defbcfb3c3b8b1ced714a4e4c111c7a4af18acdb",
+      "caseCount": 10,
+      "rowCount": 153,
+      "seedRange": [
+        39000000,
+        39000009
+      ],
+      "path": "sealed/test/investigacion/stable.json"
+    },
+    {
+      "scenario": "investigacion",
+      "family": "interleaved",
+      "split": "test",
+      "hash": "17ad9478a76bc6ac6249750259f7151152838a95ae0da6cb2f1ebdc91a7d4642",
+      "caseCount": 10,
+      "rowCount": 165,
+      "seedRange": [
+        39100000,
+        39100009
+      ],
+      "path": "sealed/test/investigacion/interleaved.json"
+    },
+    {
+      "scenario": "investigacion",
+      "family": "temporal_shift",
+      "split": "test",
+      "hash": "110c93ab9122f26fb6ed61c0bfe13c518d228b30f7d64945075834459a7821bd",
+      "caseCount": 10,
+      "rowCount": 158,
+      "seedRange": [
+        39200000,
+        39200009
+      ],
+      "path": "sealed/test/investigacion/temporal_shift.json"
     }
   ],
-  "hash": "7615ab2bffd5d92ab3dffb40d09139d18f19d5e71860857c9d348d54141f3b69"
+  "hash": "3fd56c7b4558d999a855ecaf433c7669ff9b046bb502abb224f963ac39077cc7"
 }

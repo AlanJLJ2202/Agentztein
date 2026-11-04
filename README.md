@@ -6,7 +6,9 @@
 pieza, como Frankenstein: crea sus propias habilidades y solo se queda con las que mejoran sin romper lo que
 ya sabía. La meta es medirlo en benchmarks públicos de frontera (código, terminal, razonamiento, web e
 investigación de IA); ver [`docs/FRONTERA.md`](docs/FRONTERA.md) y ADR-018. Hoy el mecanismo se prueba en
-cinco escenarios sintéticos (conciliación bancaria, inspección de calidad, devoluciones, mensajes de
+cinco exámenes sintéticos **al estilo de esos benchmarks** (SWE-bench Pro, Terminal-Bench, ARC-AGI, BrowseComp y
+MLE-bench: se califican como ellos, pero no son ellos; `packages/scenarios`, ADR-028); antes se probaba en cinco
+escenarios de negocio (conciliación bancaria, inspección de calidad, devoluciones, mensajes de
 clientes y tarifas de paquetería); aún no hay resultados en ningún benchmark.
 
 Laboratorio para estudiar la **evolución verificable de habilidades de agentes LLM**: ante un patrón de
@@ -46,12 +48,12 @@ packages/agent-core  el cuerpo del agente: el ejecutor que el propio agente rees
 scripts/evolve       el juez y el taller: examen nuevo con semilla aleatoria, bench en workers sin llaves, reglas del gate, Forja
 packages/contracts   esquemas Zod (fuente de los tipos) + hashing canónico
 packages/env-recon   entorno sintético de conciliación: generador, reglas R1/R2, oráculos de validación
-packages/scenarios   marco común + 5 escenarios de negocio (conciliación, manufactura, devoluciones, mensajes, envíos)
+packages/scenarios   marco común + 5 exámenes al estilo de los benchmarks (código, terminal, razonamiento, web, investigación) + 5 escenarios de negocio originales
 packages/db          esquema Drizzle + migraciones (tablas append-only, esquema `sealed`)
 apps/panel           panel estático de solo lectura (Vite + React): validación del entorno, sin agentes aún
 apps/app             app con sesión (Vite + React) en /app/: acceso con Google o correo + código; Inicio en vista sencilla o completa con Agentztein en 3D; Agentztein como compañero en todas las pestañas (explica, narra y se le habla en voz alta, /api/talk); Cerebro (grafo de lo que sabe y las herramientas que usa); Lab 3D (el edificio de la landing, siguiendo al agente cuarto por cuarto); ciclos que él decide con tope de gasto (ADR-027); llave de Meta por usuario y radar
-api/                 funciones de Vercel: /api/config, /api/keys (llaves cifradas), /api/radar (Hacker News + triage con el modelo del usuario)
-packages/research    lógica compartida del radar: búsqueda en Hacker News, capacidades y triage (prompt + validación)
+api/                 funciones de Vercel: /api/config, /api/keys (llaves cifradas), /api/radar (Hacker News, arXiv, Hugging Face Papers y GitHub + triage con el modelo del usuario)
+packages/research    lógica compartida del radar: fuentes (Hacker News, arXiv, Hugging Face, GitHub), capacidades y triage (prompt + validación)
 apps/landing         landing de presentación: Agentztein en 3D (three.js); un edificio recorrible (cuna + un cuarto por benchmark, 1.ª/3.ª persona) y un laboratorio 3D por benchmark; `pnpm --filter @skillab/landing stills` regenera sus imágenes
 datasets/manifest.json  hashes de todos los splits (los datos se regeneran desde semillas)
 ```

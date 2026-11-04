@@ -1,10 +1,11 @@
-// The research radar: what Hacker News is discussing this week, and what Agentztein decided about it.
-import { CAPABILITIES, EFFORTS, familyOf, fetchAiStories, type Story } from "@skillab/research";
+// The research radar: what's new this week in its four sources (Hacker News, arXiv, Hugging Face Papers and GitHub),
+// and what Agentztein decided about it.
+import { CAPABILITIES, EFFORTS, familyOf, fetchLiveFeed, SOURCE_IDS, SOURCES, type Story } from "@skillab/research";
 import { useEffect, useState } from "react";
 import { ApiError, type Api, type Budget, type Note, type SavedKey, type Verdict } from "./api.js";
 import type { Tab } from "./App.js";
 import { T, useT, type Lang } from "./i18n.js";
-import { HnMark } from "./Logos.js";
+import { SourcesMark, SourceTag } from "./Logos.js";
 
 type Props = { client: Api; keys: SavedKey[] | null; onKeys: (k: SavedKey[]) => void; onNotes: (n: number) => void; go: (t: Tab) => void; lang: Lang };
 type Cap = keyof typeof CAPABILITIES;
@@ -26,6 +27,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
   const t = useT();
   const [stories, setStories] = useState<Story[] | null>(null);
   const [liveError, setLiveError] = useState(false);
+  const [down, setDown] = useState<string[]>([]);
   const [notes, setNotes] = useState<Note[] | null>(null);
   const [filter, setFilter] = useState<Verdict | "all">("all");
   const [provider, setProvider] = useState<string | null>(null);
@@ -44,7 +46,9 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
 
   useEffect(() => {
     const ctl = new AbortController();
-    fetchAiStories({ limit: 10, signal: ctl.signal }).then(setStories).catch(() => !ctl.signal.aborted && setLiveError(true));
+    fetchLiveFeed({ limit: 14, signal: ctl.signal })
+      .then((r) => { setStories(r.items); setDown(r.sources.filter((s) => !s.ok).map((s) => s.id)); })
+      .catch(() => !ctl.signal.aborted && setLiveError(true));
     client.notes().then((r) => { setNotes(r.notes); onNotes(r.notes.length); }).catch(() => setNotes([]));
     return () => ctl.abort();
   }, [client, onNotes]);
@@ -83,7 +87,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
     <section>
       <div className="radar-head">
         <div>
-          <p className="kicker"><HnMark size={20} /> Hacker News</p>
+          <p className="kicker"><SourcesMark size={20} /> {SOURCE_IDS.map((id) => SOURCES[id].name).join(" · ")}</p>
           <h1 className="h1">{t(T.radarTitle)}</h1>
           <p className="lead">{t(T.radarLead)}</p>
         </div>
@@ -150,6 +154,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
                 <li key={n.id} className={`note ${n.verdict}`}>
                   <div className="note-top">
                     <span className={`verdict ${n.verdict}`}>{t(T.verdict[n.verdict])}</span>
+                    <SourceTag source={n.source} />
                     <CapChip cap={n.capability} lang={lang} />
                   </div>
                   <h3><a href={n.url ?? n.discussionUrl ?? "#"} target="_blank" rel="noreferrer">{n.title}</a></h3>
@@ -190,12 +195,13 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
                 <li key={s.id}>
                   <a href={s.url ?? s.hnUrl} target="_blank" rel="noreferrer">{s.title}</a>
                   <p className="meta">
-                    <CapChip cap={s.hint} lang={lang} /> {s.points} {t(T.points)} · <a href={s.hnUrl} target="_blank" rel="noreferrer">{s.comments} {t(T.comments)}</a> · {ago(s.postedAt, lang)}
+                    <SourceTag source={s.source} /> <CapChip cap={s.hint} lang={lang} /> {s.points ? `${s.points} ${t(T.points)} · ` : ""}{s.source === "hackernews" || !s.source ? <><a href={s.hnUrl} target="_blank" rel="noreferrer">{s.comments} {t(T.comments)}</a> · </> : null}{ago(s.postedAt, lang)}
                   </p>
                 </li>
               ))}
             </ol>
           )}
+          {down.length > 0 && <p className="fine">{down.map((d) => SOURCES[d as keyof typeof SOURCES]?.name ?? d).join(", ")} {t(T.sourceDown)}.</p>}
           <p className="fine">{t(T.liveNote)} {t(T.hnNote)}</p>
         </aside>
       </div>

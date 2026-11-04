@@ -94,9 +94,9 @@ function researchDesk(L) {
     ["Sandboxes for terminal agents", L("Experiment", "Experimentar"), VIOLET, "#efeaff"],
   ];
   let body = `<g transform="translate(30 60)"><rect width="370" height="250" rx="14" fill="#fff" stroke="#e1e7ed" stroke-width="2"/>
-    <rect width="370" height="40" rx="14" fill="#ff6600"/><rect y="26" width="370" height="14" fill="#ff6600"/>
-    <rect x="12" y="9" width="22" height="22" rx="3" fill="#fff"/>${t(23, 26, "Y", { size: 15, weight: 800, fill: "#ff6600", anchor: "middle" })}
-    ${t(44, 26, "Hacker News", { size: 15, weight: 800, fill: "#fff" })}
+    <rect width="370" height="40" rx="14" fill="${INK}"/><rect y="26" width="370" height="14" fill="${INK}"/>
+    ${t(14, 26, L("Research radar", "Radar de investigación"), { size: 15, weight: 800, fill: "#fff" })}
+    ${t(356, 26, "HN · arXiv · HF · GitHub", { size: 11, weight: 700, fill: "#c9d2dc", anchor: "end" })}
     ${rows.map(([h, v, c, bg], i) => `<g transform="translate(12 ${54 + i * 48})">
       ${rect(0, 0, 346, 40, "#f6f6ef", { r: 8 })}${t(12, 25, `${i + 1}. ${h}`, { size: 12, weight: 700 })}
       <g transform="translate(262 6)"><g class="a-stamp"${d(0.6 + i * 0.7)}>${rect(0, 0, 78, 28, bg, { r: 14, stroke: c, sw: 1.5 })}${t(39, 19, v, { size: 10.5, weight: 800, fill: c, anchor: "middle" })}</g></g>
@@ -116,7 +116,7 @@ function researchDesk(L) {
   body += `<path class="a-flow" d="M402 120 C 440 120, 430 250, 470 268" fill="none" stroke="${VIOLET}" stroke-width="2.5" stroke-dasharray="6 6"/>`;
   body += chip(470, 252, L("→ to the lab", "→ al laboratorio"), VIOLET, { cls: "a-pop", delay: 3.4, fill: "#f6f3ff", w: 150 });
   return room(L("Research desk", "Mesa de investigación"), "#ff6600", body,
-    L("Research desk: a Hacker News page with four AI headlines, each stamped with a verdict (experiment, watch or skip). A balance weighs gain against cost, and the ideas worth an experiment go to the lab.", "Mesa de investigación: una página de Hacker News con cuatro titulares de IA, cada uno sellado con un veredicto (experimentar, vigilar o descartar). Una balanza pesa ganancia contra costo y las ideas que valen un experimento van al laboratorio."));
+    L("Research desk: the research radar with four AI items from Hacker News, arXiv, Hugging Face and GitHub, each stamped with a verdict (experiment, watch or skip). A balance weighs gain against cost, and the ideas worth an experiment go to the lab.", "Mesa de investigación: el radar de investigación con cuatro publicaciones de IA de Hacker News, arXiv, Hugging Face y GitHub, cada una sellada con un veredicto (experimentar, vigilar o descartar). Una balanza pesa la ganancia contra el costo, y las ideas que valen un experimento van al laboratorio."));
 }
 
 function failureLab(L) {
