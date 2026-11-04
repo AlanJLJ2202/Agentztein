@@ -274,7 +274,10 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 /* ---------- Meta ---------- */
 /* proof: the real app, right after Meta's models */
 .proof { background: #fff; }
-.shots { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, .55fr); gap: 16px; align-items: start; }
+.shots { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .55fr); gap: 20px 16px; align-items: start; }
+.shot.big { grid-column: 1 / -1; }
+.shot.big img { max-width: 1000px; margin: 0 auto; }
+.shot.big figcaption { max-width: 1000px; margin: 0 auto; width: 100%; }
 .shot { margin: 0; display: grid; gap: 10px; }
 .shot img { width: 100%; height: auto; border-radius: 20px; border: 1px solid var(--soft-2); box-shadow: 0 18px 40px rgba(28, 43, 51, .1); background: #fff; }
 .shot figcaption { display: grid; gap: 2px; font-size: .9375rem; line-height: 1.4; }
@@ -1149,8 +1152,12 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
     </div>
     <div class="shots">
       <figure class="shot big ent">
-        <img src="img/app-run.webp" width="1600" height="1153" loading="lazy" alt="One cycle drawn as a 3D network: each call to the model, the tools it used and what each gave back; it turns red and says the code stopped the agent when it went over the cycle's cap." data-es-alt="Una corrida dibujada como red 3D: cada llamada al modelo, las herramientas que usó y lo que devolvió cada una; se pone roja y dice que el código detuvo al agente cuando pasó el tope de la corrida." />
-        <figcaption><b data-es="Cada corrida, como red">Each cycle, as a network</b><span data-es="Cada llamada a Muse, cada herramienta y su costo contra el tope. Si un paso pudiera pasarse, el código detiene al agente.">Every call to Muse, every tool and its cost against the cap. If a step could go over, the code stops the agent.</span></figcaption>
+        <img src="img/app-run.webp" width="1600" height="1154" loading="lazy" alt="One cycle drawn as a 3D network on white: it starts, calls the model three times, uses its tools (grader, library) and ends with the skill approved, at $0.08 of a $0.50 cap." data-es-alt="Una corrida dibujada como red 3D en blanco: empieza, llama al modelo tres veces, usa sus herramientas (calificador, biblioteca) y termina con la habilidad aprobada, con $0.08 de un tope de $0.50." />
+        <figcaption><b data-es="Cada corrida, como red">Each cycle, as a network</b><span data-es="Cada llamada a Muse (violeta), cada herramienta que usó (azul) y lo que le devolvió cada una, hasta el resultado. Gira, se toca y crece en vivo mientras trabaja.">Every call to Muse (violet), every tool it used (blue) and what each gave back, down to the result. It turns, you can tap it, and it grows live while it works.</span></figcaption>
+      </figure>
+      <figure class="shot ent">
+        <img src="img/app-run-cap.webp" width="1600" height="1156" loading="lazy" alt="The same network in alert: it turns red, the cost meter shows $0.112 against a $0.10 cap, and a banner says the cap was used up and the code stopped the agent." data-es-alt="La misma red en alerta: se pone roja, el medidor marca $0.112 contra un tope de $0.10 y un aviso dice que se agotó el tope y el código detuvo al agente." />
+        <figcaption><b data-es="Y si se pasa del tope, alerta">And if it goes over the cap, an alert</b><span data-es="La red se pone roja, el medidor marca el exceso y el código detiene al agente: no cambia nada.">The network turns red, the meter shows the overage and the code stops the agent: nothing changes.</span></figcaption>
       </figure>
       <figure class="shot ent">
         <img src="img/app-board.webp" width="1600" height="1200" loading="lazy" alt="The dashboard: two highlighted alerts (a skill waits for approval, the budget is at 86%), colored key numbers and the six phases of the latest cycle." data-es-alt="El tablero: dos alertas remarcadas (una habilidad espera aprobación, el presupuesto va en 86%), números clave con color y las seis fases de la última corrida." />

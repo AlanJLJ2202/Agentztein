@@ -16,16 +16,17 @@ const STAGE_MS = 550;
 const HOLD_MS = 2600;
 const FOCAL = 720;
 
+// On white, like the rest of the page: deeper tones of the same families so every neuron reads on a light background.
 export const COLORS = {
-  start: "#e8eef5",
-  model: "#a78bfa",
-  tool: "#22d3ee",
-  detail: "#facc15",
-  mistake: "#fb923c",
-  end: "#34d399",
-  bad: "#f43f5e",
-  wait: "#fbbf24",
-  now: "#60a5fa",
+  start: "#1c2b33",
+  model: "#6d5ce8",
+  tool: "#0891b2",
+  detail: "#d49a00",
+  mistake: "#ea580c",
+  end: "#16a34a",
+  bad: "#e11d48",
+  wait: "#e8a200",
+  now: "#0064e0",
 } as const;
 
 type Kind = "start" | "model" | "tool" | "detail" | "end";
@@ -260,6 +261,7 @@ const rgba = (hex: string, a: number) => { const [r, g, b] = rgb(hex); return `r
 const ease = (x: number) => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3);
 
 type Proj = { sx: number; sy: number; z: number; s: number };
+type Label = { n: GNode; x: number; y: number; born: number; fresh: boolean };
 
 function useSound() {
   const [on, setOn] = useState(() => { try { return localStorage.getItem("agz-graph-sound") === "on"; } catch { return false; } });
@@ -371,12 +373,12 @@ export function RunGraph({ job, bench, lang }: { job: Job; bench: BenchScenario[
 
       g.clearRect(0, 0, w, h);
       const bg = g.createRadialGradient(w / 2, h * 0.45, 10, w / 2, h / 2, Math.max(w, h) * 0.75);
-      bg.addColorStop(0, alarm === 1 ? "#3a1020" : alarm ? "#2e2410" : "#141d3a");
-      bg.addColorStop(1, alarm === 1 ? "#12060c" : "#070b18");
+      bg.addColorStop(0, alarm === 1 ? "#fff5f6" : alarm ? "#fffaf0" : "#ffffff");
+      bg.addColorStop(1, alarm === 1 ? "#ffe4e8" : alarm ? "#fff1d6" : "#eef3f9");
       g.fillStyle = bg;
       g.fillRect(0, 0, w, h);
       // a few stars
-      g.fillStyle = "rgba(255,255,255,.18)";
+      g.fillStyle = "rgba(28,43,51,.10)";
       for (let i = 0; i < 40; i++) g.fillRect((i * 97.3) % w, (i * 53.7 + (i % 3) * 41) % h, 1.2, 1.2);
 
       const fit = Math.min(w / 520, h / 700);
@@ -399,8 +401,8 @@ export function RunGraph({ job, bench, lang }: { job: Job; bench: BenchScenario[
         const grow = ease((at - (e.stage - 1)) / 0.8);
         if (grow <= 0) continue;
         const ex = a.sx + (b.sx - a.sx) * grow, ey = a.sy + (b.sy - a.sy) * grow;
-        const col = alarm === 1 && e.kind !== "detail" ? COLORS.bad : e.kind === "flow" ? COLORS.model : e.kind === "return" ? "#7dd3fc" : nb.color;
-        g.strokeStyle = rgba(col, e.kind === "detail" ? 0.35 : 0.55);
+        const col = alarm === 1 && e.kind !== "detail" ? COLORS.bad : e.kind === "flow" ? COLORS.model : e.kind === "return" ? "#38bdf8" : nb.color;
+        g.strokeStyle = rgba(col, e.kind === "detail" ? 0.45 : 0.6);
         g.lineWidth = e.kind === "flow" ? 2.2 : 1.1;
         g.setLineDash(e.kind === "return" ? [4, 5] : []);
         g.beginPath(); g.moveTo(a.sx, a.sy); g.lineTo(ex, ey); g.stroke();
@@ -409,12 +411,13 @@ export function RunGraph({ job, bench, lang }: { job: Job; bench: BenchScenario[
           const p = s.live && grow >= 1 ? (now / 900) % 1 : grow;
           const px = a.sx + (b.sx - a.sx) * p, py = a.sy + (b.sy - a.sy) * p;
           const halo = g.createRadialGradient(px, py, 0, px, py, 10);
-          halo.addColorStop(0, "rgba(255,255,255,.95)"); halo.addColorStop(1, rgba(col, 0));
+          halo.addColorStop(0, rgba(col, 0.95)); halo.addColorStop(0.35, rgba(col, 0.45)); halo.addColorStop(1, rgba(col, 0));
           g.fillStyle = halo; g.beginPath(); g.arc(px, py, 10, 0, Math.PI * 2); g.fill();
         }
       }
 
       // neurons, far ones first
+      const labels: Label[] = [];
       const order = [...d.nodes].sort((p, q) => (s.proj.get(q.key)?.z ?? 0) - (s.proj.get(p.key)?.z ?? 0));
       for (const n of order) {
         const p = s.proj.get(n.key);
@@ -425,13 +428,13 @@ export function RunGraph({ job, bench, lang }: { job: Job; bench: BenchScenario[
         const beat = n.live ? 1 + Math.sin(now / 260) * 0.18 : 1;
         const r = n.r * p.s * born * beat * (hoverKey === n.key || pickKey === n.key ? 1.35 : 1);
         const glow = g.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, r * 3.2);
-        glow.addColorStop(0, rgba(col, 0.55 * born)); glow.addColorStop(1, rgba(col, 0));
+        glow.addColorStop(0, rgba(col, 0.28 * born)); glow.addColorStop(1, rgba(col, 0));
         g.fillStyle = glow; g.beginPath(); g.arc(p.sx, p.sy, r * 3.2, 0, Math.PI * 2); g.fill();
         const core = g.createRadialGradient(p.sx - r * 0.35, p.sy - r * 0.35, r * 0.1, p.sx, p.sy, r);
         core.addColorStop(0, "#ffffff"); core.addColorStop(0.35, col); core.addColorStop(1, rgba(col, 0.75));
         g.fillStyle = core; g.beginPath(); g.arc(p.sx, p.sy, r, 0, Math.PI * 2); g.fill();
         if (n.blocked) {
-          g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 1.6;
+          g.strokeStyle = rgba(COLORS.bad, 0.9); g.lineWidth = 1.6;
           g.beginPath(); g.arc(p.sx, p.sy, r + 4, 0, Math.PI * 2); g.stroke();
           g.beginPath(); g.moveTo(p.sx - r * 0.6, p.sy - r * 0.6); g.lineTo(p.sx + r * 0.6, p.sy + r * 0.6); g.moveTo(p.sx + r * 0.6, p.sy - r * 0.6); g.lineTo(p.sx - r * 0.6, p.sy + r * 0.6); g.stroke();
         } else if (n.bad) {
@@ -440,14 +443,25 @@ export function RunGraph({ job, bench, lang }: { job: Job; bench: BenchScenario[
         // labels: always for the spine, start and end; for the rest while they are fresh or pointed at
         const fresh = at - n.stage < 2.2;
         const show = n.kind !== "detail" || fresh || hoverKey === n.key || pickKey === n.key;
-        if (show) {
-          const a = n.kind === "detail" && !fresh ? 0.75 : 0.95;
-          g.textAlign = "left"; g.textBaseline = "middle";
-          g.font = `${n.kind === "model" || n.kind === "start" || n.kind === "end" ? 700 : 500} ${n.kind === "detail" ? 11 : 12.5}px Figtree, system-ui`;
-          g.fillStyle = rgba(n.kind === "model" && alarm === 1 ? "#fecdd3" : "#e5ecf6", a * born);
-          g.fillText(n.label.length > 34 ? `${n.label.slice(0, 33)}…` : n.label, p.sx + r + 7, p.sy);
-          if (n.sub) { g.font = "500 10.5px Figtree, system-ui"; g.fillStyle = rgba("#b9c6dc", 0.8 * born); g.fillText(n.sub, p.sx + r + 7, p.sy + 13); }
-        }
+        if (show) labels.push({ n, x: p.sx + r + 7, y: p.sy, born, fresh });
+      }
+      // labels go last, most important first, and one that would cover another is left out (the neuron is still
+      // there: pointing at it shows its label and its card)
+      const rank = (l: Label) => (l.n.key === hoverKey || l.n.key === pickKey ? 0 : l.n.kind === "start" || l.n.kind === "end" ? 1 : l.n.kind === "model" ? 2 : l.n.kind === "tool" ? 3 : 4);
+      const placed: { x: number; y: number; w: number; h: number }[] = [];
+      for (const l of labels.sort((a, b) => rank(a) - rank(b))) {
+        const { n } = l;
+        const text = n.label.length > 34 ? `${n.label.slice(0, 33)}…` : n.label;
+        g.font = `${n.kind === "model" || n.kind === "start" || n.kind === "end" ? 700 : 500} ${n.kind === "detail" ? 11 : 12.5}px Figtree, system-ui`;
+        const w = Math.max(g.measureText(text).width, n.sub ? g.measureText(n.sub).width * 0.85 : 0);
+        const box = { x: l.x - 2, y: l.y - 9, w: w + 4, h: n.sub ? 32 : 18 };
+        if (rank(l) > 0 && placed.some((q) => box.x < q.x + q.w && q.x < box.x + box.w && box.y < q.y + q.h && q.y < box.y + box.h)) continue;
+        placed.push(box);
+        const a = n.kind === "detail" && !l.fresh ? 0.75 : 0.95;
+        g.textAlign = "left"; g.textBaseline = "middle";
+        g.fillStyle = rgba(n.kind === "model" && alarm === 1 ? "#9f1239" : "#1c2b33", a * l.born);
+        g.fillText(text, l.x, l.y);
+        if (n.sub) { g.font = "500 10.5px Figtree, system-ui"; g.fillStyle = rgba("#4b5f6d", 0.9 * l.born); g.fillText(n.sub, l.x, l.y + 13); }
       }
       raf = requestAnimationFrame(frame);
     };
