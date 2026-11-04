@@ -92,7 +92,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
           <h1 className="h1">{t(T.radarTitle)}</h1>
           <Robot
             className="radar-robot"
-            pose={!hasKey ? "sleep" : busy ? "think" : "read"}
+            scene={!hasKey ? "nokey" : "radar"}
             say={!hasKey
               ? t({ en: "I need my brain to read: connect your Meta key.", es: "Necesito mi cerebro para leer: conecta tu llave de Meta." })
               : busy
@@ -157,7 +157,7 @@ export function Radar({ client, keys, onKeys, onNotes, go, lang }: Props) {
           {notes === null ? (
             <p className="muted">{t(T.loading)}</p>
           ) : shown.length === 0 ? (
-            <div className="empty"><Robot pose="ok" size={64} say={t(T.notesEmpty)} /></div>
+            <div className="empty"><Robot scene="radar" size={88} say={t(T.notesEmpty)} /></div>
           ) : (
             <ol className="notes">
               {shown.map((n) => (

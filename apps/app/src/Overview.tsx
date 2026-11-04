@@ -512,9 +512,7 @@ function MemoryCard({ lab, lang, go, client }: { lab: Lab; lang: Lang; go: (t: T
             </h2>
           </div>
           <div className="sleeper" aria-hidden="true">
-            <span className="moon">☾<i /><i /><i /></span>
-            <img src="/img/agent-sleep.webp" alt="" width={347} height={563} />
-            <span className="zzz"><b>z</b><b>z</b><b>Z</b></span>
+            <img src="/img/scene-dream.webp" alt="" width={544} height={480} />
           </div>
         </div>
         <p className="memcard-lead">

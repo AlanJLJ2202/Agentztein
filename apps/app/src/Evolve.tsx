@@ -112,7 +112,7 @@ export function Evolve({ client, go }: { client: Api; go: (t: Tab) => void }) {
           <h1 className="h1">{t(L.title)}</h1>
           <Robot
             className="radar-robot"
-            pose={working ? "think" : "ok"}
+            scene="code"
             say={working
               ? t({ en: "A judge is examining my new code with an exam I've never seen…", es: "Un juez está examinando mi código nuevo con un examen que nunca he visto…" })
               : t({ en: "Here I can rewrite my own code. A judge tests it, and I only keep a version that does better.", es: "Aquí puedo reescribir mi propio código. Un juez lo prueba y solo me quedo con una versión que lo haga mejor." })}

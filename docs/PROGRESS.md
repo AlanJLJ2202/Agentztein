@@ -140,8 +140,10 @@ pnpm check
 - Tests: `test/api/memory.test.ts` (reglas puras) y el ciclo que sueña de punta a punta en `test/api/agent.test.ts`.
 
 ## Pantallas más digeribles, con Agentztein como guía (2026-11-04)
-- `Robot.tsx`: Agentztein en una pose (ok, alerta, dormido, explicando, feliz, saludando, leyendo) con una frase. Las
-  poses son fotos del mismo modelo 3D (`render-stills.mjs agent-*`), sin un segundo canvas WebGL.
+- `Robot.tsx`: Agentztein a medio cuerpo (para que su cara se lea aun en chico) con el objeto 3D que cuenta la
+  situación (`apps/landing/src/props.js`): llave (API key), monedas (gasto, con alerta), luna y "z" (sueño), micrófono
+  (voz), lupa (radar), pantalla `</>` (su código), tabla con palomitas (examen), tarjeta (créditos). Son fotos del mismo
+  modelo 3D (`render-stills.mjs scene-*`), sin un segundo canvas WebGL.
 - Inicio: tarjeta "Memoria y sueños" con Agentztein dormido, alertas de sueño, KPI de memoria y sueños en la historia.
 - Agente: el robot dice qué pasa; los pasos del ciclo como fichas; tope con botones rápidos; guía, modelos y esfuerzo
   en "Más opciones"; el panel vacío ya no repite el texto.

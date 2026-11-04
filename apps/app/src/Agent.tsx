@@ -12,7 +12,7 @@ import { useLive } from "./live.js";
 import { Memory } from "./Memory.js";
 import { RunGraph } from "./RunGraph.js";
 import { nextUp } from "./story.js";
-import { Robot, type Pose } from "./Robot.js";
+import { Robot, type Scene } from "./Robot.js";
 
 const E = (en: string, es: string): Text => ({ en, es });
 const L = {
@@ -341,24 +341,24 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
 
   const mem = data.memory;
   const lastDone = data.jobs.find((j) => j.phase === "done");
-  const mood: { pose: Pose; say: Text } = !hasKey
-    ? { pose: "sleep", say: E("I need my brain: connect your Meta key in Settings.", "Necesito mi cerebro: conecta tu llave de Meta en Ajustes.") }
+  const mood: { scene: Scene; say: Text } = !hasKey
+    ? { scene: "nokey", say: E("I need my brain: connect your Meta key in Settings.", "Necesito mi cerebro: conecta tu llave de Meta en Ajustes.") }
     : job && RUNNING.includes(job.phase) && !job.state.error
-      ? { pose: job.phase === "dream" ? "sleep" : "think", say: nextUp(job)?.text ?? E("Working…", "Trabajando…") }
+      ? { scene: job.phase === "dream" ? "dream" : "exam", say: nextUp(job)?.text ?? E("Working…", "Trabajando…") }
       : job?.phase === "awaiting"
-        ? { pose: "alert", say: E("I wrote a skill that passed the harness. Will you look at it? It's below.", "Escribí una habilidad que pasó el arnés. ¿La revisas? Está aquí abajo.") }
+        ? { scene: "alert", say: E("I wrote a skill that passed the harness. Will you look at it? It's below.", "Escribí una habilidad que pasó el arnés. ¿La revisas? Está aquí abajo.") }
         : mem && mem.undigested >= mem.dreamAfter && auto
-          ? { pose: "sleep", say: E("I'm sleepy: if you let me decide, I'll dream first and then practice.", "Tengo sueño: si me dejas decidir, primero sueño y luego practico.") }
+          ? { scene: "dream", say: E("I'm sleepy: if you let me decide, I'll dream first and then practice.", "Tengo sueño: si me dejas decidir, primero sueño y luego practico.") }
           : lastDone?.state.outcome === "approved" && Date.now() - Date.parse(lastDone.updatedAt) < 86_400_000
-            ? { pose: "happy", say: E("My new skill is active. Shall we go for another one?", "Mi habilidad nueva ya está activa. ¿Vamos por otra?") }
+            ? { scene: "happy", say: E("My new skill is active. Shall we go for another one?", "Mi habilidad nueva ya está activa. ¿Vamos por otra?") }
             : auto
-              ? { pose: "wave", say: E("Tell me how much I can spend and I'll take care of the rest.", "Dime cuánto puedo gastar y yo me encargo del resto.") }
-              : { pose: "think", say: E("Pick the exam and how much I can spend. I'll show you every step.", "Elige el examen y cuánto puedo gastar. Te enseño cada paso.") };
+              ? { scene: "hello", say: E("Tell me how much I can spend and I'll take care of the rest.", "Dime cuánto puedo gastar y yo me encargo del resto.") }
+              : { scene: "exam", say: E("Pick the exam and how much I can spend. I'll show you every step.", "Elige el examen y cuánto puedo gastar. Te enseño cada paso.") };
 
   return (
     <section className="agent">
       <div className="agent-hero">
-        <Robot pose={mood.pose} say={t(mood.say)} />
+        <Robot scene={mood.scene} say={t(mood.say)} />
         <div>
           <p className="kicker meta-k"><MetaMark size={20} /> {t(L.kicker)}</p>
           <h1 className="h1">{t(L.title)}</h1>
@@ -544,7 +544,7 @@ export function Agent({ client, go, lang }: { client: Api; go: (t: Tab) => void;
               </>
             ) : (
               <div className="cycle-idle">
-                <img src="/img/agent-ok.webp" alt="" width={347} height={563} />
+                <img src="/img/scene-exam.webp" alt="" width={160} height={143} />
                 <p>{t(L.idle)}</p>
               </div>
             )}

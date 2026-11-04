@@ -7,7 +7,7 @@ import { markPath } from "./Path.js";
 import { browserCanListen, hush, playAudio, speakBrowser, useBrowserVoices, useVoicePrefs } from "./voice.js";
 import { MetaMark } from "./Logos.js";
 import { familyOf, META_MODELS, pickId } from "@skillab/research";
-import { Robot } from "./Robot.js";
+import { Robot, type Scene } from "./Robot.js";
 
 /** One plain icon per Meta family: what it is good for, at a glance. */
 const FAM_ICON: Record<string, { icon: string; tag: Text }> = {
@@ -21,10 +21,10 @@ const FAM_ICON: Record<string, { icon: string; tag: Text }> = {
 const tier = (usd: [number, number]) => "$".repeat(usd[1] >= 10 ? 4 : usd[1] >= 3 ? 3 : usd[1] >= 1 ? 2 : 1);
 
 /** The left side of a settings row: the robot in its pose, the title and one sentence. */
-function Side({ pose, title, text, children }: { pose: Parameters<typeof Robot>[0]["pose"]; title: string; text: string; children?: React.ReactNode }) {
+function Side({ scene, title, text, children }: { scene: Scene; title: string; text: string; children?: React.ReactNode }) {
   return (
     <div className="prov-side">
-      <Robot pose={pose} size={64} />
+      <Robot scene={scene} size={96} />
       <div>
         <h2>{title}</h2>
         <p className="muted small">{text}</p>
@@ -57,7 +57,7 @@ export function Brain({ client, keys, onKeys, go }: Props) {
     <section className="settings">
       <div className="settings-head">
         <Robot
-          pose={keys?.length ? "happy" : "sleep"}
+          scene={keys?.length ? "happy" : "nokey"}
           size={84}
           say={keys?.length
             ? t({ en: "I have a brain! Here you choose how I think, how much I spend and how I talk to you.", es: "¡Ya tengo cerebro! Aquí eliges con qué pienso, cuánto gasto y cómo te hablo." })
@@ -84,7 +84,7 @@ export function Brain({ client, keys, onKeys, go }: Props) {
         <Limits client={client} />
         <VoiceCard client={client} saved={voiceKey} onSaved={setVoiceKey} />
         <article className="prov wide credits">
-          <Side pose="ok" title={t(T.creditsTitle)} text={t(T.creditsLead)}><span className="pill amber">{t(T.phase2)}</span></Side>
+          <Side scene="credits" title={t(T.creditsTitle)} text={t(T.creditsLead)}><span className="pill amber">{t(T.phase2)}</span></Side>
         </article>
       </div>
       {keys && keys.length > 0 && (
@@ -150,7 +150,7 @@ function ProviderCard({ p, saved, client, onSaved, onRemoved }: { p: ProviderInf
   return (
     <article className={`prov wide${saved ? " on" : ""}`}>
       <Side
-        pose={saved ? "think" : "sleep"}
+        scene={saved ? "key" : "nokey"}
         title={t({ en: "Its brain", es: "Su cerebro" })}
         text={saved
           ? t({ en: "Which Meta model thinks for it. Tap one.", es: "Qué modelo de Meta piensa por él. Toca uno." })
@@ -231,7 +231,7 @@ function Limits({ client }: { client: Api }) {
   return (
     <article className="prov wide on harness-card">
       <Side
-        pose={pct >= 80 ? "alert" : "ok"}
+        scene={pct >= 80 ? "budget-alert" : "budget"}
         title={t({ en: "How much it can spend", es: "Cuánto puede gastar" })}
         text={t({ en: "Its limit per month. Before every step it checks the worst case; if it could go over, it doesn't call Meta.", es: "Su límite al mes. Antes de cada paso revisa el peor caso; si pudiera pasarse, no llama a Meta." })}
       />
@@ -315,7 +315,7 @@ function VoiceCard({ client, saved, onSaved }: { client: Api; saved: VoiceKey | 
   return (
     <article className="prov wide on voice-card">
       <Side
-        pose="wave"
+        scene="voice"
         title={t(V("Its voice and its ears", "Su voz y sus oídos"))}
         text={t(V("When you talk to it out loud: who listens to you and which voice answers. Meta can listen but has no voice yet.", "Cuando le hablas en voz alta: quién te escucha y con qué voz te contesta. Meta escucha pero aún no tiene voz."))}
       />

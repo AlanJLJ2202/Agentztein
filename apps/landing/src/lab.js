@@ -7,6 +7,7 @@ import {
   SKILLS, C, makeAgent, pose, setArms, makeCoil, makeBolt, makeChip, makePaper, makeBadge, makeBench,
   setupRenderer, addLights, makeFloor, paintScreen, makeMetaLogo, windowPanel, rr, LEG_DROP,
 } from "./agent.js";
+import { makeCard, makeClipboard, makeCodeTile, makeCoins, makeDream, makeKey, makeLens, makeMic, makeWarn } from "./props.js";
 
 const COIL_X = 2.35;
 const TARGET = new THREE.Vector3(0, 1.65, 0);
@@ -38,6 +39,34 @@ function awake(agent, mood, t = 2) {
   paintScreen(agent.userData.screenTex, "pulse", 0.6);
 }
 
+/** The creature's poses for the app's stills: mood, arms (setArms), chest screen and where it looks. */
+const POSES = {
+  sleep: { mood: "sleep", power: 0.18, arms: [-0.05, 0.05, 0, 0], screen: "off", look: [0, -0.4] },
+  think: { mood: "think", arms: [-0.12, 0.45, 0, -1.25], screen: "sync", look: [0.35, 0.4] },
+  happy: { mood: "happy", arms: [-2.5, 2.5, 0, 0], screen: "ok", look: [0, 0.15] },
+  wave: { mood: "happy", arms: [-0.12, 2.6, 0, 0], screen: "pulse", look: [0.2, 0.1] },
+  ok: { mood: "idle", arms: [-0.12, 0.12, 0, 0], screen: "ok", look: [0.15, 0.15] },
+  alert: { mood: "alert", arms: [-0.42, 0.42, -0.25, -0.25], screen: "alert", look: [0.1, 0.1] },
+};
+
+/* The app's guide stills: Agentztein half-length (so its face reads even small) with the prop that tells the
+   situation. pose is one of POSES; prop is built by ./props.js and placed beside it. */
+const SCENES = {
+  key: { pose: "think", prop: makeKey, at: [0.78, 2.05, 0.45], rot: [0.2, -0.5, 0.35], scale: 0.78 },
+  nokey: { pose: "sleep", prop: makeKey, at: [0.95, 2.35, 0.35], rot: [0.1, -0.4, -0.45], scale: 0.7 },
+  budget: { pose: "ok", prop: makeCoins, at: [1.15, 1.6, 0.45], rot: [0.3, 0, 0], scale: 1.05 },
+  "budget-alert": { pose: "alert", prop: () => { const g = new THREE.Group(); const c = makeCoins(3); const w = makeWarn(); w.position.set(0.15, 0.75, 0.1); w.scale.setScalar(0.8); g.add(c, w); return g; }, at: [1.15, 1.6, 0.45], rot: [0.25, -0.2, 0], scale: 1.0 },
+  dream: { pose: "sleep", prop: makeDream, at: [0.92, 2.5, 0.2], rot: [0, -0.25, 0], scale: 0.72 },
+  voice: { pose: "wave", prop: makeMic, at: [-0.95, 1.95, 0.5], rot: [0.1, 0.3, 0.1], scale: 0.9 },
+  radar: { pose: "think", prop: makeLens, at: [1.0, 2.1, 0.5], rot: [0, -0.35, 0], scale: 0.85 },
+  code: { pose: "think", prop: makeCodeTile, at: [1.1, 2.1, 0.4], rot: [0, -0.45, 0], scale: 0.95 },
+  exam: { pose: "think", prop: makeClipboard, at: [1.05, 2.0, 0.45], rot: [0.05, -0.45, 0.1], scale: 0.9 },
+  credits: { pose: "ok", prop: makeCard, at: [1.1, 1.95, 0.45], rot: [0.15, -0.5, 0.25], scale: 0.95 },
+  happy: { pose: "happy", prop: null },
+  alert: { pose: "alert", prop: null },
+  hello: { pose: "wave", prop: null },
+};
+
 export function renderStill(canvas, which, size = 900) {
   const renderer = setupRenderer(canvas, true);
   renderer.setPixelRatio(1);
@@ -57,16 +86,9 @@ export function renderStill(canvas, which, size = 900) {
     ped.position.y = -0.1; ped.receiveShadow = true;
     scene.add(ped, makeBench(which.slice(6)));
     look(0, 1.7, 4.3, 0, 0.6, 0);
-  } else if (which.startsWith("agent-")) {
-    // Agentztein in one pose, alone on a transparent background: the app's guide in every screen. Each still is then
-    // cropped to its outline and scaled to 563 px tall (like agent-ok.webp) before it goes in img/.
-    const P = {
-      sleep: { mood: "sleep", power: 0.18, arms: [-0.05, 0.05, 0, 0], screen: "off", look: [0, -0.4] },
-      think: { mood: "think", arms: [-0.12, 0.45, 0, -1.25], screen: "sync", look: [0.35, 0.4] },
-      happy: { mood: "happy", arms: [-2.5, 2.5, 0, 0], screen: "ok", look: [0, 0.15] },
-      wave: { mood: "happy", arms: [-0.12, 2.6, 0, 0], screen: "pulse", look: [0.2, 0.1] },
-      read: { mood: "think", arms: [-0.55, 0.55, -1.05, -1.05], screen: "pulse", look: [0, -0.45], paper: true },
-    }[which.slice(6)] ?? { mood: "idle", arms: [-0.12, 0.12, 0, 0], screen: "pulse", look: [0, 0] };
+  } else if (which.startsWith("scene-")) {
+    const sc = SCENES[which.slice(6)];
+    const P = POSES[sc.pose] ?? POSES.think;
     const agent = makeAgent({ legs: true });
     const u = agent.userData;
     u.power = P.power ?? 1;
@@ -75,13 +97,20 @@ export function renderStill(canvas, which, size = 900) {
     setArms(agent, ...P.arms);
     paintScreen(u.screenTex, P.screen, 0.6);
     agent.position.y = LEG_DROP;
+    agent.rotation.y = sc.prop ? -0.18 : 0;
     scene.add(agent);
-    if (P.paper) {
-      const paper = makePaper([["#1", "✓"], ["#2", "?"], ["#3", "✓"]], { title: "arXiv", w: 0.9, h: 1.1 });
-      paper.position.set(0, 1.45, 0.75); paper.rotation.x = -0.35;
-      scene.add(paper);
+    if (sc.prop) {
+      const prop = sc.prop();
+      prop.position.set(...sc.at);
+      prop.rotation.set(...sc.rot);
+      prop.scale.setScalar(sc.scale);
+      scene.add(prop);
     }
-    look(0.4, 2.1, 11, 0, 1.55, 0);
+    // half-length and a little wider than tall, so the face and the prop both read at 64 px
+    renderer.setSize(Math.round(size * 1.3), size, false);
+    camera.aspect = 1.3;
+    camera.updateProjectionMatrix();
+    look(0.55, 2.95, 5.4, 0.42, 2.62, 0);
   } else if (which === "muse") {
     const agent = makeAgent();
     agent.userData.look.set(0.25, 0.1);
