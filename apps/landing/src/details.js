@@ -190,7 +190,7 @@ function renderLive() {
 // The live feed lives in the "Researches" phase detail; it loads the first time that detail opens.
 let requested = false;
 document.addEventListener("step:open", (e) => {
-  if (!live || e.detail !== 1 || requested) return;
+  if (!live || e.detail !== 2 || requested) return;
   requested = true;
   fetchLiveFeed({ limit: 6, signal: AbortSignal.timeout(9000) })
     .then((r) => { stories = r.items; fetchedAt = new Date(); })

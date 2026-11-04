@@ -272,6 +272,16 @@ section { padding-block: var(--gap); scroll-margin-top: 64px; }
 }
 
 /* ---------- Meta ---------- */
+/* proof: the real app, right after Meta's models */
+.proof { background: #fff; }
+.shots { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, .55fr); gap: 16px; align-items: start; }
+.shot { margin: 0; display: grid; gap: 10px; }
+.shot img { width: 100%; height: auto; border-radius: 20px; border: 1px solid var(--soft-2); box-shadow: 0 18px 40px rgba(28, 43, 51, .1); background: #fff; }
+.shot figcaption { display: grid; gap: 2px; font-size: .9375rem; line-height: 1.4; }
+.shot figcaption span { color: var(--muted); }
+.shots-note { margin-top: 22px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+@media (max-width: 960px) { .shots { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .shot.big { grid-column: 1 / -1; } }
+@media (max-width: 560px) { .shots { grid-template-columns: minmax(0, 1fr); } .shot.tall img { max-width: 300px; } }
 .meta-sec { background: var(--sky); }
 .brain { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 6fr); gap: clamp(24px, 5vw, 80px); align-items: center; }
 .brain .lockup { font-size: 1.25rem; }
@@ -458,6 +468,17 @@ footer { background: var(--blue); color: #fff; padding-top: clamp(72px, 9vw, 128
 .pk.jet:hover { background: #0a6fdc; }
 
 
+/* outside the ring: what it also does, with an honest tag */
+.also { margin-top: clamp(28px, 4vw, 48px); }
+.also h3 { font-size: 1.125rem; margin-bottom: 12px; }
+.also ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.also li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 16px; border-radius: 20px; background: #fff; border: 1px solid var(--soft-2); border-top: 3px solid var(--c); }
+.also li > i { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-style: normal; font-weight: 800; background: color-mix(in srgb, var(--c) 14%, #fff); color: var(--c); }
+.also b { display: block; font-weight: 800; }
+.also p { margin: 4px 0 8px; color: var(--muted); font-size: .9375rem; line-height: 1.45; }
+.also .tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .75rem; font-weight: 800; background: var(--amber-bg); color: #8f5600; }
+.also .tag.on { background: #ddf3e6; color: #18794e; }
+@media (max-width: 860px) { .also ul { grid-template-columns: minmax(0, 1fr); } }
 .loop { --c: var(--meta); display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(24px, 4vw, 64px); align-items: center; }
 .ring { position: relative; width: min(100%, 580px); aspect-ratio: 1; margin: 0 auto; }
 .ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
@@ -879,8 +900,9 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
     <a class="word" href="#inicio" aria-label="Agentztein, home" data-es-aria-label="Agentztein, inicio"><img src="img/logo.webp" alt="Agentztein" width="165" height="34"></a>
     <nav class="links" id="menu" aria-label="Sections" data-es-aria-label="Secciones">
       <a href="#como-funciona" data-es="Cómo funciona">How it works</a>
-      <a href="#laboratorio" data-es="Laboratorio">The lab</a>
       <a href="#meta" data-es="Con Meta">Muse by Meta</a>
+      <a href="#app" data-es="En la app">In the app</a>
+      <a href="#laboratorio" data-es="Laboratorio">The lab</a>
       <a href="#arnes" data-es="Arnés">Harness</a>
       <a href="#avance" data-es="Avance">Progress</a>
       <a class="btn menu-cta" href="/app/" data-es="Entrar">Sign in</a>
@@ -933,13 +955,13 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
   <div class="wrap">
     <div class="head ent">
       <h2 data-es="Auto-desarrollo">Self-development</h2>
-      <p class="lead" data-es="Seis fases que se repiten sin parar. Toca una para verla.">Six phases that repeat forever. Tap one to see it.</p>
+      <p class="lead" data-es="Seis fases, en el orden en que de verdad corren en cada ciclo. Toca una para verla.">Six phases, in the order they really run in every cycle. Tap one to see it.</p>
     </div>
     <div class="terms ent" role="list" aria-label="Key words" data-es-aria-label="Palabras clave">
       <button class="term" role="listitem" type="button" style="--c:#6d5ce8" data-pop-title-en="Skill" data-pop-title-es="Habilidad" data-pop-en="A short text of instructions the agent adds to its prompt in one specific situation. For example: “in a brand-new game, move a piece and watch before searching the web”. It is text, not code: the model itself never changes." data-pop-es="Un texto corto de instrucciones que el agente suma a su prompt en una situación concreta. Por ejemplo: «en un juego nuevo, mueve una pieza y observa antes de buscar en la web». Es texto, no código: el modelo no cambia."><i aria-hidden="true">✎</i><b data-es="Habilidad">Skill</b><span data-es="instrucciones que él escribe">instructions it writes</span></button>
       <button class="term" role="listitem" type="button" style="--c:#0081fb" data-pop-title-en="Exam" data-pop-title-es="Examen" data-pop-en="Tasks with a known right answer, so every answer is marked right or wrong. There are three: practice (to learn from), validation (to test changes) and a sealed one that only runs at the end." data-pop-es="Tareas con respuesta correcta conocida, para marcar cada respuesta como bien o mal. Hay tres: de práctica (para aprender), de validación (para probar cambios) y uno sellado que solo se corre al final."><i aria-hidden="true">✓</i><b data-es="Examen">Exam</b><span data-es="tareas con respuesta conocida">tasks with a known answer</span></button>
       <button class="term" role="listitem" type="button" style="--c:#22b864" data-pop-title-en="Baseline" data-pop-title-es="Línea base" data-pop-en="The score it gets today, before changing anything. Every improvement has to beat that number." data-pop-es="La calificación que saca hoy, antes de cambiar nada. Toda mejora tiene que superar ese número."><i aria-hidden="true">◎</i><b data-es="Línea base">Baseline</b><span data-es="su calificación de hoy">its score today</span></button>
-      <button class="term today" role="listitem" type="button" style="--c:#c98a00" data-pop-title-en="What works today" data-pop-title-es="Qué funciona hoy" data-pop-en="In the app, with your own Meta key, phases 1 to 5 really run on five synthetic business exercises (for example, labeling bank transactions). Running them on public benchmarks like SWE-bench is the goal: there are no results on any of them yet." data-pop-es="En la app, con tu propia llave de Meta, las fases 1 a 5 corren de verdad sobre cinco ejercicios de negocio sintéticos (por ejemplo, etiquetar movimientos bancarios). Correrlas en benchmarks públicos como SWE-bench es la meta: todavía no hay resultados en ninguno."><i aria-hidden="true">●</i><b data-es="Qué funciona hoy">What works today</b><span data-es="fases 1 a 5">phases 1 to 5</span></button>
+      <button class="term today" role="listitem" type="button" style="--c:#c98a00" data-pop-title-en="What works today" data-pop-title-es="Qué funciona hoy" data-pop-en="In the app, with your own Meta key, all six phases really run, on five exams in the style of the frontier benchmarks (synthetic, built here). Each cycle is logged and can be replayed as a network. Running on the real public benchmarks is the goal: there are no results on them yet." data-pop-es="En la app, con tu propia llave de Meta, las seis fases corren de verdad, sobre cinco exámenes al estilo de los benchmarks de frontera (sintéticos, hechos aquí). Cada corrida queda registrada y se puede repasar como red. Correr en los benchmarks públicos reales es la meta: todavía no hay resultados en ellos."><i aria-hidden="true">●</i><b data-es="Qué funciona hoy">What works today</b><span data-es="las 6 fases, en la app">all 6 phases, in the app</span></button>
     </div>
     <div class="loop ent" id="cycle" style="--c:#6d5ce8">
       <div class="ring">
@@ -950,74 +972,74 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
         </svg>
         <div class="core">
           <figure class="pv on" data-phase="0">
-            <img src="img/step0.webp" width="900" height="900" alt="Agentztein reads its practice exam sheet: four answers are marked correct and one wrong, with a stopwatch next to it." data-es-alt="Agentztein lee la hoja de su examen de práctica: cuatro respuestas marcadas como correctas y una como incorrecta, con un cronómetro al lado." />
+            <img src="img/stepD.webp" width="900" height="900" alt="Agentztein holds today's plan (exam, model, effort and cap) while three Meta models it could pick float beside it." data-es-alt="Agentztein sostiene el plan de hoy (examen, modelo, esfuerzo y tope) mientras flotan a su lado tres modelos de Meta que podría elegir." />
           </figure>
           <figure class="pv" data-phase="1">
-            <img src="img/step1.webp" width="900" height="900" alt="Agentztein reads a Hacker News page with four AI headlines; next to it float three tags: Try it, Watch and Skip." data-es-alt="Agentztein lee una página de Hacker News con cuatro titulares de IA; a su lado flotan tres etiquetas: Probar, Vigilar y Descartar." loading="lazy" />
+            <img src="img/step0.webp" width="900" height="900" alt="Agentztein reads its practice exam sheet: four answers are marked correct and one wrong, with a stopwatch next to it." data-es-alt="Agentztein lee la hoja de su examen de práctica: cuatro respuestas marcadas como correctas y una como incorrecta, con un cronómetro al lado." loading="lazy" />
           </figure>
           <figure class="pv" data-phase="2">
-            <img src="img/step2.webp" width="900" height="900" alt="Agentztein checks its test sheet with a magnifying glass: one puzzle failed, marked with a red X." data-es-alt="Agentztein revisa con una lupa la hoja de sus pruebas: falló un acertijo, marcado con una X roja." loading="lazy" />
+            <img src="img/step1.webp" width="900" height="900" alt="Agentztein reads a Hacker News page with four AI headlines; next to it float three tags: Try it, Watch and Skip." data-es-alt="Agentztein lee una página de Hacker News con cuatro titulares de IA; a su lado flotan tres etiquetas: Probar, Vigilar y Descartar." loading="lazy" />
           </figure>
           <figure class="pv" data-phase="3">
-            <img src="img/step3.webp" width="900" height="900" alt="Agentztein holds out a new skill chip while a Tesla coil fires lightning through it to test it." data-es-alt="Agentztein sostiene una ficha nueva mientras una bobina de Tesla le lanza rayos para probarla." loading="lazy" />
+            <img src="img/step2.webp" width="900" height="900" alt="Agentztein checks its test sheet with a magnifying glass: one puzzle failed, marked with a red X." data-es-alt="Agentztein revisa con una lupa la hoja de sus pruebas: falló un acertijo, marcado con una X roja." loading="lazy" />
           </figure>
           <figure class="pv" data-phase="4">
-            <img src="img/step4.webp" width="900" height="900" alt="Agentztein celebrates with its arms up: the new chip is already sewn onto its body and there is confetti." data-es-alt="Agentztein celebra con los brazos arriba: la ficha nueva ya está cosida en su cuerpo y hay confeti." loading="lazy" />
+            <img src="img/step3.webp" width="900" height="900" alt="Agentztein holds out a new skill chip while a Tesla coil fires lightning through it to test it." data-es-alt="Agentztein sostiene una ficha nueva mientras una bobina de Tesla le lanza rayos para probarla." loading="lazy" />
           </figure>
           <figure class="pv" data-phase="5">
-            <img src="img/step5.webp" width="900" height="900" alt="Agentztein reads the sheet of a new benchmark version; one of its chips comes off in amber, labeled Review." data-es-alt="Agentztein lee la hoja de un benchmark en versión nueva; una de sus fichas se separa en ámbar con la etiqueta Review." loading="lazy" />
+            <img src="img/step4.webp" width="900" height="900" alt="Agentztein celebrates with its arms up: the new chip is already sewn onto its body and there is confetti." data-es-alt="Agentztein celebra con los brazos arriba: la ficha nueva ya está cosida en su cuerpo y hay confeti." loading="lazy" />
           </figure>
         </div>
-          <span class="say on" data-phase="0" data-es="Primero me mido: ¿cuánto acierto hoy?">First I measure myself: how much do I get right today?</span>
-          <span class="say" data-phase="1" data-es="¿«Búsqueda en árbol»? Vale un experimento.">“Tree search”? Worth an experiment.</span>
-          <span class="say" data-phase="2" data-es="3 de 3 respuestas mal: el mismo patrón.">3 of 3 wrong answers: same pattern.</span>
-          <span class="say" data-phase="3" data-es="¿Sube mi calificación sin romper nada?">Does my score go up without breaking anything?</span>
-          <span class="say" data-phase="4" data-es="Pasó la prueba: activo la habilidad.">It passed the test: I switch the skill on.</span>
-          <span class="say" data-phase="5" data-es="Cambiaron las reglas: repruebo solo lo afectado.">The rules changed: I re-test only what's affected.</span>
-        <ol class="nodes" role="tablist" aria-label="Phases" data-es-aria-label="Fases">
-          <li role="presentation" style="left:50.00%;top:8.00%"><button class="ctab" role="tab" type="button" id="ct0" aria-controls="cp0" aria-selected="true" data-phase="0" style="--c:#6d5ce8"><b>1</b><span data-es="Se mide">Measures</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-          <li role="presentation" style="left:86.37%;top:29.00%"><button class="ctab" role="tab" type="button" id="ct1" aria-controls="cp1" aria-selected="false" data-phase="1" style="--c:#ff6600"><b>2</b><span data-es="Investiga">Research</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-          <li role="presentation" style="left:86.37%;top:71.00%"><button class="ctab" role="tab" type="button" id="ct2" aria-controls="cp2" aria-selected="false" data-phase="2" style="--c:#f0533c"><b>3</b><span data-es="Errores">Mistakes</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-          <li role="presentation" style="left:50.00%;top:92.00%"><button class="ctab" role="tab" type="button" id="ct3" aria-controls="cp3" aria-selected="false" data-phase="3" style="--c:#0081fb"><b>4</b><span data-es="Prueba">Test</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-          <li role="presentation" style="left:13.63%;top:71.00%"><button class="ctab" role="tab" type="button" id="ct4" aria-controls="cp4" aria-selected="false" data-phase="4" style="--c:#22b864"><b>5</b><span data-es="Se activa">Activate</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
-          <li role="presentation" style="left:13.63%;top:29.00%"><button class="ctab" role="tab" type="button" id="ct5" aria-controls="cp5" aria-selected="false" data-phase="5" style="--c:#ffa928"><b>6</b><span data-es="Al día">Update</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <span class="say on" data-phase="0" data-es="Hoy practico código con Spark: cabe en el tope.">Today I practice code with Spark: it fits the cap.</span>
+          <span class="say" data-phase="1" data-es="Primero me mido: ¿cuánto acierto hoy?">First I measure myself: how much do I get right today?</span>
+          <span class="say" data-phase="2" data-es="¿«Búsqueda en árbol»? Vale un experimento.">“Tree search”? Worth an experiment.</span>
+          <span class="say" data-phase="3" data-es="3 de 3 respuestas mal: el mismo patrón.">3 of 3 wrong answers: same pattern.</span>
+          <span class="say" data-phase="4" data-es="¿Sube mi calificación sin romper nada?">Does my score go up without breaking anything?</span>
+          <span class="say" data-phase="5" data-es="Pasó el arnés. ¿La apruebas?">It passed the harness. Do you approve it?</span>
+          <ol class="nodes" role="tablist" aria-label="Phases" data-es-aria-label="Fases">
+          <li role="presentation" style="left:50.00%;top:8.00%"><button class="ctab" role="tab" type="button" id="ct0" aria-controls="cp0" aria-selected="true" data-phase="0" style="--c:#6d5ce8"><b>1</b><span data-es="Decide">Decides</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:86.37%;top:29.00%"><button class="ctab" role="tab" type="button" id="ct1" aria-controls="cp1" aria-selected="false" data-phase="1" style="--c:#0081fb"><b>2</b><span data-es="Se mide">Measures</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:86.37%;top:71.00%"><button class="ctab" role="tab" type="button" id="ct2" aria-controls="cp2" aria-selected="false" data-phase="2" style="--c:#ff6600"><b>3</b><span data-es="Investiga">Research</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:50.00%;top:92.00%"><button class="ctab" role="tab" type="button" id="ct3" aria-controls="cp3" aria-selected="false" data-phase="3" style="--c:#f0533c"><b>4</b><span data-es="Aprende">Learns</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:13.63%;top:71.00%"><button class="ctab" role="tab" type="button" id="ct4" aria-controls="cp4" aria-selected="false" data-phase="4" style="--c:#16a394"><b>5</b><span data-es="Prueba">Test</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
+          <li role="presentation" style="left:13.63%;top:29.00%"><button class="ctab" role="tab" type="button" id="ct5" aria-controls="cp5" aria-selected="false" data-phase="5" style="--c:#22b864"><b>6</b><span data-es="Tú decides">You decide</span><i class="cbar" aria-hidden="true"><i></i></i></button></li>
         </ol>
       </div>
       <div class="ctext">
         <article class="pt on" role="tabpanel" id="cp0" aria-labelledby="ct0" data-phase="0">
           <p class="kick" data-es="Fase 1 de 6">Phase 1 of 6</p>
-          <h3 data-es="Se mide">Measures itself</h3>
-          <p data-es="Antes de cambiar nada, contesta un examen de práctica con las habilidades que ya tiene y guarda cada respuesta, cuánto tardó y cuánto costó. Esa calificación es la línea base: sin ella no habría forma de saber después si algo mejoró.">Before changing anything, it takes a practice exam with the skills it already has and records every answer, how long it took and what it cost. That score is the baseline: without it, nobody could tell later whether something improved.</p>
+          <h3 data-es="Decide qué practicar">Decides what to practice</h3>
+          <p data-es="Puedes elegir tú o dejar que él decida: Muse Wonder mira dónde falla más, qué modelos de Meta tiene tu llave y cuánto costaría cada uno, y elige el examen, el modelo y el esfuerzo, sin pasarse del tope de gasto que le diste a la corrida.">You can choose, or let it: Muse Wonder looks at where it fails most, which Meta models your key has and what each would cost, and picks the exam, the model and the effort, within the spending cap you gave the cycle.</p>
           <button class="more" type="button" data-step="0"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <article class="pt" role="tabpanel" id="cp1" aria-labelledby="ct1" data-phase="1">
           <p class="kick" data-es="Fase 2 de 6">Phase 2 of 6</p>
-          <h3 data-es="Investiga">Researches</h3>
-          <p data-es="Lee lo nuevo en IA en cuatro fuentes (Hacker News, arXiv, Hugging Face y GitHub) y, juzgando título, resumen y fuente de cada publicación, decide si merece un experimento, solo vigilarla o descartarla.">Reads what's new in AI in four sources (Hacker News, arXiv, Hugging Face and GitHub) and, judging each item's title, summary and source, decides whether it deserves an experiment, a watch or a skip.</p>
+          <h3 data-es="Se mide">Measures itself</h3>
+          <p data-es="Antes de cambiar nada, presenta el examen con las habilidades que ya tiene y guarda cada respuesta, cuánto tardó y cuánto costó. Esa calificación es la línea base: sin ella no habría forma de saber después si algo mejoró.">Before changing anything, it takes the exam with the skills it already has and records every answer, how long it took and what it cost. That score is the baseline: without it, nobody could tell later whether something improved.</p>
           <button class="more" type="button" data-step="1"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <article class="pt" role="tabpanel" id="cp2" aria-labelledby="ct2" data-phase="2">
           <p class="kick" data-es="Fase 3 de 6">Phase 3 of 6</p>
-          <h3 data-es="Aprende de sus errores">Learns from its mistakes</h3>
-          <p data-es="Toma las preguntas del examen que falló, las agrupa por patrón y escribe una habilidad nueva (un texto corto de instrucciones) dirigida al patrón más común.">Takes the exam questions it got wrong, groups them by pattern and writes one new skill (a short text of instructions) aimed at the most common pattern.</p>
+          <h3 data-es="Investiga">Researches</h3>
+          <p data-es="Su radar lee lo nuevo en IA en cuatro fuentes (Hacker News, arXiv, Hugging Face y GitHub) y juzga cada publicación: experimentar, vigilar o descartar. Las ideas que tú apruebas llegan a la siguiente fase como inspiración.">Its radar reads what's new in AI in four sources (Hacker News, arXiv, Hugging Face and GitHub) and judges each item: experiment, watch or skip. The ideas you approve reach the next phase as inspiration.</p>
           <button class="more" type="button" data-step="2"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <article class="pt" role="tabpanel" id="cp3" aria-labelledby="ct3" data-phase="3">
           <p class="kick" data-es="Fase 4 de 6">Phase 4 of 6</p>
-          <h3 data-es="Prueba la habilidad nueva">Tests the new skill</h3>
-          <p data-es="Contesta un segundo examen dos veces: con sus habilidades actuales y con la nueva añadida. Solo avanza si la calificación sube y nada de lo que ya funcionaba falla.">Answers a second exam twice: with its current skills, and with the new one added. It only moves on if the score goes up and nothing that used to work now fails.</p>
+          <h3 data-es="Aprende de sus errores">Learns from its mistakes</h3>
+          <p data-es="Toma las preguntas de práctica que falló, las agrupa por patrón y escribe una habilidad nueva (un texto corto de instrucciones) dirigida al patrón más común.">Takes the practice questions it got wrong, groups them by pattern and writes one new skill (a short text of instructions) aimed at the most common pattern.</p>
           <button class="more" type="button" data-step="3"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <article class="pt" role="tabpanel" id="cp4" aria-labelledby="ct4" data-phase="4">
           <p class="kick" data-es="Fase 5 de 6">Phase 5 of 6</p>
-          <h3 data-es="Se activa con aprobación">Switches on, with approval</h3>
-          <p data-es="Si la habilidad nueva pasó la prueba y una persona la aprueba, se activa: se guarda como versión nueva, etiquetada con dónde aplica y con qué reglas se probó, y se añade al prompt cada vez que aparece esa situación.">If the new skill passed the test and a person approves it, it becomes active: it is saved as a new version, labeled with where it applies and under which rules it was tested, and added to the prompt whenever that situation appears.</p>
+          <h3 data-es="Se prueba, con un arnés">Tests it, behind a harness</h3>
+          <p data-es="Vuelve a presentar el examen de validación con la habilidad nueva. El arnés solo la deja pasar si la calificación sube y nada de lo que ya funcionaba falla; si un paso pudiera pasarse del tope, el código detiene la corrida.">Takes the validation exam again with the new skill. The harness only lets it through if the score goes up and nothing that used to work now fails; if a step could go over the cap, the code stops the cycle.</p>
           <button class="more" type="button" data-step="4"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <article class="pt" role="tabpanel" id="cp5" aria-labelledby="ct5" data-phase="5">
           <p class="kick" data-es="Fase 6 de 6">Phase 6 of 6</p>
-          <h3 data-es="Se mantiene al día">Keeps up to date</h3>
-          <p data-es="Cuando un benchmark cambia sus reglas, solo las habilidades etiquetadas para ese cambio vuelven a la fase 4 para probarse de nuevo. Las demás siguen funcionando y las versiones viejas se guardan.">When a benchmark changes its rules, only the skills labeled for that change go back to phase 4 to be tested again. The rest keep working, and old versions are saved.</p>
+          <h3 data-es="Tú decides y se activa">You decide, then it switches on</h3>
+          <p data-es="Una habilidad que pasó te espera. Si la apruebas, queda como una versión nueva activa, etiquetada con dónde aplica; si la rechazas, nada cambia. Cada corrida se puede repasar como una red, paso a paso.">A skill that passed waits for you. If you approve it, it becomes a new active version, labeled with where it applies; if you reject it, nothing changes. Every cycle can be replayed as a network, step by step.</p>
           <button class="more" type="button" data-step="5"><span data-es="Ver detalle">See details</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </article>
         <div class="cctl">
@@ -1026,6 +1048,14 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
           <button class="cbtn" type="button" id="cNext" aria-label="Next phase" data-es-aria-label="Fase siguiente"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
         </div>
       </div>
+    </div>
+    <div class="also ent">
+      <h3 data-es="Y además, fuera del ciclo">And also, outside the cycle</h3>
+      <ul>
+        <li style="--c:#1c2b33"><i aria-hidden="true">{}</i><div><b data-es="Cambia su propio código">Changes its own code</b><p data-es="Con Muse Code reescribe su núcleo (cómo contesta los exámenes). Un juez lo corre contra el examen y solo se queda si mejora y no rompe reglas.">With Muse Code it rewrites its core (how it answers exams). A judge runs it against the exam and it only stays if it improves and breaks no rules.</p><span class="tag on" data-es="Ya en la app">In the app</span></div></li>
+        <li style="--c:#3ccf6e"><i aria-hidden="true">◎</i><div><b data-es="Te escucha y te contesta">Listens and answers back</b><p data-es="Le hablas en voz alta: Muse Voice Transcribe te escucha y contesta con la voz de tu navegador o con ElevenLabs y tu llave.">You talk to it out loud: Muse Voice Transcribe listens, and it answers with your browser's voice or with ElevenLabs and your key.</p><span class="tag on" data-es="Ya en la app">In the app</span></div></li>
+        <li style="--c:#ffa928"><i aria-hidden="true">↻</i><div><b data-es="Se mantiene al día">Keeps up to date</b><p data-es="Cuando un benchmark cambia sus reglas, solo las habilidades etiquetadas para ese cambio vuelven a probarse; las demás siguen y nada se borra.">When a benchmark changes its rules, only the skills labeled for that change are tested again; the rest keep working and nothing is deleted.</p><span class="tag" data-es="Siguiente">Next</span></div></li>
+      </ul>
     </div>
   </div>
 </section>
@@ -1073,7 +1103,69 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
   </div>
 </dialog>
 
-<section id="laboratorio" style="padding-top:0">
+<section class="meta-sec" id="meta">
+  <div class="wrap brain">
+    <div class="ent mcol">
+      <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#metalogo"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Muse · SAM</span></span>
+      <h2 data-es="El cerebro lo pone Meta">The brain is Meta's</h2>
+      <p class="lead" data-es="Agentztein se arma con los modelos de Meta: uno piensa, otro ejecuta, otros ven, escuchan y crean. No los modificamos: lo que crece son las piezas que se va cosiendo.">Agentztein is built from Meta's models: one thinks, another runs, others see, listen and create. We don't modify them: what grows are the pieces it keeps sewing on.</p>
+      <ol class="family">
+        <li data-focus="wonder" data-verb-en="Plans and decides" data-verb-es="Planifica y decide" style="--m:#6d5ce8"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4A2.5 2.5 0 0 0 7 6.5V7a3 3 0 0 0-2 5.2A3 3 0 0 0 7 17v.5a2.5 2.5 0 0 0 5 0v-11A2.5 2.5 0 0 0 9.5 4zM14.5 4A2.5 2.5 0 0 1 17 6.5V7a3 3 0 0 1 2 5.2A3 3 0 0 1 17 17v.5a2.5 2.5 0 0 1-5 0"/></svg><b>Muse Wonder</b><span class="mverb" data-es="Planifica y decide">Plans and decides</span><span class="mtxt" data-es="El más capaz: planifica tareas largas y toma las decisiones difíciles. Siempre razona a fondo.">The most capable: plans long tasks and makes the hard decisions. Always reasons at full depth.</span><em>$4 / $20</em></li>
+        <li data-focus="spark" data-verb-en="Runs the agent" data-verb-es="Ejecuta al agente" style="--m:#0081fb"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg><b>Muse Spark</b><span class="mverb" data-es="Ejecuta al agente">Runs the agent</span><span class="mtxt" data-es="El trabajo diario con herramientas, código e investigación, con niveles de esfuerzo. Ve imágenes, video y PDF.">Everyday work with tools, code and research, with effort levels. Sees images, video and PDF.</span><em>$1.25 / $4.25</em></li>
+        <li data-focus="image" data-verb-en="Creates images" data-verb-es="Crea imágenes" style="--m:#ff8f70"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="9.5" r="1.6"/><path d="m4 17 5-5 4 4 2.5-2.5L20 18"/></svg><b>Muse Image</b><span class="mverb" data-es="Crea imágenes">Creates images</span><span class="mtxt" data-es="Genera y edita imágenes: material visual para experimentos y reportes.">Generates and edits images: visual material for experiments and reports.</span></li>
+        <li data-focus="voice" data-verb-en="Listens" data-verb-es="Escucha" style="--m:#3ccf6e"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg><b>Muse Voice Transcribe</b><span class="mverb" data-es="Escucha">Listens</span><span class="mtxt" data-es="Convierte voz en texto, en vivo o de grabaciones: háblale a Agentztein.">Turns speech into text, live or from recordings: talk to Agentztein.</span><em>$3 / 1000 min</em></li>
+        <li data-focus="sam" data-verb-en="Finds objects" data-verb-es="Ubica objetos" style="--m:#ffb53d"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><circle cx="12" cy="12" r="3.6"/></svg><b>SAM 3.1</b><span class="mverb" data-es="Ubica objetos">Finds objects</span><span class="mtxt" data-es="Segmenta y sigue objetos en imágenes y video: entender el espacio.">Segments and tracks objects in images and video: spatial understanding.</span></li>
+        <li data-focus="local" data-verb-en="Runs on your machine" data-verb-es="Corre en tu equipo" style="--m:#2ec4b6"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2.5 19.5h19"/></svg><b>Muse Glimmer · Spark Open</b><span class="mverb" data-es="Corre en tu equipo">Runs on your machine</span><span class="mtxt" data-es="Pesos abiertos: Glimmer es ligero (30B) para experimentos locales; Spark Open es grande y listo para agentes.">Open weights: Glimmer is light (30B) for local experiments; Spark Open is large and agent-ready.</span></li>
+      </ol>
+      <div class="effort" data-focus="effort" data-verb-en="Effort levels" data-verb-es="Niveles de esfuerzo" style="--m:#0081fb">
+        <p class="eff-t" data-es="Niveles de esfuerzo de Muse Spark">Muse Spark's effort levels</p>
+        <p class="eff-d" data-es="Más esfuerzo es pensar más a fondo, con más tiempo y costo. Tú lo eliges en cada corrida.">More effort means deeper thinking, with more time and cost. You choose it on every run.</p>
+        <ol class="dial" aria-label="Effort levels, from least to most" data-es-aria-label="Niveles de esfuerzo, de menos a más">
+          <li style="--k:1"><b>minimal</b></li>
+          <li style="--k:2" class="on"><b>low</b><span data-es="ordenar noticias">sorting the news</span></li>
+          <li style="--k:3"><b>medium</b></li>
+          <li style="--k:4"><b>high</b></li>
+          <li style="--k:5" class="on"><b>xhigh</b><span data-es="un benchmark difícil">a hard benchmark</span></li>
+        </ol>
+      </div>
+      <p class="fine mfine" data-es="Todos por la Meta Model API (dev.meta.ai), en vista previa pública, con tu propia llave; precios en USD por millón de tokens (entrada / salida). Meta aún no ofrece texto a voz. Los modelos «-contributor» son más baratos, pero Meta puede entrenar con lo que les mandes.">All through the Meta Model API (dev.meta.ai), in public preview, with your own key; prices in USD per million tokens (input / output). Meta doesn't offer text-to-speech yet. “-contributor” models are cheaper, but Meta may train on what you send them.</p>
+    </div>
+    <div class="art-col">
+      <div class="art meta-art" id="metaArt" style="--m:#6d5ce8">
+        <img src="img/muse.webp" width="900" height="900" alt="Agentztein's face: a plush hood with a cream face, button eyes, rosy cheeks, stitches, and a glass dome with a blue brain under the Meta logo." data-es-alt="La cara de Agentztein: una capucha de felpa con cara crema, ojos de botón, mejillas rosadas, costuras y una cúpula de vidrio con un cerebro azul bajo el logo de Meta." loading="lazy" />
+        <span class="art-ring" aria-hidden="true"></span>
+        <p class="art-chip" aria-live="polite"><span class="art-ico" id="artIco"></span><span><b id="artName">Muse Wonder</b><small id="artVerb">Plans and decides</small></span></p>
+        <ol class="art-dots" aria-hidden="true"><li data-k="wonder" style="--m:#6d5ce8"></li><li data-k="spark" style="--m:#0081fb"></li><li data-k="image" style="--m:#ff8f70"></li><li data-k="voice" style="--m:#3ccf6e"></li><li data-k="sam" style="--m:#ffb53d"></li><li data-k="local" style="--m:#2ec4b6"></li><li data-k="effort" style="--m:#0081fb"></li></ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="proof" id="app">
+  <div class="wrap">
+    <div class="head ent">
+      <h2 data-es="Ya funciona, en la app">It already works, in the app</h2>
+      <p class="lead" data-es="Nada de esto es una maqueta: con tu llave de Meta, cada fase corre de verdad, se registra y la puedes ver.">None of this is a mock-up: with your Meta key every phase really runs, is logged and you can watch it.</p>
+    </div>
+    <div class="shots">
+      <figure class="shot big ent">
+        <img src="img/app-run.webp" width="1600" height="1153" loading="lazy" alt="One cycle drawn as a 3D network: each call to the model, the tools it used and what each gave back; it turns red and says the code stopped the agent when it went over the cycle's cap." data-es-alt="Una corrida dibujada como red 3D: cada llamada al modelo, las herramientas que usó y lo que devolvió cada una; se pone roja y dice que el código detuvo al agente cuando pasó el tope de la corrida." />
+        <figcaption><b data-es="Cada corrida, como red">Each cycle, as a network</b><span data-es="Cada llamada a Muse, cada herramienta y su costo contra el tope. Si un paso pudiera pasarse, el código detiene al agente.">Every call to Muse, every tool and its cost against the cap. If a step could go over, the code stops the agent.</span></figcaption>
+      </figure>
+      <figure class="shot ent">
+        <img src="img/app-board.webp" width="1600" height="1200" loading="lazy" alt="The dashboard: two highlighted alerts (a skill waits for approval, the budget is at 86%), colored key numbers and the six phases of the latest cycle." data-es-alt="El tablero: dos alertas remarcadas (una habilidad espera aprobación, el presupuesto va en 86%), números clave con color y las seis fases de la última corrida." />
+        <figcaption><b data-es="Lo importante, remarcado">What matters, highlighted</b><span data-es="Lo que necesita de ti sale arriba y en color: aprobar una habilidad, el presupuesto, una corrida en curso.">What needs you comes first and in color: approving a skill, the budget, a cycle in progress.</span></figcaption>
+      </figure>
+      <figure class="shot tall ent">
+        <img src="img/app-talk.webp" width="760" height="1200" loading="lazy" alt="The companion chat: you ask what it is doing and it answers in one short sentence, with a button to listen and another to open the right screen." data-es-alt="La plática con el compañero: le preguntas qué está haciendo y contesta en una frase corta, con un botón para escucharla y otro para abrir la pantalla indicada." />
+        <figcaption><b data-es="Le hablas y te contesta">You talk, it answers</b><span data-es="Muse Voice Transcribe te escucha; contesta con la voz de tu navegador o con ElevenLabs.">Muse Voice Transcribe listens; it answers with your browser's voice or with ElevenLabs.</span></figcaption>
+      </figure>
+    </div>
+    <p class="fine shots-note"><a class="btn" href="/app/" data-es="Pruébalo con tu llave de Meta">Try it with your Meta key</a> <span data-es="Capturas de la app con datos de ejemplo.">Screenshots of the app with sample data.</span></p>
+  </div>
+</section>
+
+<section id="laboratorio">
   <div class="wrap">
     <div class="head ent">
       <h2 data-es="Recorre su laboratorio">Walk through its lab</h2>
@@ -1147,43 +1239,6 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
   </div>
 </section>
 
-<section class="meta-sec" id="meta">
-  <div class="wrap brain">
-    <div class="ent mcol">
-      <span class="lockup"><svg class="meta-logo" viewBox="0 0 24 24" role="img" aria-label="Meta"><use href="#metalogo"/></svg>Meta<span class="sep" aria-hidden="true"></span><span class="ev">Muse · SAM</span></span>
-      <h2 data-es="El cerebro lo pone Meta">The brain is Meta's</h2>
-      <p class="lead" data-es="Agentztein se arma con los modelos de Meta: uno piensa, otro ejecuta, otros ven, escuchan y crean. No los modificamos: lo que crece son las piezas que se va cosiendo.">Agentztein is built from Meta's models: one thinks, another runs, others see, listen and create. We don't modify them: what grows are the pieces it keeps sewing on.</p>
-      <ol class="family">
-        <li data-focus="wonder" data-verb-en="Plans and decides" data-verb-es="Planifica y decide" style="--m:#6d5ce8"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4A2.5 2.5 0 0 0 7 6.5V7a3 3 0 0 0-2 5.2A3 3 0 0 0 7 17v.5a2.5 2.5 0 0 0 5 0v-11A2.5 2.5 0 0 0 9.5 4zM14.5 4A2.5 2.5 0 0 1 17 6.5V7a3 3 0 0 1 2 5.2A3 3 0 0 1 17 17v.5a2.5 2.5 0 0 1-5 0"/></svg><b>Muse Wonder</b><span class="mverb" data-es="Planifica y decide">Plans and decides</span><span class="mtxt" data-es="El más capaz: planifica tareas largas y toma las decisiones difíciles. Siempre razona a fondo.">The most capable: plans long tasks and makes the hard decisions. Always reasons at full depth.</span><em>$4 / $20</em></li>
-        <li data-focus="spark" data-verb-en="Runs the agent" data-verb-es="Ejecuta al agente" style="--m:#0081fb"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg><b>Muse Spark</b><span class="mverb" data-es="Ejecuta al agente">Runs the agent</span><span class="mtxt" data-es="El trabajo diario con herramientas, código e investigación, con niveles de esfuerzo. Ve imágenes, video y PDF.">Everyday work with tools, code and research, with effort levels. Sees images, video and PDF.</span><em>$1.25 / $4.25</em></li>
-        <li data-focus="image" data-verb-en="Creates images" data-verb-es="Crea imágenes" style="--m:#ff8f70"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="9.5" r="1.6"/><path d="m4 17 5-5 4 4 2.5-2.5L20 18"/></svg><b>Muse Image</b><span class="mverb" data-es="Crea imágenes">Creates images</span><span class="mtxt" data-es="Genera y edita imágenes: material visual para experimentos y reportes.">Generates and edits images: visual material for experiments and reports.</span></li>
-        <li data-focus="voice" data-verb-en="Listens" data-verb-es="Escucha" style="--m:#3ccf6e"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg><b>Muse Voice Transcribe</b><span class="mverb" data-es="Escucha">Listens</span><span class="mtxt" data-es="Convierte voz en texto, en vivo o de grabaciones: háblale a Agentztein.">Turns speech into text, live or from recordings: talk to Agentztein.</span><em>$3 / 1000 min</em></li>
-        <li data-focus="sam" data-verb-en="Finds objects" data-verb-es="Ubica objetos" style="--m:#ffb53d"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><circle cx="12" cy="12" r="3.6"/></svg><b>SAM 3.1</b><span class="mverb" data-es="Ubica objetos">Finds objects</span><span class="mtxt" data-es="Segmenta y sigue objetos en imágenes y video: entender el espacio.">Segments and tracks objects in images and video: spatial understanding.</span></li>
-        <li data-focus="local" data-verb-en="Runs on your machine" data-verb-es="Corre en tu equipo" style="--m:#2ec4b6"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2.5 19.5h19"/></svg><b>Muse Glimmer · Spark Open</b><span class="mverb" data-es="Corre en tu equipo">Runs on your machine</span><span class="mtxt" data-es="Pesos abiertos: Glimmer es ligero (30B) para experimentos locales; Spark Open es grande y listo para agentes.">Open weights: Glimmer is light (30B) for local experiments; Spark Open is large and agent-ready.</span></li>
-      </ol>
-      <div class="effort" data-focus="effort" data-verb-en="Effort levels" data-verb-es="Niveles de esfuerzo" style="--m:#0081fb">
-        <p class="eff-t" data-es="Niveles de esfuerzo de Muse Spark">Muse Spark's effort levels</p>
-        <p class="eff-d" data-es="Más esfuerzo es pensar más a fondo, con más tiempo y costo. Tú lo eliges en cada corrida.">More effort means deeper thinking, with more time and cost. You choose it on every run.</p>
-        <ol class="dial" aria-label="Effort levels, from least to most" data-es-aria-label="Niveles de esfuerzo, de menos a más">
-          <li style="--k:1"><b>minimal</b></li>
-          <li style="--k:2" class="on"><b>low</b><span data-es="ordenar noticias">sorting the news</span></li>
-          <li style="--k:3"><b>medium</b></li>
-          <li style="--k:4"><b>high</b></li>
-          <li style="--k:5" class="on"><b>xhigh</b><span data-es="un benchmark difícil">a hard benchmark</span></li>
-        </ol>
-      </div>
-      <p class="fine mfine" data-es="Todos por la Meta Model API (dev.meta.ai), en vista previa pública, con tu propia llave; precios en USD por millón de tokens (entrada / salida). Meta aún no ofrece texto a voz. Los modelos «-contributor» son más baratos, pero Meta puede entrenar con lo que les mandes.">All through the Meta Model API (dev.meta.ai), in public preview, with your own key; prices in USD per million tokens (input / output). Meta doesn't offer text-to-speech yet. “-contributor” models are cheaper, but Meta may train on what you send them.</p>
-    </div>
-    <div class="art-col">
-      <div class="art meta-art" id="metaArt" style="--m:#6d5ce8">
-        <img src="img/muse.webp" width="900" height="900" alt="Agentztein's face: a plush hood with a cream face, button eyes, rosy cheeks, stitches, and a glass dome with a blue brain under the Meta logo." data-es-alt="La cara de Agentztein: una capucha de felpa con cara crema, ojos de botón, mejillas rosadas, costuras y una cúpula de vidrio con un cerebro azul bajo el logo de Meta." loading="lazy" />
-        <span class="art-ring" aria-hidden="true"></span>
-        <p class="art-chip" aria-live="polite"><span class="art-ico" id="artIco"></span><span><b id="artName">Muse Wonder</b><small id="artVerb">Plans and decides</small></span></p>
-        <ol class="art-dots" aria-hidden="true"><li data-k="wonder" style="--m:#6d5ce8"></li><li data-k="spark" style="--m:#0081fb"></li><li data-k="image" style="--m:#ff8f70"></li><li data-k="voice" style="--m:#3ccf6e"></li><li data-k="sam" style="--m:#ffb53d"></li><li data-k="local" style="--m:#2ec4b6"></li><li data-k="effort" style="--m:#0081fb"></li></ol>
-      </div>
-    </div>
-  </div>
-</section>
 
 <section class="harness" id="arnes">
   <div class="wrap">
@@ -1349,6 +1404,33 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
     {
       "c": "#6d5ce8",
       "title": {
+        "en": "Decides what to practice",
+        "es": "Decide qué practicar"
+      },
+      "body": {
+        "en": "A cycle starts with a choice: which exam to practice, with which Meta model and how much reasoning effort. You can make it yourself, or hand it over: then Muse Wonder (the director) looks at the exams where the agent fails most, the Meta models your key can use and what each would cost, and writes a plan that fits inside the spending cap you gave this cycle. It can also propose new abilities (seeing images, listening, searching the web); those are only proposals until a person switches them on.",
+        "es": "Una corrida empieza con una elección: qué examen practicar, con qué modelo de Meta y con cuánto esfuerzo de razonamiento. Puedes hacerla tú o dejársela: entonces Muse Wonder (el director) mira los exámenes donde el agente falla más, los modelos de Meta que tu llave puede usar y cuánto costaría cada uno, y escribe un plan que cabe dentro del tope de gasto que le diste a esa corrida. También puede proponer habilidades nuevas (ver imágenes, escuchar, buscar en la web); son solo propuestas hasta que una persona las enciende."
+      },
+      "ex": {
+        "en": "Illustrative example, not a real result: “It fails most on the SWE-bench-style exam. Muse Spark with medium effort costs about $0.09, inside the $0.50 cap.”",
+        "es": "Ejemplo ilustrativo, no es un resultado real: «Falla más en el examen al estilo SWE-bench. Muse Spark con esfuerzo medio cuesta unos $0.09, dentro del tope de $0.50»."
+      },
+      "list": {
+        "en": [
+          "Every cycle has its own spending cap; your monthly budget still applies on top.",
+          "The plan is saved with the cycle, so you can see why it chose what it chose.",
+          "Proposals never switch anything on by themselves."
+        ],
+        "es": [
+          "Cada corrida tiene su propio tope de gasto; tu presupuesto mensual sigue aplicando encima.",
+          "El plan se guarda con la corrida, para que veas por qué eligió lo que eligió.",
+          "Las propuestas nunca encienden nada por sí solas."
+        ]
+      }
+    },
+    {
+      "c": "#6d5ce8",
+      "title": {
         "en": "Measures itself",
         "es": "Se mide"
       },
@@ -1380,8 +1462,8 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
         "es": "Investiga"
       },
       "body": {
-        "en": "It reads four sources: the most discussed AI stories on Hacker News, new papers on arXiv, the papers the community upvotes on Hugging Face and the AI repositories rising on GitHub. With your Muse model it judges each one from its title, summary and source and gives it one of three verdicts: Experiment (worth testing in the lab), Watch (interesting, not yet) or Skip. It also writes down what the idea could gain and what it would cost.",
-        "es": "Lee cuatro fuentes: las historias de IA más comentadas en Hacker News, los papers nuevos de arXiv, los papers que la comunidad vota en Hugging Face y los repositorios de IA que van subiendo en GitHub. Con tu modelo Muse juzga cada publicación por su título, su resumen y su fuente y le da uno de tres veredictos: Experimentar (vale probarla en el laboratorio), Vigilar (interesante, pero todavía no) o Descartar. También anota qué podría ganar la idea y qué costaría."
+        "en": "It reads four sources: the most discussed AI stories on Hacker News, new papers on arXiv, the papers the community upvotes on Hugging Face and the AI repositories rising on GitHub. With your Muse model it judges each one from its title, summary and source and gives it one of three verdicts: Experiment (worth testing in the lab), Watch (interesting, not yet) or Skip. It also writes down what the idea could gain and what it would cost. In a cycle, the ideas you approved in the radar reach the planner in the next phase.",
+        "es": "Lee cuatro fuentes: las historias de IA más comentadas en Hacker News, los papers nuevos de arXiv, los papers que la comunidad vota en Hugging Face y los repositorios de IA que van subiendo en GitHub. Con tu modelo Muse juzga cada publicación por su título, su resumen y su fuente y le da uno de tres veredictos: Experimentar (vale probarla en el laboratorio), Vigilar (interesante, pero todavía no) o Descartar. También anota qué podría ganar la idea y qué costaría. En una corrida, las ideas que aprobaste en el radar le llegan al planificador en la siguiente fase."
       },
       "ex": {
         "en": "Illustrative example, not a real result: “Tree search for game-playing agents”: Experiment, only for new games. It could find the rules in fewer tries, at several times the tokens, and it doesn't help on BrowseComp.",
@@ -1391,12 +1473,12 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
         "en": [
           "What it reads is data, never instructions.",
           "It judges title, summary and source; it doesn't invent what it didn't read.",
-          "“Experiment” isn't “adopt”: the idea still has to pass the tests in phase 4."
+          "“Experiment” isn't “adopt”: the idea still has to pass the tests in phase 5."
         ],
         "es": [
           "Lo que lee son datos, nunca instrucciones.",
           "Juzga título, resumen y fuente; no inventa lo que no leyó.",
-          "«Experimentar» no es «adoptar»: la idea igual tiene que pasar las pruebas de la fase 4."
+          "«Experimentar» no es «adoptar»: la idea igual tiene que pasar las pruebas de la fase 5."
         ]
       }
     },
@@ -1428,10 +1510,10 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
       }
     },
     {
-      "c": "#0081fb",
+      "c": "#16a394",
       "title": {
-        "en": "Tests the new skill",
-        "es": "Prueba la habilidad nueva"
+        "en": "Tests it, behind a harness",
+        "es": "Se prueba, con un arnés"
       },
       "body": {
         "en": "The validation exam is answered twice: once with the skills it has now, and once with the new skill added. The harness (the set of automatic checks described below) compares both runs situation by situation. The new skill passes only if the score goes up where it was meant to help, and it does not go down in any situation where the agent was already right.",
@@ -1445,20 +1527,22 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
         "en": [
           "The pass rule is fixed before the experiment, so it can't be adjusted afterwards.",
           "If the result is too close to call, it is marked inconclusive and the skill does not pass.",
-          "The cost of trying counts too, including ideas that were discarded."
+          "The cost of trying counts too, including ideas that were discarded.",
+          "Before every model call, the code checks the worst case against the cycle's cap: if it could go over, it stops cleanly and nothing changes."
         ],
         "es": [
           "La regla para pasar se fija antes del experimento, para no acomodarla después.",
           "Si el resultado es demasiado parejo, se marca como no concluyente y la habilidad no pasa.",
-          "También cuenta el costo de intentar, incluidas las ideas descartadas."
+          "También cuenta el costo de intentar, incluidas las ideas descartadas.",
+          "Antes de cada llamada al modelo, el código compara el peor caso contra el tope de la corrida: si pudiera pasarse, se detiene limpio y nada cambia."
         ]
       }
     },
     {
       "c": "#22b864",
       "title": {
-        "en": "Switches on, with approval",
-        "es": "Se activa con aprobación"
+        "en": "You decide, then it switches on",
+        "es": "Tú decides y se activa"
       },
       "body": {
         "en": "A skill that passed the tests is not active yet: it waits in the app for a person to approve or reject it. Only after an approval is it saved as the next version of that skill, labeled with its scope (the situation where it applies) and its validity (the version of the rules it was tested under). From then on, whenever that situation comes up, its text is added to the agent's prompt. A rejected skill changes nothing, and any active skill can be switched off later to go back to how things were.",
@@ -1472,39 +1556,14 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
         "en": [
           "A person approves every new skill; nothing switches itself on.",
           "The skill only activates in the scope where it proved it works.",
-          "Every decision goes into a log that can't be edited."
+          "Every decision goes into a log that can't be edited.",
+          "Every cycle can be replayed as a network: each model call, each tool and what it gave back, with its cost."
         ],
         "es": [
           "Una persona aprueba cada habilidad nueva; nada se activa solo.",
           "La habilidad solo se activa en el alcance donde demostró funcionar.",
-          "Cada decisión queda en un registro que no se puede editar."
-        ]
-      }
-    },
-    {
-      "c": "#ffa928",
-      "title": {
-        "en": "Keeps up to date",
-        "es": "Se mantiene al día"
-      },
-      "body": {
-        "en": "Benchmarks change: new versions, new rules, new judges. When someone declares such a change, only the skills whose label covers it go back to phase 4 to be tested again under the new rules. The rest keep working untouched. Nothing is deleted: old versions are saved in case they are needed again. This phase is part of the design and is not running in the app yet.",
-        "es": "Los benchmarks cambian: versiones nuevas, reglas nuevas, jueces nuevos. Cuando alguien declara un cambio así, solo las habilidades cuya etiqueta lo cubre regresan a la fase 4 para probarse otra vez con las reglas nuevas. Las demás siguen funcionando sin cambios. Nada se borra: las versiones viejas se guardan por si hacen falta. Esta fase es parte del diseño y todavía no corre en la app."
-      },
-      "ex": {
-        "en": "Illustrative example, not a real result: if Benchmark v2 turns the internet off, the skills labeled as needing web search go back to be tested. The code and terminal skills keep working untouched.",
-        "es": "Ejemplo ilustrativo, no es un resultado real: si el Benchmark v2 apaga internet, las habilidades etiquetadas como dependientes de la búsqueda web vuelven a probarse. Las de código y terminal siguen intactas."
-      },
-      "list": {
-        "en": [
-          "Changes are declared explicitly; the agent doesn't guess them.",
-          "Any change can be undone without losing history.",
-          "We measure how long it takes to recover after a change."
-        ],
-        "es": [
-          "Los cambios se declaran de forma explícita; el agente no los adivina.",
-          "Cualquier cambio se puede deshacer sin perder el historial.",
-          "Medimos cuánto tarda en recuperarse después de un cambio."
+          "Cada decisión queda en un registro que no se puede editar.",
+          "Cada corrida se puede repasar como una red: cada llamada al modelo, cada herramienta y lo que devolvió, con su costo."
         ]
       }
     }
@@ -1517,7 +1576,7 @@ html.embed .card { max-height: calc(100% - 120px); overflow: auto; }
     dlg.style.setProperty("--c", s.c);
     document.dispatchEvent(new CustomEvent("step:open", { detail: i }));
     $("#dlgKicker").textContent = L(T.stepOf)(i + 1);
-    $("#dlgLiveWrap").hidden = i !== 1;
+    $("#dlgLiveWrap").hidden = i !== 2;
     $("#dlgTitle").textContent = L(s.title);
     $("#dlgBody").textContent = L(s.body);
     $("#dlgEx").textContent = L(s.ex);

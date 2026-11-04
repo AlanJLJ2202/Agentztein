@@ -439,7 +439,7 @@ export function RunGraph({ job, bench, lang }: { job: Job; bench: BenchScenario[
         }
         // labels: always for the spine, start and end; for the rest while they are fresh or pointed at
         const fresh = at - n.stage < 2.2;
-        const show = n.kind !== "detail" || fresh || hoverKey === n.key || pickKey === n.key || p.s > 1.05;
+        const show = n.kind !== "detail" || fresh || hoverKey === n.key || pickKey === n.key;
         if (show) {
           const a = n.kind === "detail" && !fresh ? 0.75 : 0.95;
           g.textAlign = "left"; g.textBaseline = "middle";

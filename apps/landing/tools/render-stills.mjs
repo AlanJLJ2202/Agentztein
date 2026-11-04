@@ -33,7 +33,7 @@ await page.waitForFunction(() => window.renderStill && document.fonts.ready);
 await page.evaluate(() => document.fonts.load("700 40px Figtree"));
 
 const shots = {
-  lab: 1000, room: 1000, muse: 900, step0: 900, step1: 900, step2: 900, step3: 900, step4: 900, step5: 900,
+  lab: 1000, room: 1000, muse: 900, stepD: 900, step0: 900, step1: 900, step2: 900, step3: 900, step4: 900, step5: 900,
   "bench-swe": 700, "bench-terminal": 700, "bench-arc": 700, "bench-web": 700, "bench-research": 700, "bench-horizon": 700,
 };
 const only = process.argv.slice(2);

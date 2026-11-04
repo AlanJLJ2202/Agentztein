@@ -59,7 +59,7 @@ const check = (x, y, ok = true, s = 1) =>
   `<g transform="translate(${x} ${y}) scale(${s})"><circle r="10" fill="${ok ? OK : BAD}"/>${ok ? '<path d="M-4.5 0 l3 3 6 -6" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>' : '<path d="M-4 -4 l8 8 M4 -4 l-8 8" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>'}</g>`;
 const table = (x, w) => `<rect x="${x}" y="300" width="${w}" height="12" rx="4" fill="#cfd9e3"/><rect x="${x + 12}" y="312" width="8" height="30" fill="#c2cdd8"/><rect x="${x + w - 20}" y="312" width="8" height="30" fill="#c2cdd8"/>`;
 
-/* ================= The cycle ================= */
+/* ================= The cycle: decide, measure, research, learn, test, you decide ================= */
 
 function measureBench(L) {
   // 40 answers of a practice exam: 26 right, 14 wrong (an illustration, not a result)
@@ -176,7 +176,7 @@ function testChamber(L) {
     </g>`;
   body += `<g transform="translate(482 320)">${rect(-8, -22, 132, 44, "#1c2b33", { r: 12 })}<path d="M10 -6 v-5 a7 7 0 0 1 14 0 v5" stroke="#fff" stroke-width="2.4" fill="none"/>${rect(6, -6, 22, 16, "#fff", { r: 3 })}${t(38, 5, L("Sealed exam", "Examen sellado"), { size: 11.5, weight: 700, fill: "#fff" })}</g>`;
   body += `<path class="a-zap" d="M300 330 l-12 -22 h12 l-10 -20" stroke="#ffd25c" stroke-width="3" fill="none"/>`;
-  return room(L("Test chamber", "Cámara de pruebas"), "#0081fb", body,
+  return room(L("Test chamber", "Cámara de pruebas"), "#16a394", body,
     L("Test chamber: the current version and the candidate skill solve the same unseen tasks. On new games the candidate goes from 1 of 4 to 3 of 4; on old web research tasks both get 4 of 4, so nothing broke. The final exam stays sealed.", "Cámara de pruebas: la versión actual y la habilidad candidata resuelven las mismas tareas nunca vistas. En juegos nuevos la candidata pasa de 1 de 4 a 3 de 4; en las viejas de búsqueda web ambas sacan 4 de 4, así que nada se rompió. El examen final sigue sellado."));
 }
 
@@ -205,26 +205,29 @@ function sewingBench(L) {
     L("Sewing bench: the skill 'Explore first' carries a tag with its scope (new puzzle games only) and its validity (tested with rules v1). A green stamp says approved by a person, and a log that can't be edited records every step.", "Mesa de costura: la habilidad «Primero explora» lleva una etiqueta con su alcance (solo juegos nuevos) y su vigencia (probada con reglas v1). Un sello verde dice aprobada por una persona y un registro que no se edita anota cada paso."));
 }
 
-function versionArchive(L) {
-  const card = (x, v, net, hl) => `<g transform="translate(${x} 70)">
-    <rect width="170" height="132" rx="14" fill="#fff" stroke="${hl ? AMBER : "#e1e7ed"}" stroke-width="2.5"/>
-    ${t(16, 28, `Benchmark ${v}`, { size: 14, weight: 800 })}
-    ${t(16, 56, L("Tasks", "Tareas"), { size: 12, weight: 600, fill: MUTED })}${t(154, 56, "300", { size: 12, weight: 700, anchor: "end" })}
-    ${t(16, 80, L("Time limit", "Límite"), { size: 12, weight: 600, fill: MUTED })}${t(154, 80, "12 h", { size: 12, weight: 700, anchor: "end" })}
-    ${hl ? rect(8, 90, 154, 26, AMBERBG, { r: 6, cls: "a-blink" }) : ""}
-    ${t(16, 108, "Internet", { size: 12, weight: 600, fill: MUTED })}${t(154, 108, net, { size: 12, weight: 800, fill: hl ? AMBER : INK, anchor: "end" })}
-  </g>`;
-  let body = card(40, "v1", L("on", "sí"), false) + `<path d="M222 136 h44" stroke="${MUTED}" stroke-width="2.5"/><path d="M258 128 l9 8 -9 8" fill="none" stroke="${MUTED}" stroke-width="2.5"/>` + card(276, "v2", L("off", "no"), true);
-  body += `<g transform="translate(474 70)"><rect width="140" height="132" rx="14" fill="#e9eff5"/>${[0, 1, 2].map((i) => rect(12, 14 + i * 38, 116, 30, "#fff", { r: 6 }) + `<circle cx="70" cy="${29 + i * 38}" r="3" fill="#9aa8b5"/>`).join("")}${t(70, 124, L("old versions kept", "versiones guardadas"), { size: 11, weight: 700, fill: MUTED, anchor: "middle" })}</g>`;
-  body += chip(40, 236, L("Search the web · Review", "Buscar en web · Revisión"), AMBER, { cls: "a-pulse", fill: AMBERBG, w: 220 });
-  body += chip(276, 236, L("Run tests first · intact", "Correr pruebas · intacta"), OK, { w: 178, fill: OKBG });
-  body += chip(276, 280, L("Read the error · intact", "Leer el error · intacta"), OK, { w: 178, fill: OKBG });
-  body += t(40, 300, L("Only skills whose scope covers", "Solo vuelven a revisión las que"), { size: 12, weight: 600, fill: MUTED }) + t(40, 316, L("the change go back to review.", "cubren el cambio."), { size: 12, weight: 600, fill: MUTED });
-  return room(L("Version archive", "Archivo de versiones"), "#ffa928", body,
-    L("Version archive: Benchmark v1 had internet on; v2 turns it off. Only the skill that searches the web goes back to review in amber; the code and terminal skills stay green and intact. Old versions are kept in drawers.", "Archivo de versiones: el Benchmark v1 tenía internet; el v2 lo apaga. Solo la habilidad que busca en la web vuelve a revisión en ámbar; las de código y terminal siguen verdes e intactas. Las versiones viejas se guardan en cajones."));
+function directorDesk(L) {
+  // where it fails most (an illustration, not a result) → the models on the key → the plan inside the cap
+  const exams = [[L("Code", "Código"), 0.55, "#3b7bf0"], [L("Terminal", "Terminal"), 0.7, "#16a394"], [L("Reasoning", "Razonamiento"), 0.8, "#e8682f"], [L("Web", "Web"), 0.75, "#9b5de5"], [L("Research", "Investigación"), 0.85, "#b58100"]];
+  let body = `<g transform="translate(30 62)">${rect(0, 0, 210, 236, "#fff", { r: 16, stroke: "#e1e7ed" })}
+    ${t(16, 26, L("Where it fails most", "Dónde falla más"), { size: 12.5, weight: 800 })}`;
+  exams.forEach(([name, v, c], i) => {
+    const y = 50 + i * 36;
+    body += `${t(16, y + 12, name, { size: 11.5, weight: 700, fill: MUTED })}<rect x="100" y="${y}" width="94" height="14" rx="7" fill="#eef2f6"/><rect class="a-grow" x="100" y="${y}" width="${(94 * v).toFixed(0)}" height="14" rx="7" fill="${c}"${d(0.3 + i * 0.2)}/>`;
+  });
+  body += `${t(16, 226, L("lowest score → practice here", "menor calificación → practica aquí"), { size: 10.5, weight: 600, fill: VIOLET })}</g>`;
+  const models = [["Muse Spark", "$", "#0081fb"], ["Muse Wonder", "$$$", VIOLET], ["Spark contributor", "¢", "#9aa8b5"]];
+  body += `<g transform="translate(258 62)">${t(0, 14, L("Models on your key", "Modelos en tu llave"), { size: 12.5, weight: 800 })}`;
+  models.forEach(([m, p, c], i) => { body += chip(0, 28 + i * 44, `${m} · ${p}`, c, { cls: "a-pop", delay: 0.9 + i * 0.25, w: 150 }); });
+  body += `</g><path class="a-flow" d="M412 150 C 432 150, 432 120, 446 120" stroke="${VIOLET}" stroke-width="2" fill="none" stroke-dasharray="6 5"/>`;
+  body += `<g transform="translate(446 62)"><g class="a-pop"${d(1.8)}>${rect(0, 0, 164, 188, "#f6f3ff", { r: 16, stroke: VIOLET, sw: 2.5 })}
+    ${t(14, 26, L("Today's plan", "El plan de hoy"), { size: 13, weight: 800, fill: VIOLET })}
+    ${[[L("Exam", "Examen"), L("Code", "Código")], [L("Model", "Modelo"), "Spark"], [L("Effort", "Esfuerzo"), L("medium", "medio")], [L("Estimate", "Estimado"), "≈ $0.09"]].map(([k, v], i) => `${t(14, 56 + i * 30, k, { size: 11.5, weight: 600, fill: MUTED })}${t(150, 56 + i * 30, v, { size: 12, weight: 800, anchor: "end" })}`).join("")}
+    <rect x="14" y="160" width="136" height="8" rx="4" fill="#e6e0ff"/><rect class="a-grow" x="14" y="160" width="25" height="8" rx="4" fill="${OK}"${d(2.4)}/>
+    ${t(14, 182, L("cap $0.50 · fits", "tope $0.50 · cabe"), { size: 10.5, weight: 700, fill: OK })}</g></g>`;
+  body += chip(258, 262, L("Proposes: see images (only a proposal)", "Propone: ver imágenes (solo propuesta)"), AMBER, { cls: "a-pop", delay: 2.6, w: 352, fill: AMBERBG });
+  return room(L("Director's desk", "Escritorio del director"), VIOLET, body,
+    L("Director's desk: bars show where the agent fails most among five exams, code being the lowest. Three Meta models on the key are listed with their price. The plan card picks the code exam with Muse Spark at medium effort, about $0.09, inside a $0.50 cap. A proposal to see images is marked as only a proposal. This is an illustration, not a result.", "Escritorio del director: unas barras muestran dónde falla más el agente entre cinco exámenes, y código es el más bajo. Se listan tres modelos de Meta de la llave con su precio. La tarjeta del plan elige el examen de código con Muse Spark y esfuerzo medio, unos $0.09, dentro de un tope de $0.50. Una propuesta de ver imágenes aparece marcada como solo propuesta. Es una ilustración, no un resultado."));
 }
-
-/* ================= Benchmarks ================= */
 
 function sweLab(L) {
   const files = ["src/", "  dates/", "    parse.ts", "    zone.ts", "  api/", "tests/"];
@@ -341,7 +344,7 @@ function horizonLab(L) {
   return room(L("Time-horizon observatory", "Observatorio del horizonte"), "#8a7dff", body, L("METR time-horizon lab: a chart with task length for a skilled person on a log scale (1 minute to 1 day) and success rate from 0 to 100%. A newer model's S-shaped curve sits to the right of an older one; where it crosses 50% is its time horizon.", "Laboratorio del horizonte de METR: una gráfica con la duración de la tarea para una persona experta en escala logarítmica (de 1 minuto a 1 día) y la tasa de éxito de 0 a 100%. La curva en S de un modelo más nuevo queda a la derecha de una vieja; donde cruza el 50% es su horizonte de tiempo."));
 }
 
-const STEP_SCENES = [measureBench, researchDesk, failureLab, testChamber, sewingBench, versionArchive];
+const STEP_SCENES = [directorDesk, measureBench, researchDesk, failureLab, testChamber, sewingBench];
 const BENCH_SCENES = { swe: sweLab, terminal: terminalLab, arc: arcLab, web: webLab, research: researchLab, horizon: horizonLab };
 
 /** @param {number} i @param {"en"|"es"} lang */

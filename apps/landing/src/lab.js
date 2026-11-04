@@ -87,6 +87,25 @@ export function renderStill(canvas, which, size = 900) {
       camera.lookAt(TARGET);
       scene.updateMatrixWorld(true);
       scene.children.filter((o) => o.userData.body).forEach((ch) => ch.lookAt(camera.position.x, ch.position.y, camera.position.z));
+    } else if (which === "stepD") {
+      // decides: with the plan in its hand (exam, model, effort, cap) and the Meta models it could pick floating by
+      u.look.set(0.75, 0.2);
+      awake(agent, "think");
+      setArms(agent, -0.14, 1.25, -0.2, 0);
+      paintScreen(u.screenTex, "pulse", 0.6);
+      const paper = makePaper([["Exam", "Code"], ["Model", "Spark"], ["Effort", "medium"], ["Cap", "$0.50"]], { title: "Today's plan" });
+      paper.position.set(1.35, 1.8, 0.6); paper.rotation.set(0, -0.45, -0.03);
+      const picks = [[0x6d5ce8, -1.55, 2.75], [C.meta, -1.75, 1.95], [0x9b5de5, -1.4, 1.2]];
+      picks.forEach(([color, x, y], i) => {
+        const ch = makeChip({ ...SKILLS[i % SKILLS.length], color, name: "" }, { label: false });
+        ch.position.set(x, y, 0.55); ch.rotation.y = 0.35;
+        scene.add(ch);
+      });
+      const logo = makeMetaLogo(1.6);
+      logo.scale.setScalar(0.3); logo.position.set(-1.45, 3.4, 0.4); logo.rotation.y = 0.3;
+      const ok = makeBadge("ok"); ok.position.set(1.5, 3.1, 0.85); ok.rotation.y = -0.3;
+      scene.add(paper, logo, ok);
+      look(0, 2.1, 8.4, 0, 1.6, 0);
     } else if (which === "step0") {
       // measures itself: reads the sheet of its practice exam, with a stopwatch
       u.look.set(-0.85, 0.15);

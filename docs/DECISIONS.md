@@ -468,3 +468,25 @@ Las marcadas **[pendiente de confirmar por Alan]** son defaults para las "decisi
     corrida, verla trabajar, decidir y platicar. Al terminar lo básico se puede ocultar y se recupera con "Guía".
     El menú pone primero lo esencial (Inicio, Agente, Ajustes) y separa lo de "Explorar"; los controles del Agente
     van numerados (quién elige, cuánto gastar, guía opcional).
+
+## ADR-030 — Las fases en su orden real, un tablero con color, un lab a escala y la landing para el hackathon
+- **Contexto (4 nov 2026):** Alan pidió acomodar las fases con todo lo que Agentztein ya hace, remarcar con color lo
+  importante en el tablero, corregir el tamaño de los robots del laboratorio 3D (atravesaban las puertas), que
+  camine más rápido, que el locutor no hable en cada cuarto y una auditoría del acomodo para el hackathon.
+- **Decisión:**
+  - **Fases (landing y tablero, mismos nombres y colores):** Decide (director, #6d5ce8) → Se mide (#0081fb) →
+    Investiga (#ff6600) → Aprende (#f0533c) → Prueba con arnés (#16a394) → Tú decides (#22b864). Es el orden de la
+    traza real. "Se mantiene al día" sale del anillo porque no corre todavía y pasa a "Y además", junto con
+    "Cambia su propio código" y "Te escucha y te contesta" (ambos ya en la app). Nueva imagen `stepD.webp` y nueva
+    escena del escritorio del director. El tablero marca el tope alcanzado ("llegó al tope"), la fase de decidir
+    cuando la eligió la persona y el radar como opcional.
+  - **Tablero:** bloque "Importante ahora" por urgencia (rojo: atorada, tope o presupuesto agotado; ámbar: una
+    habilidad espera, presupuesto ≥ 80%; azul: corrida en curso; verde: habilidad nueva activa) con un botón para
+    resolverlo. Cada tarjeta de números tiene su color; las que necesitan algo se pintan de ámbar o rojo.
+  - **Lab 3D:** una sola escala para todos los robots (0.6: ~2.36 de alto, bajo los 2.6 de cada puerta; antes 0.85,
+    0.7 y 0.62), ojos en primera persona a esa altura, piloto automático a 2.5 (antes 1.75) y correr a 3.8. El
+    locutor narra un cuarto una sola vez y solo cuando una persona interactúa (toca una pieza o la puerta), nunca
+    en el recorrido automático; las frases cortas siempre salen en la burbuja pero solo suenan si alguien está
+    usando el lab.
+  - **Landing:** Hero → Cómo funciona → Con Meta → Ya funciona, en la app (capturas reales con datos de ejemplo) →
+    Laboratorio → Arnés → Avance. Detalle y recomendaciones pendientes en `docs/AUDITORIA-HACKATHON.md`.

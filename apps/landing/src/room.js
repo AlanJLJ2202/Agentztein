@@ -18,11 +18,13 @@ import { LINES } from "../../../api/_data/audio-catalog.js";
 
 const H = 3; // wall height
 const R = 0.42; // agent radius
-const SCALE = 0.85;
+// Every robot in the lab has the same size, and it walks under the door frames: the model is ~3.9 units tall with
+// legs, so at 0.6 it stands ~2.36, under the 2.6 opening of every door and the 3.0 walls (it used to be 0.85: ~3.3).
+const SCALE = 0.6;
 const WALL_CLEAR = 2.7; // flying above this height clears the walls
 const FLY_MAX = 4.6;
 const HOVER_Y = LEG_DROP * SCALE; // the agent walks: its origin sits one leg above the floor
-const EYE = 1.72;
+const EYE = 1.62; // its eyes, at the robot's size
 const hex = (n) => "#" + n.toString(16).padStart(6, "0");
 const glossy = (color, o = {}) => new THREE.MeshPhysicalMaterial({ color, roughness: 0.35, clearcoat: 0.7, clearcoatRoughness: 0.25, ...o });
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.5, ...o });
@@ -219,7 +221,7 @@ function addPod(g, id, built, relabels, extra) {
   const capRing = ring.clone(); capRing.position.y = 2.02;
   pod.add(base, ring, glass, mist, cap, capRing);
   const sleeper = makeAgent();
-  sleeper.scale.setScalar(0.62);
+  sleeper.scale.setScalar(SCALE);
   sleeper.position.set(at[0], 0.14, at[1]);
   const home = new THREE.Vector3(at[0], 0.14, at[1]);
   sleeper.rotation.y = Math.atan2(-at[0], -at[1]); // facing the middle of the room
@@ -229,7 +231,7 @@ function addPod(g, id, built, relabels, extra) {
   g.add(sleeper);
   plaque(g, at[0] - 1.05, at[1] + 1.25, built.exhibits.length + 1, room.items.pod.title, room.color, relabels, -0.5);
   const worker = makeAgent({ legs: true });
-  worker.scale.setScalar(0.7); worker.userData.power = 1; worker.visible = false; g.add(worker);
+  worker.scale.setScalar(SCALE); worker.userData.power = 1; worker.visible = false; g.add(worker);
   for (let i = 0; i < 20; i++) pose(worker, "idle", 0, 0.1);
   const main = built.exhibits[0];
   built.exhibits.push({ key: "pod", at, stand: [at[0] - 1.0, at[1] + 1.7], solid: 0.65, hits: [glass, base, cap], act: () => extra.runExercise?.(id) });
@@ -705,7 +707,8 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
   const lastPos = new THREE.Vector3();
   const say = (o) => onSay(tr(o));
   // a line from the catalog: the speech bubble shows it and the agent says it out loud
-  const line = (id) => { onSay(tr(LINES[id])); sound.say(id); };
+  // its short lines always show in the bubble, but it only says them out loud while someone is using the lab
+  const line = (id) => { onSay(tr(LINES[id])); if (engaged) sound.say(id); };
   extra.say = say;
   extra.line = line;
   extra.cheer = () => { armsUp = t + 1.8; happyUntil = t + 2.4; onFlash(); sound.sfx("success"); };
@@ -869,17 +872,17 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     const looked = fp && blend > 0.9 ? aimed() : null;
     const pinned = pin && t < pin.until && pin.e.room === currentRoom && Math.hypot(pin.e.world.x - agent.position.x, pin.e.world.z - agent.position.z) < 3.6 ? pin.e : null;
     focus = looked ?? pinned ?? nearest();
-    // reaching a room's main exhibit (the engine in the workshop) once per visit: the page may narrate it
-    const mainKey = focus ? (focus.room === "taller" ? "brain" : mainOf(focus.room)?.key) : null;
-    if (focus && focus.key === mainKey && !toured.has(focus.room)) { toured.add(focus.room); onTour(focus.room); }
     const key = focus ? focus.id : currentRoom;
     if (key === guideKey) return;
     guideKey = key;
     onGuide(focus ? { room: focus.room, item: focus.key } : { room: currentRoom });
   }
+  /** The guide narrates a room once, and only when a person interacts with it (never while it tours by itself). */
+  const tourOnce = (room) => { if (room && !toured.has(room)) { toured.add(room); onTour(room); } };
+  let tourDoor = null;
   function interact(e = focus, { byAuto = false } = {}) {
     if (!e) return;
-    if (!byAuto) engaged = true;
+    if (!byAuto) { engaged = true; tourOnce(e.room); }
     pin = { e, until: t + 7 };
     sound.sfx("interact");
     e.act();
@@ -963,7 +966,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       return;
     }
     const dh = ray.intersectObjects(doors.map((d) => d.hit), false)[0];
-    if (dh) { const d = doors.find((x) => x.hit === dh.object); goTo(roomAt(agent.position.x, agent.position.z) === d.id ? "cuna" : d.id); return; }
+    if (dh) { const d = doors.find((x) => x.hit === dh.object); const to = roomAt(agent.position.x, agent.position.z) === d.id ? "cuna" : d.id; tourDoor = to; goTo(to); return; }
     const fh = ray.intersectObject(floorHit, false)[0];
     if (fh && roomAt(fh.point.x, fh.point.z)) walkTo(fh.point);
   };
@@ -1033,7 +1036,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       { ex: "trend", cap: { en: "Plotting the trend", es: "Trazando la tendencia" }, hold: 2.8 },
     ],
   };
-  const WG = LEG_DROP * 0.7;
+  const WG = LEG_DROP * SCALE;
   const hubAt = new THREE.Vector3(0, WG, 1.8);
   function abortMission(id) {
     const P = pods[id];
@@ -1047,7 +1050,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
     if (!P || !steps || P.busy) return;
     P.busy = true;
     const tok = ++P.tok, alive = () => P.tok === tok && P.busy;
-    const W = P.worker, spd = reduced ? 40 : 1.7;
+    const W = P.worker, spd = reduced ? 40 : 2.3;
     const gnd = (x, z) => new THREE.Vector3(x, WG, z);
     let T = 0;
     anim(0.5, (k) => { if (!alive()) return; P.glass.scale.y = Math.max(0.02, 1 - k); P.glass.position.y = 0.15 + 0.95 * (1 - k); P.mist.material.opacity = 0.45 * (1 - k); }, T);
@@ -1233,7 +1236,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
         if (dist < 0.08 || stuck > 0.8) { path.shift(); stuck = 0; }
         else if (flyRoute && alt < 2.6 && dist > 2.4) { turnTo(Math.atan2(dx, dz), dt); } // taking off first
         else {
-          const spd = auto ? 1.75 : 3.4; // the autopilot walks; you run
+          const spd = auto ? 2.5 : 3.8; // the autopilot walks (briskly); you run
           const step = Math.min(dist, (path.length > 1 ? spd : Math.min(spd, dist * 3 + 0.6)) * dt);
           agent.position.x += (dx / dist) * step; agent.position.z += (dz / dist) * step;
           collide(agent.position);
@@ -1402,7 +1405,7 @@ export function createRoom(canvas, { reduced = false, minimap = null, onArrive =
       interact(e, { byAuto: auto });
       if (auto) autoWait = t + 4.5; // it stays a moment so you can see what the exhibit does
     }
-    if (pendingRoom) { const id = pendingRoom; pendingRoom = null; onArrive(id); if (id === "cuna" && !reduced) extra.zap(); }
+    if (pendingRoom) { const id = pendingRoom; pendingRoom = null; onArrive(id); if (id === tourDoor) { tourDoor = null; tourOnce(id); } if (id === "cuna" && !reduced) extra.zap(); }
   }
   if (auto) { planRoom("cuna"); autoWait = 2.5; }
   tick();

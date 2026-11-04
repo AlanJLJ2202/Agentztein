@@ -20,7 +20,7 @@ type Props = {
   name: string;
   keys: SavedKey[] | null;
   notesCount: number;
-  go: (t: Tab) => void;
+  go: (t: Tab, anchor?: string) => void;
   client: Api;
   onKeys: (k: SavedKey[]) => void;
   onNotes: (n: number) => void;
@@ -279,6 +279,7 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
         </div>
       </div>
 
+      <Attention lab={lab} lang={lang} go={go} />
       <SetupAlerts checks={health} go={go} />
       {view === "simple" ? (
         <>
@@ -288,7 +289,7 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
         </>
       ) : (
         <>
-          <Kpis lab={lab} lang={lang} loading={loading} />
+          <Kpis lab={lab} lang={lang} loading={loading} go={go} />
           <CycleTrack lab={lab} lang={lang} go={go} />
           <div className="dgrid">
             <ScoreChart lab={lab} lang={lang} go={go} />
@@ -297,6 +298,54 @@ export function Overview({ name, keys, go, client, onKeys, onNotes }: Props) {
           <SkillMap lab={lab} go={go} />
         </>
       )}
+    </section>
+  );
+}
+
+/* ---------- what matters right now, colored by urgency ---------- */
+type Alert = { tone: "bad" | "warn" | "live" | "good"; icon: string; title: Text; text: Text; cta?: { label: Text; to: Tab; anchor?: string } };
+
+function alertsOf(lab: Lab, lang: Lang): Alert[] {
+  const out: Alert[] = [];
+  const j = lab.latest;
+  const budget = lab.agent?.budget;
+  const used = budget && budget.monthly > 0 ? budget.spent / budget.monthly : 0;
+  if (j && isRunning(j))
+    out.push({ tone: "live", icon: "●", title: E("A cycle is running", "Hay una corrida en curso"), text: E(`${scTitle(lab, j.scenario)} · $${Number(j.state.cost ?? 0).toFixed(3)} spent so far. Watch it grow step by step.`, `${scTitle(lab, j.scenario)} · $${Number(j.state.cost ?? 0).toFixed(3)} gastados hasta ahora. Mírala crecer paso a paso.`), cta: { label: E("See it live", "Verla en vivo"), to: "agent", anchor: "corrida" } });
+  if (j?.phase === "awaiting" && j.state.candidate) {
+    const c = j.state.candidate;
+    const b = pct(j.state.before?.validation), a = pct(j.state.after);
+    out.push({ tone: "warn", icon: "!", title: E("A skill is waiting for your decision", "Una habilidad espera tu decisión"), text: E(`v${c.version} for “${ctxName(lab, c.scenario, c.context)}”${b !== null && a !== null ? `: ${b.toFixed(0)}% → ${a.toFixed(0)}%` : ""}. Nothing switches on without you.`, `v${c.version} para «${ctxName(lab, c.scenario, c.context)}»${b !== null && a !== null ? `: ${b.toFixed(0)}% → ${a.toFixed(0)}%` : ""}. Nada se enciende sin ti.`), cta: { label: E("Review and decide", "Revisar y decidir"), to: "agent" } });
+  }
+  if (j?.state.error)
+    out.push({ tone: "bad", icon: "✕", title: E("The last cycle got stuck", "La última corrida se atoró"), text: E(j.state.error, j.state.error), cta: { label: E("See what happened", "Ver qué pasó"), to: "agent", anchor: "corrida" } });
+  else if (j?.state.outcome === "run-budget")
+    out.push({ tone: "bad", icon: "✕", title: E("The last cycle hit its cap", "La última corrida llegó a su tope"), text: E(`The code stopped it at $${(j.state.maxCost ?? 0).toFixed(2)}. Nothing changed; a higher cap lets it go further.`, `El código la detuvo en $${(j.state.maxCost ?? 0).toFixed(2)}. No cambió nada; un tope más alto le deja llegar más lejos.`), cta: { label: E("See the cycle", "Ver la corrida"), to: "agent", anchor: "corrida" } });
+  if (budget && used >= 1)
+    out.push({ tone: "bad", icon: "$", title: E("Monthly budget used up", "Se acabó el presupuesto del mes"), text: E(`${money(budget.spent, lang)} of ${money(budget.monthly, lang)}. It won't call the model until you raise it or the month changes.`, `${money(budget.spent, lang)} de ${money(budget.monthly, lang)}. No llamará al modelo hasta que lo subas o cambie el mes.`), cta: { label: E("Raise it", "Subirlo"), to: "brain" } });
+  else if (budget && used >= 0.8)
+    out.push({ tone: "warn", icon: "$", title: E("Close to the monthly budget", "Cerca del presupuesto del mes"), text: E(`${Math.round(used * 100)}% used: ${money(budget.spent, lang)} of ${money(budget.monthly, lang)}.`, `${Math.round(used * 100)}% usado: ${money(budget.spent, lang)} de ${money(budget.monthly, lang)}.`), cta: { label: E("Adjust", "Ajustar"), to: "brain" } });
+  if (j?.state.outcome === "approved" && j.state.candidate && Date.now() - Date.parse(j.updatedAt) < 3 * 86_400_000)
+    out.push({ tone: "good", icon: "✓", title: E("New skill active", "Habilidad nueva activa"), text: E(`v${j.state.candidate.version} for “${ctxName(lab, j.state.candidate.scenario, j.state.candidate.context)}” is in use.`, `La v${j.state.candidate.version} para «${ctxName(lab, j.state.candidate.scenario, j.state.candidate.context)}» ya se usa.`) });
+  return out;
+}
+
+function Attention({ lab, lang, go }: { lab: Lab; lang: Lang; go: (t: Tab, anchor?: string) => void }) {
+  const t = useT();
+  const items = alertsOf(lab, lang);
+  if (!items.length) return null;
+  return (
+    <section className="attn" aria-label={t(E("Important now", "Importante ahora"))}>
+      {items.map((a, i) => (
+        <article key={i} className={`attn-item ${a.tone}`} role={a.tone === "bad" || a.tone === "warn" ? "alert" : "status"}>
+          <span className="attn-ico" aria-hidden="true">{a.icon}</span>
+          <div>
+            <b>{t(a.title)}</b>
+            <p>{t(a.text)}</p>
+          </div>
+          {a.cta && <button type="button" className="btn small" onClick={() => a.cta && go(a.cta.to, a.cta.anchor)}>{t(a.cta.label)} →</button>}
+        </article>
+      ))}
     </section>
   );
 }
@@ -331,6 +380,8 @@ function Story({ lab, lang, go }: { lab: Lab; lang: Lang; go: (t: Tab) => void }
   );
 }
 
+const tone3 = (b?: { spent: number; monthly: number }) => (!b ? "#8a99a6" : b.spent >= b.monthly ? "#c42d12" : b.spent >= b.monthly * 0.8 ? "#e2a400" : "#6d5ce8");
+
 function BigThree({ lab, lang }: { lab: Lab; lang: Lang }) {
   const t = useT();
   const contexts = lab.bench.flatMap((b) => b.contexts.map((c) => ({ sc: b.id, ctx: c.id })));
@@ -343,19 +394,19 @@ function BigThree({ lab, lang }: { lab: Lab; lang: Lang }) {
   const budget = lab.agent?.budget;
   return (
     <section className="big3" aria-label={t(E("In three numbers", "En tres números"))}>
-      <article>
+      <article style={{ ["--c" as string]: "#22b864" }}>
         <p className="big">{n}<small>/{contexts.length || 10}</small></p>
         <p>{t(E("situations it already handles with a skill of its own", "situaciones que ya resuelve con una habilidad propia"))}</p>
         {contexts.length > 0 && <div className="cells">{contexts.map((c) => <i key={c.sc + c.ctx} className={covered(c.sc, c.ctx) ? "on" : ""} style={{ ["--c" as string]: covered(c.sc, c.ctx) ? scColor(c.sc) : undefined }} />)}</div>}
       </article>
-      <article>
+      <article style={{ ["--c" as string]: "#0081fb" }}>
         <p className={`big${best && best > 0 ? " up" : ""}`}>{best === null ? "—" : `+${best.toFixed(0)}`}<small>{best === null ? "" : " pts"}</small></p>
         <p>{best === null ? t(E("its best approved improvement will show here", "aquí verás su mejor mejora aprobada")) : t(E("its best approved improvement on an exam it never saw", "su mejor mejora aprobada, en un examen que nunca vio"))}</p>
       </article>
-      <article>
+      <article style={{ ["--c" as string]: tone3(budget) }} className={budget && budget.spent >= budget.monthly * 0.8 ? (budget.spent >= budget.monthly ? "bad" : "warn") : ""}>
         <p className="big">{budget ? money(budget.spent, lang) : "—"}</p>
         <p>{budget ? t(E(`spent this month, out of ${money(budget.monthly, lang)} you allowed`, `gastado este mes, de ${money(budget.monthly, lang)} que le permitiste`)) : t(E("what it spends with your key", "lo que gasta con tu llave"))}</p>
-        {budget && <div className="meter"><i style={{ width: `${Math.min(100, (budget.spent / Math.max(0.01, budget.monthly)) * 100)}%` }} /></div>}
+        {budget && <div className="meter"><i className={budget.spent >= budget.monthly * 0.8 ? "hot" : ""} style={{ width: `${Math.min(100, (budget.spent / Math.max(0.01, budget.monthly)) * 100)}%` }} /></div>}
       </article>
     </section>
   );
@@ -382,7 +433,7 @@ function Doors({ go }: { go: (t: Tab) => void }) {
 }
 
 /* ---------- the numbers ---------- */
-function Kpis({ lab, lang, loading }: { lab: Lab; lang: Lang; loading: boolean }) {
+function Kpis({ lab, lang, loading, go }: { lab: Lab; lang: Lang; loading: boolean; go: (t: Tab, anchor?: string) => void }) {
   const t = useT();
   const contexts = lab.bench.flatMap((b) => b.contexts.map((c) => ({ sc: b.id, ctx: c.id })));
   const covered = (sc: string, ctx: string) => lab.active.some((s) => s.scenario === sc && s.context === ctx);
@@ -397,12 +448,13 @@ function Kpis({ lab, lang, loading }: { lab: Lab; lang: Lang; loading: boolean }
   const used = budget && budget.monthly > 0 ? Math.min(1, budget.spent / budget.monthly) : 0;
   const exp = lab.notes.filter((n) => n.verdict === "experiment").length;
   const pending = lab.notes.filter((n) => n.verdict === "experiment" && !n.decision).length;
+  const running = Boolean(lab.latest && isRunning(lab.latest));
 
   return (
     <section className={`kpis${loading ? " loading" : ""}`} aria-label={t(E("Key numbers", "Números clave"))}>
-      <article className="kpi">
+      <article className={`kpi${lab.candidates.length ? " warn" : ""}`} style={{ ["--c" as string]: "#22b864" }}>
         <h3>{t(E("Active skills", "Habilidades activas"))}</h3>
-        <p className="big">{lab.active.length}{lab.candidates.length > 0 && <span className="pill amber">+{lab.candidates.length} {t(E("waiting", "en espera"))}</span>}</p>
+        <p className="big">{lab.active.length}{lab.candidates.length > 0 && <button type="button" className="pill amber kpi-act" onClick={() => go("agent")}>+{lab.candidates.length} {t(E("waiting for you", "te esperan"))} →</button>}</p>
         {contexts.length > 0 && (
           <div className="cells" role="img" aria-label={t(E(`Covers ${ncov} of ${contexts.length} situations`, `Cubre ${ncov} de ${contexts.length} situaciones`))}>
             {contexts.map((c) => <i key={c.sc + c.ctx} style={{ ["--c" as string]: covered(c.sc, c.ctx) ? scColor(c.sc) : undefined }} className={covered(c.sc, c.ctx) ? "on" : ""} />)}
@@ -410,17 +462,17 @@ function Kpis({ lab, lang, loading }: { lab: Lab; lang: Lang; loading: boolean }
         )}
         <p className="sub">{t(E(`Covers ${ncov} of ${contexts.length || 10} situations`, `Cubre ${ncov} de ${contexts.length || 10} situaciones`))}</p>
       </article>
-      <article className="kpi">
+      <article className={`kpi${running ? " live" : ""}`} style={{ ["--c" as string]: "#6d5ce8" }}>
         <h3>{t(E("Improvement cycles", "Ciclos de mejora"))}</h3>
-        <p className="big">{lab.jobs.length}</p>
+        <p className="big">{lab.jobs.length}{running && <button type="button" className="pill live kpi-act" onClick={() => go("agent", "corrida")}>● {t(E("running", "en curso"))}</button>}</p>
         <p className="sub">{t(E(`${approved} approved · ${blocked} thrown out by the harness`, `${approved} aprobados · ${blocked} descartados por el arnés`))}</p>
       </article>
-      <article className="kpi">
+      <article className={`kpi${best && best.gain > 0 ? " good" : ""}`} style={{ ["--c" as string]: "#0081fb" }}>
         <h3>{t(E("Best gain", "Mejor mejora"))}</h3>
         <p className={`big${best && best.gain > 0 ? " up" : ""}`}>{best ? `${best.gain > 0 ? "+" : ""}${best.gain.toFixed(1)}` : "—"}<small>{best ? t(E(" pts", " pts")) : ""}</small></p>
         <p className="sub">{best ? t(E(`On validation · ${lab.bench.find((b) => b.id === best.sc)?.title ?? best.sc}`, `En validación · ${lab.bench.find((b) => b.id === best.sc)?.title ?? best.sc}`)) : t(E("No measured improvement yet", "Aún sin mejoras medidas"))}</p>
       </article>
-      <article className="kpi">
+      <article className={`kpi${used >= 1 ? " bad" : used >= 0.8 ? " warn" : ""}`} style={{ ["--c" as string]: tone3(budget) }}>
         <h3>{t(E("Spent this month", "Gasto del mes"))}</h3>
         <p className="big">{budget ? money(budget.spent, lang) : "—"}{budget && <small> / {money(budget.monthly, lang)}</small>}</p>
         <div className="meter" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(used * 100)} aria-label={t(E("Budget used", "Presupuesto usado"))}>
@@ -428,7 +480,7 @@ function Kpis({ lab, lang, loading }: { lab: Lab; lang: Lang; loading: boolean }
         </div>
         <p className="sub">{budget ? t(E(`${budget.runs} model calls · your key, your limit`, `${budget.runs} llamadas al modelo · tu llave, tu límite`)) : t(E("Set a limit in Agent", "Pon un límite en Agente"))}</p>
       </article>
-      <article className="kpi">
+      <article className={`kpi${pending ? " warn" : ""}`} style={{ ["--c" as string]: "#ff6600" }}>
         <h3>{t(E("Research radar", "Radar de investigación"))}</h3>
         <p className="big">{lab.notes.length}</p>
         <p className="sub">{t(E(`stories judged · ${exp} worth an experiment${pending ? ` · ${pending} to decide` : ""}`, `historias evaluadas · ${exp} valen un experimento${pending ? ` · ${pending} por decidir` : ""}`))}</p>
@@ -439,55 +491,59 @@ function Kpis({ lab, lang, loading }: { lab: Lab; lang: Lang; loading: boolean }
 
 /* ---------- the self-development cycle, with where the latest one is ---------- */
 type PhaseInfo = { short: Text; name: Text; what: Text; color: string };
-const PHASES: [PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo] = [
+// The same six phases as the landing, in the order they really run in a cycle (and the colors of their tools).
+export const PHASES: [PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo, PhaseInfo] = [
   {
-    short: E("Measures", "Se mide"), name: E("Measures itself", "Se mide"), color: "#6d5ce8",
-    what: E("Before changing anything, it takes a practice exam with the skills it already has. That score is the baseline: without it nobody could tell later whether something improved.", "Antes de cambiar nada, presenta un examen de práctica con las habilidades que ya tiene. Esa calificación es la línea base: sin ella no habría forma de saber después si algo mejoró."),
+    short: E("Decides", "Decide"), name: E("Decides what to practice", "Decide qué practicar"), color: "#6d5ce8",
+    what: E("You choose, or you let it: Muse Wonder looks where it fails most, which Meta models your key has and what each costs, and picks the exam, the model and the effort within the cycle's cap.", "Eliges tú o lo dejas a él: Muse Wonder mira dónde falla más, qué modelos de Meta tiene tu llave y cuánto cuesta cada uno, y elige el examen, el modelo y el esfuerzo sin pasarse del tope de la corrida."),
+  },
+  {
+    short: E("Measures", "Se mide"), name: E("Measures itself", "Se mide"), color: "#0081fb",
+    what: E("Before changing anything, it takes the exam with the skills it already has. That score is the baseline: without it nobody could tell later whether something improved.", "Antes de cambiar nada, presenta el examen con las habilidades que ya tiene. Esa calificación es la línea base: sin ella no habría forma de saber después si algo mejoró."),
   },
   {
     short: E("Research", "Investiga"), name: E("Researches", "Investiga"), color: "#ff6600",
-    what: E("It reads four sources (Hacker News, arXiv, Hugging Face and GitHub) and decides which items deserve an experiment, a watch or a skip. Optional, but it gives it ideas.", "Lee cuatro fuentes (Hacker News, arXiv, Hugging Face y GitHub) y decide qué merece un experimento, vigilarse o descartarse. Es opcional, pero le da ideas."),
+    what: E("Its radar reads Hacker News, arXiv, Hugging Face and GitHub and judges each item. The ideas you approve reach the planner as inspiration.", "Su radar lee Hacker News, arXiv, Hugging Face y GitHub y juzga cada publicación. Las ideas que apruebas le llegan al planificador como inspiración."),
   },
   {
-    short: E("Mistakes", "Errores"), name: E("Learns from its mistakes", "Aprende de sus errores"), color: "#f0533c",
-    what: E("It takes the questions it got wrong, groups them by pattern and writes one new skill (a short text of instructions) aimed at the most common pattern.", "Toma las preguntas que falló, las agrupa por patrón y escribe una habilidad nueva (un texto corto de instrucciones) dirigida al patrón más común."),
+    short: E("Learns", "Aprende"), name: E("Learns from its mistakes", "Aprende de sus errores"), color: "#f0533c",
+    what: E("It takes the practice questions it got wrong, groups them by pattern and writes one new skill (a short text of instructions) aimed at the most common pattern.", "Toma las preguntas de práctica que falló, las agrupa por patrón y escribe una habilidad nueva (un texto corto de instrucciones) dirigida al patrón más común."),
   },
   {
-    short: E("Test", "Prueba"), name: E("Tests the new skill", "Prueba la habilidad nueva"), color: "#0081fb",
-    what: E("It answers a second exam it never saw, with and without the new skill. It only moves on if the score goes up and nothing that used to work now fails.", "Contesta un segundo examen que nunca vio, con y sin la habilidad nueva. Solo avanza si la calificación sube y nada de lo que ya funcionaba falla."),
+    short: E("Test", "Prueba"), name: E("Tests it, behind a harness", "Se prueba, con un arnés"), color: "#16a394",
+    what: E("It takes the validation exam again with the new skill. The harness lets it through only if the score goes up and nothing that worked breaks; if a step could go over the cap, the code stops it.", "Vuelve a presentar el examen de validación con la habilidad nueva. El arnés solo la deja pasar si la calificación sube y nada de lo que funcionaba se rompe; si un paso pudiera pasarse del tope, el código lo detiene."),
   },
   {
-    short: E("Activate", "Se activa"), name: E("Switches on, with your approval", "Se activa con tu aprobación"), color: "#22b864",
-    what: E("If the skill passed the test and you approve it, it becomes a new active version, labeled with where it applies.", "Si la habilidad pasó la prueba y tú la apruebas, queda como una versión nueva activa, etiquetada con dónde aplica."),
-  },
-  {
-    short: E("Update", "Al día"), name: E("Keeps up to date", "Se mantiene al día"), color: "#ffa928",
-    what: E("When a scenario changes its rules, only the skills labeled for that change are tested again. The rest keep working and old versions are kept.", "Cuando un escenario cambia sus reglas, solo las habilidades etiquetadas para ese cambio se vuelven a probar. Las demás siguen funcionando y las versiones viejas se guardan."),
+    short: E("You decide", "Tú decides"), name: E("You decide, then it switches on", "Tú decides y se activa"), color: "#22b864",
+    what: E("A skill that passed waits for you. Approve it and it becomes a new active version; reject it and nothing changes.", "Una habilidad que pasó te espera. Si la apruebas, queda como versión nueva activa; si la rechazas, nada cambia."),
   },
 ];
-type PhaseState = "done" | "now" | "wait" | "stop" | "todo" | "later";
+type PhaseState = "done" | "now" | "wait" | "stop" | "cap" | "todo" | "you" | "opt";
 
 function phaseStates(job: Job | null, notes: Note[]): { st: PhaseState[]; at: number } {
-  const research: PhaseState = notes.length ? "done" : "todo";
-  if (!job) return { st: ["todo", research, "todo", "todo", "todo", "later"], at: 0 };
+  const research: PhaseState = notes.length ? "done" : "opt";
+  if (!job) return { st: ["todo", "todo", research, "todo", "todo", "todo"], at: 0 };
   const o = job.state.outcome;
   const s = job.state;
-  let at = 0;
+  const auto = Boolean(s.auto || s.plan);
+  let at = 1;
   let mark: PhaseState = "now";
-  if (job.phase === "baseline") at = 0;
-  else if (job.phase === "propose") at = 2;
-  else if (job.phase === "validate") at = 3;
-  else if (job.phase === "awaiting") { at = 4; mark = "wait"; }
-  else if (o === "approved") { at = 4; mark = "done"; }
-  else if (o === "rejected") { at = 4; mark = "stop"; }
-  else if (o === "harness-rejected") { at = 3; mark = "stop"; }
-  else if (o === "nothing-to-learn") { at = 2; mark = "done"; }
-  else if (o === "planner-failed") { at = 2; mark = "stop"; }
-  else at = s.after ? 3 : s.candidate ? 2 : 0;
+  if (job.phase === "plan") at = 0;
+  else if (job.phase === "baseline") at = 1;
+  else if (job.phase === "propose") at = 3;
+  else if (job.phase === "validate") at = 4;
+  else if (job.phase === "awaiting") { at = 5; mark = "wait"; }
+  else if (o === "approved") { at = 5; mark = "done"; }
+  else if (o === "rejected") { at = 5; mark = "stop"; }
+  else if (o === "harness-rejected") { at = 4; mark = "stop"; }
+  else if (o === "run-budget") { at = s.after ? 4 : s.candidate ? 4 : s.before ? 3 : 1; mark = "cap"; }
+  else if (o === "nothing-to-learn") { at = 3; mark = "done"; }
+  else if (o === "planner-failed") { at = 3; mark = "stop"; }
+  else at = s.after ? 4 : s.candidate ? 3 : 1;
   if (s.error) mark = "stop";
   const st: PhaseState[] = [0, 1, 2, 3, 4, 5].map((i) => {
-    if (i === 1) return research;
-    if (i === 5) return "later";
+    if (i === 0 && !auto) return at > 0 ? "you" : mark;
+    if (i === 2) return research;
     return i < at ? "done" : i === at ? mark : "todo";
   });
   return { st, at };
@@ -507,24 +563,24 @@ function CycleTrack({ lab, lang, go }: { lab: Lab; lang: Lang; go: (t: Tab) => v
   const exp = lab.notes.filter((n) => n.verdict === "experiment").length;
   const STATE: Record<PhaseState, Text> = {
     done: E("done", "listo"), now: E("working on it", "trabajando"), wait: E("waiting for you", "te espera"),
-    stop: E("stopped here", "se detuvo aquí"), todo: E("not yet", "aún no"), later: E("when rules change", "cuando cambien las reglas"),
+    stop: E("stopped here", "se detuvo aquí"), cap: E("cap reached", "llegó al tope"), todo: E("not yet", "aún no"), you: E("you chose", "elegiste tú"), opt: E("optional", "opcional"),
   };
 
   let real: Text | null = null;
   let quote: string | null = null;
   let action: { label: Text; to: Tab } | null = null;
-  if (cur === 0) {
+  if (cur === 1) {
     real = s?.before
       ? E(`Baseline: ${frac(before)} right on validation (${b?.toFixed(0)}%) and ${frac(s.before.practice)} on practice.`, `Línea base: ${frac(before)} bien en validación (${b?.toFixed(0)}%) y ${frac(s.before.practice)} en práctica.`)
       : job && job.phase === "baseline"
         ? E("Taking the exam right now…", "Presentando el examen ahorita…")
         : null;
-  } else if (cur === 1) {
+  } else if (cur === 2) {
     real = lab.notes.length
       ? E(`The radar has judged ${lab.notes.length} stories; ${exp} deserve an experiment.${c?.noteId ? " This cycle's skill was inspired by one of them." : ""}`, `El radar ha evaluado ${lab.notes.length} historias; ${exp} merecen un experimento.${c?.noteId ? " La habilidad de este ciclo se inspiró en una de ellas." : ""}`)
       : null;
     if (!lab.notes.length) action = { label: E("Run the radar", "Correr el radar"), to: "radar" };
-  } else if (cur === 2) {
+  } else if (cur === 3) {
     real = c
       ? E(`It studied ${s?.mistakes.length ?? 0} practice mistakes and wrote v${c.version} for “${ctxName(lab, c.scenario, c.context)}”.`, `Estudió ${s?.mistakes.length ?? 0} errores de práctica y escribió la v${c.version} para «${ctxName(lab, c.scenario, c.context)}».`)
       : s?.outcome === "nothing-to-learn"
@@ -533,7 +589,7 @@ function CycleTrack({ lab, lang, go }: { lab: Lab; lang: Lang; go: (t: Tab) => v
           ? E("The planner couldn't write a valid skill this time.", "El planificador no logró escribir una habilidad válida esta vez.")
           : job?.phase === "propose" ? E("Studying its mistakes…", "Estudiando sus errores…") : null;
     if (c?.rationale) quote = c.rationale;
-  } else if (cur === 3) {
+  } else if (cur === 4) {
     const v = s?.verdict;
     real = s?.after
       ? E(
@@ -541,16 +597,19 @@ function CycleTrack({ lab, lang, go }: { lab: Lab; lang: Lang; go: (t: Tab) => v
           `Con la habilidad nueva: ${frac(s.after)} (${a?.toFixed(0)}%) contra ${frac(before)} (${b?.toFixed(0)}%) sin ella. ${v ? (v.reason === "improves" ? "Mejora y no rompe nada → pasa a una persona." : v.reason === "regression" ? "Rompió algo que ya funcionaba → descartada." : "No mejoró lo suficiente → descartada.") : ""}`,
         )
       : job?.phase === "validate" ? E("Taking the second exam…", "Presentando el segundo examen…") : null;
-  } else if (cur === 4) {
+  } else if (cur === 5) {
     real = job?.phase === "awaiting"
       ? E("It passed the harness and is waiting for your decision.", "Pasó el arnés y espera tu decisión.")
       : s?.outcome === "approved" ? E("You approved it: it's active now.", "La aprobaste: ya está activa.")
         : s?.outcome === "rejected" ? E("You rejected it: nothing changed.", "La rechazaste: nada cambió.") : null;
     if (job?.phase === "awaiting") action = { label: E("Approve or reject", "Aprobar o rechazar"), to: "agent" };
   } else {
-    real = E("No scenario in your lab has changed its rules yet, so nothing needs re-testing.", "Ningún escenario de tu laboratorio ha cambiado sus reglas todavía, así que no hay nada que volver a probar.");
+    const plan = s?.plan;
+    real = plan
+      ? E(`It chose ${scTitle(lab, plan.scenario)} with ${plan.executor}${plan.effort ? ` (${plan.effort} effort)` : ""}${plan.estimate ? `, about $${plan.estimate.toFixed(2)}` : ""}${s?.maxCost ? ` of a $${s.maxCost.toFixed(2)} cap` : ""}: ${plan.why}`, `Eligió ${scTitle(lab, plan.scenario)} con ${plan.executor}${plan.effort ? ` (esfuerzo ${plan.effort})` : ""}${plan.estimate ? `, unos $${plan.estimate.toFixed(2)}` : ""}${s?.maxCost ? ` de un tope de $${s.maxCost.toFixed(2)}` : ""}: ${plan.why}`)
+      : job ? E(`You chose: ${scTitle(lab, job.scenario)} with ${job.executor}.`, `Elegiste tú: ${scTitle(lab, job.scenario)} con ${job.executor}.`) : null;
   }
-
+  if (s?.outcome === "run-budget" && cur === at) real = E(`It reached this cycle's cap ($${(s.maxCost ?? 0).toFixed(2)}) and the code stopped it cleanly. Nothing changed; give it a higher cap to go further.`, `Llegó al tope de esta corrida ($${(s.maxCost ?? 0).toFixed(2)}) y el código la detuvo limpio. No cambió nada; dale un tope más alto para llegar más lejos.`);
   return (
     <section className="dcard cyc" aria-labelledby="cyc-h">
       <div className="dhead">
@@ -572,10 +631,10 @@ function CycleTrack({ lab, lang, go }: { lab: Lab; lang: Lang; go: (t: Tab) => v
           return (
             <li key={i} className={`${state}${cur === i ? " sel" : ""}`} style={{ ["--c" as string]: p.color }}>
               {job && i === at && (
-                <img className="pin" src={state === "stop" || state === "wait" ? "/img/agent-alert.webp" : "/img/agent-ok.webp"} alt="" width={34} height={51} />
+                <img className="pin" src={state === "stop" || state === "wait" || state === "cap" ? "/img/agent-alert.webp" : "/img/agent-ok.webp"} alt="" width={34} height={51} />
               )}
               <button type="button" role="tab" aria-selected={cur === i} onClick={() => setSel(i)}>
-                <span className="dot" aria-hidden="true">{state === "done" ? <Check size={13} /> : state === "stop" ? "✕" : i + 1}</span>
+                <span className="dot" aria-hidden="true">{state === "done" || state === "you" ? <Check size={13} /> : state === "stop" || state === "cap" ? "✕" : i + 1}</span>
                 <b>{t(p.short)}</b>
                 <small>{t(STATE[state])}</small>
               </button>
@@ -594,7 +653,7 @@ function CycleTrack({ lab, lang, go }: { lab: Lab; lang: Lang; go: (t: Tab) => v
           <p>{real ? t(real) : t(E("Nothing here yet. It fills in when you run a cycle.", "Aún nada. Se llena cuando corres un ciclo."))}</p>
           {quote && <blockquote>“{quote.length > 260 ? quote.slice(0, 257) + "…" : quote}”</blockquote>}
           {action && <button type="button" className="btn small" onClick={() => go(action.to)}>{t(action.label)}</button>}
-          {!job && cur !== 1 && cur !== 5 && <button type="button" className="btn small" onClick={() => go("agent")}>{t(E("Start a cycle", "Iniciar un ciclo"))}</button>}
+          {!job && cur !== 2 && <button type="button" className="btn small" onClick={() => go("agent")}>{t(E("Start a cycle", "Iniciar un ciclo"))}</button>}
         </div>
       </div>
     </section>
