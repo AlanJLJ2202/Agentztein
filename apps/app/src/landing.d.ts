@@ -11,3 +11,9 @@ declare module "@landing/dashstage.js" {
   };
   export function createDashStage(host: HTMLElement, o?: { reduced?: boolean }): DashStage | null;
 }
+declare module "@landing/track.js" {
+  export function startTracking(page: "landing" | "app", target?: string): void;
+  export function track(event: "section" | "cta" | "lab" | "tab" | "signin", target?: string, value?: number): void;
+  export function trackSignIn(token: string): void;
+  export function stopTracking(): void;
+}

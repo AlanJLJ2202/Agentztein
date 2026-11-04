@@ -15,9 +15,11 @@ import { LiveProvider } from "./live.js";
 import { TranslateProvider } from "./translate.js";
 import { Mind } from "./Mind.js";
 import { Path, showPath } from "./Path.js";
+import { Traffic } from "./Traffic.js";
+import { startTracking, stopTracking, track, trackSignIn } from "@landing/track.js";
 
-export type Tab = "overview" | "mind" | "lab" | "agent" | "evolve" | "radar" | "brain";
-const TABS: Tab[] = ["overview", "mind", "lab", "agent", "evolve", "radar", "brain"];
+export type Tab = "overview" | "mind" | "lab" | "agent" | "evolve" | "radar" | "brain" | "traffic";
+const TABS: Tab[] = ["overview", "mind", "lab", "agent", "evolve", "radar", "brain", "traffic"];
 // the nav puts what you need to start first, then the places to explore
 const ESSENTIAL: Tab[] = ["overview", "agent", "lab", "brain"];
 const EXPLORE: Tab[] = ["mind", "radar", "evolve"];
@@ -29,6 +31,7 @@ const TAB_HINT: Record<Tab, { en: string; es: string }> = {
   lab: { en: "Watch it think: what it did, what it decided and what it asks you to approve (or in 3D)", es: "Míralo pensar: qué hizo, qué decidió y qué te pide aprobar (o en 3D)" },
   radar: { en: "AI news it reads for ideas", es: "Noticias de IA que lee para sacar ideas" },
   evolve: { en: "It rewrites its own code, behind a judge", es: "Reescribe su propio código, con un juez" },
+  traffic: { en: "Who visits the site and how far they get (only the owners see it)", es: "Quién visita el sitio y hasta dónde llega (solo lo ven los dueños)" },
 };
 const tabFromHash = (): Tab => {
   const raw = location.hash.slice(1);
@@ -45,6 +48,7 @@ export function App() {
   }, [lang]);
   useEffect(() => {
     void getConfig().then(setConfig);
+    startTracking("app"); // visit counting (ADR-034); a no-op in browsers that opted out
   }, []);
 
   const supabase = useMemo(
@@ -117,6 +121,10 @@ function Authed({ supabase, config, lang, setLang }: { supabase: SupabaseClient;
     return () => data.subscription.unsubscribe();
   }, [supabase]);
 
+  useEffect(() => {
+    if (session === null) track("signin");
+  }, [session]);
+
   if (session === undefined) return <Splash />;
   if (!session) return <SignIn supabase={supabase} google={config.google} lang={lang} setLang={setLang} />;
   return <Shell supabase={supabase} session={session} config={config} lang={lang} setLang={setLang} />;
@@ -128,6 +136,18 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
   const [tab, setTab] = useState<Tab>(tabFromHash);
   const [keys, setKeys] = useState<SavedKey[] | null>(null);
   const [notesCount, setNotesCount] = useState(0);
+  // the owners see the site's traffic; their own browser stops counting itself
+  const [admin, setAdmin] = useState<boolean | null>(null);
+  useEffect(() => {
+    trackSignIn(session.access_token);
+    void client.isAdmin().then((yes) => {
+      setAdmin(yes);
+      if (yes) stopTracking();
+    });
+  }, [client]); // once per signed-in session: the token only ties the visit to the account
+  useEffect(() => {
+    track("tab", tab);
+  }, [tab]);
   useEffect(() => {
     const on = () => setTab(tabFromHash());
     addEventListener("hashchange", on);
@@ -170,6 +190,11 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
                 </a>
               </Fragment>
             ))}
+            {admin && (
+              <a href="#traffic" title={t(TAB_HINT.traffic)} aria-current={tab === "traffic" ? "page" : undefined} onClick={(e) => { e.preventDefault(); go("traffic"); }}>
+                {t(T.tabs.traffic)}
+              </a>
+            )}
           </nav>
           <button type="button" className="guide-btn" onClick={showPath} title={lang === "es" ? "Mostrar la guía paso a paso" : "Show the step-by-step guide"}>
             ? <span>{lang === "es" ? "Guía" : "Guide"}</span>
@@ -199,6 +224,7 @@ function Shell({ supabase, session, config, lang, setLang }: { supabase: Supabas
         {tab === "evolve" && <Evolve client={client} go={go} />}
         {tab === "mind" && <Mind go={go} />}
         {tab === "lab" && <Process client={client} go={go} lang={lang} />}
+        {tab === "traffic" && (admin ? <Traffic client={client} lang={lang} /> : <p className="muted">{admin === null ? t(T.loading) : lang === "es" ? "Solo los dueños del sitio ven su tráfico (ADMIN_EMAILS)." : "Only the site's owners see its traffic (ADMIN_EMAILS)."}</p>)}
         {tab === "radar" && <Radar client={client} keys={keys} onKeys={setKeys} onNotes={setNotesCount} go={go} lang={lang} />}
       </main>
       <Companion tab={tab} go={go} client={client} lang={lang} />

@@ -983,3 +983,32 @@ input:focus, select:focus { outline: 3px solid var(--sky); border-color: var(--m
 .srcmark { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
 .srctag svg { flex: 0 0 auto; }
 .srctag { gap: 4px; }
+
+/* ---------- Traffic (owners only, ADR-034) ---------- */
+.traffic-body { display: grid; gap: 20px; transition: opacity .2s; }
+.traffic-body.loading { opacity: .55; }
+.traffic-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.traffic-card { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 20px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.traffic-card.wide { grid-column: 1 / -1; }
+.funnel { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.funnel li { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(80px, 2fr) 7.5em; gap: 12px; align-items: center; font-size: .9375rem; }
+.funnel .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.funnel .bartrack { height: 14px; }
+.funnel .fnum { text-align: right; font-variant-numeric: tabular-nums; }
+.funnel .fnum small { color: var(--muted); font-weight: 600; margin-left: 4px; }
+.daily { position: relative; display: flex; align-items: flex-end; gap: 3px; height: 160px; padding-bottom: 22px; }
+.dbar { flex: 1; height: 100%; display: flex; align-items: flex-end; min-width: 2px; }
+.dbar i { display: block; width: 100%; min-height: 2px; background: var(--blue); border-radius: 4px 4px 0 0; }
+.dbar:hover i { background: var(--blue-hover); }
+.daxis { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; color: var(--muted); }
+.tscroll { overflow-x: auto; }
+.ttable { width: 100%; border-collapse: collapse; font-size: .875rem; }
+.ttable th { text-align: left; font-size: .75rem; color: var(--muted); font-weight: 700; padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.ttable td { padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.ttable td .pill { margin-left: 8px; }
+@media (max-width: 960px) { .traffic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .traffic-grid { grid-template-columns: minmax(0, 1fr); }
+  .funnel li { grid-template-columns: minmax(0, 1fr) 6.5em; }
+  .funnel .bartrack { grid-column: 1 / -1; grid-row: 2; }
+}

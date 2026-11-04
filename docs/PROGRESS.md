@@ -152,3 +152,12 @@ pnpm check
 - `fetchResearch`: tiempo por fuente, un reintento, respaldo de la última respuesta buena; triage con un reintento.
 - Logos reales de las cuatro fuentes (`packages/research/src/logos.js`) en el Hero, la landing y la app.
 - Nuevo lema del Hero y glosario con los tipos de cambio.
+
+## Tráfico del sitio (2026-11-04, ADR-034)
+- Migración `0010_visits`: `app.visit_events`.
+- `POST /api/track` (beacon, siempre 204, filtra bots) y `GET /api/visits` (solo `ADMIN_EMAILS`; `?check=1`, `?days=`).
+- `apps/landing/src/track.js` (compartido con la app vía `@landing/track.js`) y `visits.js`: vista, secciones,
+  laboratorio 3D, botones a la app y tiempo en pantalla. La app cuenta pestañas, la pantalla de entrada y el inicio de sesión.
+- App: pestaña **Tráfico** (`apps/app/src/Traffic.tsx`) para los dueños.
+- Tests: `test/api/visits.test.ts`.
+

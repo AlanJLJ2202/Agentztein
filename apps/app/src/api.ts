@@ -201,6 +201,21 @@ export type EvolveState = {
   limits: { maxUsd: number; dailyRuns: number };
 };
 
+/** The site's traffic (/api/visits, owners only). */
+export type Traffic = {
+  days: number;
+  totals: { visitors: number; newVisitors: number; sessions: number; views: number; medianSeconds: number };
+  funnel: { id: string; en: string; es: string; visitors: number }[];
+  daily: { day: string; visitors: number; sessions: number }[];
+  referrers: { name: string; n: number }[];
+  campaigns: { name: string; n: number }[];
+  countries: { name: string; n: number }[];
+  devices: { name: string; n: number }[];
+  ctas: { name: string; n: number }[];
+  tabs: { name: string; n: number }[];
+  sessions: { id: string; started: string; seconds: number; country: string | null; device: string | null; referrer: string | null; signedIn: boolean; reached: string | null; steps: string[] }[];
+};
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -293,6 +308,8 @@ export function api(supabase: SupabaseClient) {
       call<{ say: string; action: string | null; cost: number; model: string }>("/api/talk", { method: "POST", body: JSON.stringify({ messages, lang, tab }) }),
     limits: () => call<Budget>("/api/limits"),
     setLimit: (monthly: number) => call<Budget>("/api/limits", { method: "PUT", body: JSON.stringify({ monthly }) }),
+    isAdmin: () => call<{ admin: boolean }>("/api/visits?check=1").then((r) => r.admin, () => false),
+    visits: (days: number) => call<Traffic>(`/api/visits?days=${days}`),
   };
 }
 export type Api = ReturnType<typeof api>;
